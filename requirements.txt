@@ -1,0 +1,10 @@
+Django==4.2.10
+djangorestframework==3.14.0
+Pillow==10.0.1
+python-dotenv==1.0.0
+django-crispy-forms==2.0
+crispy-bootstrap5==0.7
+whitenoise==6.5.0
+gunicorn==21.2.0
+# For production
+# psycopg2-binary==2.9.7

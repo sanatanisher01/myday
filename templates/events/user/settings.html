@@ -1,0 +1,261 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Account Settings - MyDay{% endblock %}
+
+{% block content %}
+<!-- User Dashboard -->
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-lg-3 col-md-4 sidebar py-4 px-0">
+            <div class="sticky-top pt-3">
+                <div class="text-center mb-4">
+                    <div class="avatar mx-auto mb-3">
+                        {% if user.profile.profile_picture %}
+                            <img src="{{ user.profile.profile_picture.url }}" alt="{{ user.username }}" class="rounded-circle img-fluid">
+                        {% else %}
+                            <div class="avatar-placeholder rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto" style="width: 100px; height: 100px; font-size: 2rem;">
+                                {{ user.username|first|upper }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <h4>{{ user.get_full_name|default:user.username }}</h4>
+                    <p class="text-muted">Member since {{ user.date_joined|date:"M Y" }}</p>
+                </div>
+                
+                <div class="nav flex-column">
+                    <a href="{% url 'user_dashboard' %}" class="sidebar-link mb-2 {% if request.path == '/dashboard/' %}active{% endif %}">
+                        <i class="fas fa-home"></i> Dashboard
+                    </a>
+                    <a href="{% url 'user_bookings' %}" class="sidebar-link mb-2 {% if '/dashboard/bookings/' in request.path %}active{% endif %}">
+                        <i class="fas fa-calendar-alt"></i> My Bookings
+                    </a>
+                    <a href="{% url 'user_profile' %}" class="sidebar-link mb-2 {% if '/dashboard/profile/' in request.path %}active{% endif %}">
+                        <i class="fas fa-user"></i> Profile
+                    </a>
+                    <a href="{% url 'user_settings' %}" class="sidebar-link mb-2 {% if '/dashboard/settings/' in request.path %}active{% endif %}">
+                        <i class="fas fa-cog"></i> Settings
+                    </a>
+                    <a href="{% url 'logout' %}" class="sidebar-link mb-2 text-danger">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-lg-9 col-md-8 py-4">
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">Account Settings</h2>
+            </div>
+            
+            {% if messages %}
+            <div class="messages mb-4">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <!-- Settings Tabs -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <ul class="nav nav-tabs card-header-tabs" id="settingsTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="account-tab" data-bs-toggle="tab" data-bs-target="#account" type="button" role="tab" aria-controls="account" aria-selected="true">
+                                <i class="fas fa-lock me-2"></i>Account Security
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content" id="settingsTabsContent">
+                        <!-- Account Security Tab -->
+                        <div class="tab-pane fade show active" id="account" role="tabpanel" aria-labelledby="account-tab">
+                            <h5 class="mb-4">Change Password</h5>
+                            <form method="post" action="{% url 'change_password' %}">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label for="current_password" class="form-label">Current Password</label>
+                                    <input type="password" class="form-control" id="current_password" name="current_password" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="new_password" class="form-label">New Password</label>
+                                    <input type="password" class="form-control" id="new_password" name="new_password" required>
+                                    <div class="form-text">Password must be at least 8 characters and include numbers and special characters.</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="confirm_password" class="form-label">Confirm New Password</label>
+                                    <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Update Password</button>
+                            </form>
+                            
+                            <hr class="my-4">
+                            
+                            <h5 class="mb-4">Account Preferences</h5>
+                            <form method="post" action="{% url 'user_settings' %}">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Email Address</label>
+                                    <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" required>
+                                </div>
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="marketing_emails" name="marketing_emails" {% if user.profile.marketing_emails %}checked{% endif %}>
+                                    <label class="form-check-label" for="marketing_emails">I want to receive marketing emails about new events and offers</label>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Save Preferences</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Account Modal -->
+<div class="modal fade" id="deleteAccountModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger">Delete Account</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <i class="fas fa-exclamation-triangle text-danger fa-3x mb-3"></i>
+                    <h5>Are you absolutely sure?</h5>
+                    <p>This action cannot be undone. All your data will be permanently deleted.</p>
+                </div>
+                
+                <form method="post" action="{% url 'delete_account' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="deleteConfirmation" class="form-label">Please type "DELETE" to confirm</label>
+                        <input type="text" class="form-control" id="deleteConfirmation" name="delete_confirmation" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="deletePassword" class="form-label">Enter your password</label>
+                        <input type="password" class="form-control" id="deletePassword" name="password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="deleteFeedback" class="form-label">Tell us why you're leaving (optional)</label>
+                        <textarea class="form-control" id="deleteFeedback" name="feedback" rows="3"></textarea>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-danger">Permanently Delete My Account</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Sidebar */
+    .sidebar {
+        background-color: #f8f9fa;
+        min-height: calc(100vh - 76px);
+    }
+    
+    .sidebar-link {
+        display: block;
+        padding: 0.75rem 1.5rem;
+        color: #495057;
+        text-decoration: none;
+        border-left: 3px solid transparent;
+        transition: all 0.3s ease;
+    }
+    
+    .sidebar-link:hover, .sidebar-link.active {
+        background-color: rgba(var(--primary-rgb), 0.1);
+        color: var(--primary-color);
+        border-left-color: var(--primary-color);
+    }
+    
+    .avatar-placeholder {
+        font-weight: bold;
+    }
+    
+    /* Cards */
+    .card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+    }
+    
+    /* Notification Icons */
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        font-size: 1.5rem;
+    }
+    
+    /* Form Switch */
+    .form-check-input:checked {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+    
+    /* QR Code Placeholder */
+    .qr-placeholder {
+        border: 1px dashed #ccc;
+        border-radius: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize animations
+        gsap.registerPlugin(ScrollTrigger);
+        
+        // Animate cards on scroll
+        gsap.from('.card', {
+            scrollTrigger: {
+                trigger: '.card',
+                start: "top 80%"
+            },
+            y: 30,
+            opacity: 0,
+            duration: 0.5,
+            ease: 'power2.out'
+        });
+        
+        // Remember active tab after page reload
+        const activeTab = localStorage.getItem('activeSettingsTab');
+        if (activeTab) {
+            const tab = document.querySelector(`#settingsTabs button[data-bs-target="${activeTab}"]`);
+            if (tab) {
+                const bsTab = new bootstrap.Tab(tab);
+                bsTab.show();
+            }
+        }
+        
+        // Store active tab on change
+        const tabLinks = document.querySelectorAll('#settingsTabs button');
+        tabLinks.forEach(link => {
+            link.addEventListener('shown.bs.tab', function(e) {
+                localStorage.setItem('activeSettingsTab', e.target.getAttribute('data-bs-target'));
+            });
+        });
+    });
+</script>
+{% endblock %}

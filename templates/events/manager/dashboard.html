@@ -1,0 +1,247 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Manager Dashboard - MyDay{% endblock %}
+
+{% block content %}
+<section class="py-4">
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h1 class="mb-0">Manager Dashboard</h1>
+                    <div>
+                        <a href="{% url 'home' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-home"></i> Website Home
+                        </a>
+                    </div>
+                </div>
+                <hr>
+            </div>
+        </div>
+        
+        <!-- Stats Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card shadow-sm border-primary h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="text-muted mb-1">Events</h5>
+                                <h2 class="mb-0">{{ event_count }}</h2>
+                            </div>
+                            <div class="bg-light rounded-circle p-3">
+                                <i class="fas fa-calendar-alt fa-2x text-primary"></i>
+                            </div>
+                        </div>
+                        <a href="{% url 'manager_events' %}" class="stretched-link"></a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card shadow-sm border-success h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="text-muted mb-1">Subevents</h5>
+                                <h2 class="mb-0">{{ subevent_count }}</h2>
+                            </div>
+                            <div class="bg-light rounded-circle p-3">
+                                <i class="fas fa-list-alt fa-2x text-success"></i>
+                            </div>
+                        </div>
+                        <a href="{% url 'manager_subevents' %}" class="stretched-link"></a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card shadow-sm border-info h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="text-muted mb-1">Bookings</h5>
+                                <h2 class="mb-0">{{ booking_count }}</h2>
+                            </div>
+                            <div class="bg-light rounded-circle p-3">
+                                <i class="fas fa-ticket-alt fa-2x text-info"></i>
+                            </div>
+                        </div>
+                        <a href="{% url 'manager_bookings' %}" class="stretched-link"></a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card shadow-sm border-warning h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="text-muted mb-1">Users</h5>
+                                <h2 class="mb-0">{{ user_count }}</h2>
+                            </div>
+                            <div class="bg-light rounded-circle p-3">
+                                <i class="fas fa-users fa-2x text-warning"></i>
+                            </div>
+                        </div>
+                        <a href="{% url 'manager_users' %}" class="stretched-link"></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Links -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">Management Links</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-2">
+                            <div class="col-md-4">
+                                <a href="{% url 'manager_events' %}" class="btn btn-outline-primary w-100 mb-2">
+                                    <i class="fas fa-calendar-alt"></i> Manage Events
+                                </a>
+                            </div>
+                            <div class="col-md-4">
+                                <a href="{% url 'manager_subevents' %}" class="btn btn-outline-success w-100 mb-2">
+                                    <i class="fas fa-list-alt"></i> Manage Subevents
+                                </a>
+                            </div>
+                            <div class="col-md-4">
+                                <a href="{% url 'manager_bookings' %}" class="btn btn-outline-info w-100 mb-2">
+                                    <i class="fas fa-ticket-alt"></i> Manage Bookings
+                                </a>
+                            </div>
+                            <div class="col-md-4">
+                                <a href="{% url 'manager_users' %}" class="btn btn-outline-warning w-100 mb-2">
+                                    <i class="fas fa-users"></i> Manage Users
+                                </a>
+                            </div>
+                            <div class="col-md-4">
+                                <a href="{% url 'manager_contacts' %}" class="btn btn-outline-secondary w-100 mb-2">
+                                    <i class="fas fa-envelope"></i> View Contact Messages
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Bookings -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Recent Bookings</h5>
+                            <a href="{% url 'manager_bookings' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush">
+                            {% for booking in recent_bookings %}
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">{{ booking.user.username }} - {{ booking.subevent.name }}</h6>
+                                    <small class="text-muted">{{ booking.created_at|date:"M d, Y" }}</small>
+                                </div>
+                                <p class="mb-1 small">
+                                    <span class="badge bg-{{ booking.status|yesno:'success,warning,danger' }}">
+                                        {{ booking.status|title }}
+                                    </span>
+                                    {% if booking.total_amount %}
+                                    <span class="text-muted ms-2">${{ booking.total_amount }}</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                            {% empty %}
+                            <div class="list-group-item text-center py-4">
+                                <p class="text-muted mb-0">No bookings yet</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Events -->
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Recent Events</h5>
+                            <a href="{% url 'manager_events' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush">
+                            {% for event in recent_events %}
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">{{ event.name }}</h6>
+                                    <small class="text-muted">{{ event.created_at|date:"M d, Y" }}</small>
+                                </div>
+                                <p class="mb-1 small text-muted">{{ event.description|truncatechars:50 }}</p>
+                            </div>
+                            {% empty %}
+                            <div class="list-group-item text-center py-4">
+                                <p class="text-muted mb-0">No events yet</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Users -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">New Users</h5>
+                            <a href="{% url 'manager_users' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>User</th>
+                                        <th>Joined</th>
+                                        <th>Email</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for user in recent_users %}
+                                    <tr>
+                                        <td>{{ user.username }}</td>
+                                        <td>{{ user.date_joined|date:"M d, Y" }}</td>
+                                        <td>{{ user.email }}</td>
+                                        <td>
+                                            <a href="{% url 'manager_user_detail' user.id %}" class="btn btn-sm btn-outline-primary">
+                                                View
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="4" class="text-center py-4">
+                                            <p class="text-muted mb-0">No users yet</p>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

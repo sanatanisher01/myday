@@ -1,0 +1,258 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}MyDay - User Dashboard{% endblock %}
+
+{% block content %}
+<!-- User Dashboard -->
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-lg-3 col-md-4 sidebar py-4 px-0">
+            <div class="sticky-top pt-3">
+                <div class="text-center mb-4">
+                    <div class="avatar mx-auto mb-3">
+                        {% if user.profile.profile_picture %}
+                            <img src="{{ user.profile.profile_picture.url }}" alt="{{ user.username }}" class="rounded-circle img-fluid">
+                        {% else %}
+                            <div class="avatar-placeholder rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto" style="width: 100px; height: 100px; font-size: 2rem;">
+                                {{ user.username|first|upper }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <h4>{{ user.get_full_name|default:user.username }}</h4>
+                    <p class="text-muted">Member since {{ user.date_joined|date:"M Y" }}</p>
+                </div>
+                
+                <div class="nav flex-column">
+                    <a href="{% url 'user_dashboard' %}" class="sidebar-link mb-2 {% if request.path == '/dashboard/' %}active{% endif %}">
+                        <i class="fas fa-home"></i> Dashboard
+                    </a>
+                    <a href="{% url 'user_bookings' %}" class="sidebar-link mb-2 {% if '/dashboard/bookings/' in request.path %}active{% endif %}">
+                        <i class="fas fa-calendar-alt"></i> My Bookings
+                    </a>
+                    <a href="{% url 'user_profile' %}" class="sidebar-link mb-2 {% if '/dashboard/profile/' in request.path %}active{% endif %}">
+                        <i class="fas fa-user"></i> Profile
+                    </a>
+                    <a href="{% url 'user_settings' %}" class="sidebar-link mb-2 {% if '/dashboard/settings/' in request.path %}active{% endif %}">
+                        <i class="fas fa-cog"></i> Settings
+                    </a>
+                    <a href="{% url 'logout' %}" class="sidebar-link mb-2 text-danger">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-lg-9 col-md-8 py-4">
+            <!-- Welcome Banner -->
+            <div class="card mb-4 glass-card welcome-banner">
+                <div class="card-body p-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h2 class="mb-3">Welcome back, {{ user.first_name|default:user.username }}!</h2>
+                            <p class="text-muted mb-0">Manage your bookings, update your profile, or explore new events.</p>
+                        </div>
+                        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                            <a href="{% url 'event_list' %}" class="btn btn-primary">Explore Events</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Bookings -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Recent Bookings</h5>
+                </div>
+                <div class="card-body">
+                    {% if user_bookings %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Event</th>
+                                        <th>Date</th>
+                                        <th>Time</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for booking in user_bookings %}
+                                    <tr>
+                                        <td>{{ booking.subevent.name }}</td>
+                                        <td>{{ booking.booking_date }}</td>
+                                        <td>{{ booking.booking_time }}</td>
+                                        <td>
+                                            {% if booking.status == 'pending' %}
+                                                <span class="badge bg-warning">Pending</span>
+                                            {% elif booking.status == 'confirmed' %}
+                                                <span class="badge bg-success">Confirmed</span>
+                                            {% elif booking.status == 'cancelled' %}
+                                                <span class="badge bg-danger">Cancelled</span>
+                                            {% else %}
+                                                <span class="badge bg-primary">Completed</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="#" class="btn btn-sm btn-outline-primary">View</a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-calendar-day fa-3x text-muted mb-3"></i>
+                            <h5>No bookings yet</h5>
+                            <p>You haven't made any bookings yet. Browse events to book your first experience!</p>
+                            <a href="{% url 'event_list' %}" class="btn btn-primary mt-2">Browse Events</a>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer text-center">
+                    <a href="{% url 'user_bookings' %}" class="text-decoration-none">View All Bookings</a>
+                </div>
+            </div>
+            
+            <!-- Your Reviews -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Your Reviews</h5>
+                </div>
+                <div class="card-body">
+                    {% if user_reviews %}
+                        {% for review in user_reviews %}
+                            <div class="review-item mb-3 {% if not forloop.last %}border-bottom pb-3{% endif %}">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <h6 class="mb-1">{{ review.event.name }}</h6>
+                                    <div class="rating">
+                                        {% with ''|center:review.rating as stars %}
+                                        {% for _ in stars %}
+                                            <i class="fas fa-star text-warning"></i>
+                                        {% endfor %}
+                                        {% endwith %}
+                                    </div>
+                                </div>
+                                <p class="mb-1">{{ review.comment }}</p>
+                                <small class="text-muted">{{ review.created_at|date:"M d, Y" }}</small>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-star fa-3x text-muted mb-3"></i>
+                            <h5>No reviews yet</h5>
+                            <p>You haven't reviewed any events yet. Share your experience with others!</p>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer text-center">
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#reviewModal">Write a Review</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Review Modal -->
+<div class="modal fade" id="reviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Write a Review</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" action="{% url 'add_review' event_id=1 %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="event_select" class="form-label">Select Event</label>
+                        <select class="form-select" id="event_select" name="event">
+                            {% for event in events %}
+                                <option value="{{ event.id }}">{{ event.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="rating" class="form-label">Rating</label>
+                        <div class="rating-input">
+                            <input type="range" class="form-range" min="1" max="5" step="1" id="rating" name="rating" value="5">
+                            <div class="rating-stars">
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="comment" class="form-label">Your Review</label>
+                        <textarea class="form-control" id="comment" name="comment" rows="3" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="image" class="form-label">Add Image (Optional)</label>
+                        <input type="file" class="form-control" id="image" name="image">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Submit Review</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .notification-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .welcome-banner {
+        background: linear-gradient(135deg, #4A90E2 0%, #6A50A7 100%);
+    }
+    
+    .welcome-banner .card-body {
+        color: white;
+    }
+    
+    .welcome-banner .text-muted {
+        color: rgba(255, 255, 255, 0.8) !important;
+    }
+    
+    .welcome-banner .btn-primary {
+        background: white;
+        color: #4A90E2;
+        border: none;
+    }
+    
+    .welcome-banner .btn-primary:hover {
+        background: rgba(255, 255, 255, 0.9);
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize the notification bell animation
+        animateNotificationBell();
+        
+        // Update review form action when event selection changes
+        const eventSelect = document.getElementById('event_select');
+        if (eventSelect) {
+            eventSelect.addEventListener('change', function() {
+                const reviewForm = this.closest('form');
+                reviewForm.action = "{% url 'add_review' event_id=0 %}".replace('0', this.value);
+            });
+        }
+    });
+</script>
+{% endblock %}

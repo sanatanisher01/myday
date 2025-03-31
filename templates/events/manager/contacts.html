@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Contact Messages - Manager Dashboard{% endblock %}
+
+{% block content %}
+<section class="py-4">
+    <div class="container">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h1 class="mb-0">Contact Messages</h1>
+                    <div>
+                        <a href="{% url 'manager_dashboard' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Dashboard
+                        </a>
+                    </div>
+                </div>
+                <hr>
+            </div>
+        </div>
+        
+        <!-- Contact Messages List -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">All Messages</h5>
+                            <div class="filters">
+                                <button class="btn btn-outline-primary btn-sm me-2" onclick="filterMessages('all')">All</button>
+                                <button class="btn btn-outline-danger btn-sm me-2" onclick="filterMessages('unread')">Unread</button>
+                                <button class="btn btn-outline-success btn-sm" onclick="filterMessages('read')">Read</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Status</th>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Subject</th>
+                                        <th>Date</th>
+                                        <th style="width: 100px;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for contact in contacts %}
+                                    <tr class="message-row {% if contact.is_read %}read{% else %}unread{% endif %}">
+                                        <td>
+                                            {% if contact.is_read %}
+                                            <span class="badge bg-success">Read</span>
+                                            {% else %}
+                                            <span class="badge bg-danger">Unread</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ contact.name }}</td>
+                                        <td>{{ contact.email }}</td>
+                                        <td>{{ contact.subject|truncatechars:30 }}</td>
+                                        <td>{{ contact.created_at|date:"M d, Y" }}</td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#viewMessageModal{{ contact.id }}">
+                                                View
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="6" class="text-center py-4">
+                                            <div class="py-5">
+                                                <i class="fas fa-envelope fa-3x text-muted mb-3"></i>
+                                                <h5>No Messages Found</h5>
+                                                <p class="text-muted">There are no contact messages in the system yet.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Message View Modals -->
+{% for contact in contacts %}
+<div class="modal fade" id="viewMessageModal{{ contact.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Message from {{ contact.name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">Message Details</h6>
+                            <span class="badge {% if contact.is_read %}bg-success{% else %}bg-danger{% endif %}">
+                                {% if contact.is_read %}Read{% else %}Unread{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-3">From:</dt>
+                            <dd class="col-sm-9">{{ contact.name }}</dd>
+                            
+                            <dt class="col-sm-3">Email:</dt>
+                            <dd class="col-sm-9">{{ contact.email }}</dd>
+                            
+                            <dt class="col-sm-3">Date:</dt>
+                            <dd class="col-sm-9">{{ contact.created_at|date:"M d, Y h:i A" }}</dd>
+                            
+                            <dt class="col-sm-3">Subject:</dt>
+                            <dd class="col-sm-9">{{ contact.subject }}</dd>
+                            
+                            <dt class="col-sm-3">Message:</dt>
+                            <dd class="col-sm-9">
+                                <div class="p-3 bg-light rounded">
+                                    <div style="white-space: pre-line;">{{ contact.message }}</div>
+                                </div>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+                
+                {% if not contact.is_read %}
+                <form method="post" action="{% url 'manager_contacts' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="message_id" value="{{ contact.id }}">
+                    <button type="submit" name="mark_read" class="btn btn-primary">Mark as Read</button>
+                </form>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a href="mailto:{{ contact.email }}" class="btn btn-primary">
+                    <i class="fas fa-reply"></i> Reply by Email
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% block extra_js %}
+<script>
+    function filterMessages(filter) {
+        const rows = document.querySelectorAll('.message-row');
+        
+        rows.forEach(row => {
+            if (filter === 'all') {
+                row.style.display = '';
+            } else if (filter === 'read' && row.classList.contains('read')) {
+                row.style.display = '';
+            } else if (filter === 'unread' && row.classList.contains('unread')) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+</script>
+{% endblock %}
+
+{% endblock %}

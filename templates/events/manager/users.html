@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Manage Users - Manager Dashboard{% endblock %}
+
+{% block content %}
+<section class="py-4">
+    <div class="container">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h1 class="mb-0">Manage Users</h1>
+                    <div>
+                        <a href="{% url 'manager_dashboard' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Dashboard
+                        </a>
+                    </div>
+                </div>
+                <hr>
+            </div>
+        </div>
+        
+        <!-- Users List -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">All Users</h5>
+                            <div class="input-group" style="max-width: 300px;">
+                                <input type="text" class="form-control" id="userSearch" placeholder="Search users...">
+                                <button class="btn btn-outline-secondary" type="button">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 60px;">Avatar</th>
+                                        <th>Username</th>
+                                        <th>Email</th>
+                                        <th>Phone</th>
+                                        <th>Joined</th>
+                                        <th>Bookings</th>
+                                        <th style="width: 150px;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for user in users %}
+                                    <tr>
+                                        <td>
+                                            {% if user.userprofile.profile_picture %}
+                                            <img src="{{ user.userprofile.profile_picture.url }}" alt="{{ user.username }}" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
+                                            {% else %}
+                                            <div class="avatar-placeholder rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                {{ user.username|make_list|first|upper }}
+                                            </div>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <strong>{{ user.username }}</strong>
+                                            <div class="small text-muted">{{ user.first_name }} {{ user.last_name }}</div>
+                                        </td>
+                                        <td>{{ user.email }}</td>
+                                        <td>
+                                            {% if user.userprofile.phone %}
+                                            {{ user.userprofile.phone }}
+                                            {% else %}
+                                            <span class="text-muted">Not provided</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ user.date_joined|date:"M d, Y" }}</td>
+                                        <td>
+                                            <span class="badge bg-primary">{{ user.booking_set.count }} Bookings</span>
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'manager_user_detail' user.id %}" class="btn btn-sm btn-primary">
+                                                View Details
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="7" class="text-center py-4">
+                                            <div class="py-5">
+                                                <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                                                <h5>No Users Found</h5>
+                                                <p class="text-muted">There are no registered users in the system yet.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

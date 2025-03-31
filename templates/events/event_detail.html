@@ -1,0 +1,862 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ event.name }} - MyDay{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Event Header */
+    .event-header {
+        min-height: 60vh;
+        position: relative;
+        display: flex;
+        align-items: center;
+        color: white;
+        overflow: hidden;
+    }
+    
+    .event-image-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+    }
+    
+    .event-header-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transform: scale(1.05);
+        transition: transform 10s ease;
+    }
+    
+    .event-header:hover .event-header-image {
+        transform: scale(1.15);
+    }
+    
+    .overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0.8) 100%);
+    }
+    
+    .event-title {
+        font-weight: 800;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        margin-bottom: 1rem;
+        position: relative;
+    }
+    
+    .event-title:after {
+        content: '';
+        position: absolute;
+        bottom: -15px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 80px;
+        height: 4px;
+        background: var(--bs-primary);
+        border-radius: 2px;
+    }
+    
+    /* Subevent Cards */
+    .subevent-card {
+        border: none;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+    
+    .subevent-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+    }
+    
+    .card-img-container {
+        height: 220px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .card-img-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+    }
+    
+    .subevent-card:hover .card-img-container img {
+        transform: scale(1.1);
+    }
+    
+    .price-tag {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+        padding: 8px 15px;
+        border-radius: 30px;
+        font-weight: 600;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        z-index: 2;
+    }
+    
+    .card-body {
+        padding: 1.5rem;
+    }
+    
+    .card-title {
+        font-weight: 700;
+        margin-bottom: 1rem;
+        font-size: 1.35rem;
+    }
+    
+    .card-text {
+        color: #6c757d;
+        margin-bottom: 1.25rem;
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+    
+    .card-footer {
+        padding: 1rem 1.5rem;
+    }
+    
+    .book-btn {
+        border-radius: 30px;
+        padding: 0.5rem 1.25rem;
+        transition: all 0.3s ease;
+    }
+    
+    .book-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3);
+    }
+    
+    /* Review cards */
+    .review-card {
+        border: none;
+        border-radius: 15px;
+        transition: all 0.3s ease;
+    }
+    
+    .review-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+    }
+    
+    .review-avatar img, .avatar-placeholder {
+        width: 55px;
+        height: 55px;
+        border: 3px solid #fff;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .avatar-placeholder {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+    
+    .review-text {
+        font-style: italic;
+        color: #6c757d;
+        line-height: 1.6;
+    }
+    
+    .review-image-wrapper {
+        overflow: hidden;
+        border-radius: 10px;
+        max-height: 200px;
+    }
+    
+    .review-image {
+        transition: transform 0.3s ease;
+    }
+    
+    .review-card:hover .review-image {
+        transform: scale(1.05);
+    }
+    
+    /* FAQ Accordion */
+    .faq-accordion .accordion-item {
+        border: none;
+        margin-bottom: 15px;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    }
+    
+    .faq-accordion .accordion-button {
+        font-weight: 600;
+        padding: 1.25rem;
+        background-color: #fff;
+    }
+    
+    .faq-accordion .accordion-button:not(.collapsed) {
+        color: var(--bs-primary);
+        background-color: rgba(0, 123, 255, 0.05);
+    }
+    
+    .faq-accordion .accordion-button:focus {
+        box-shadow: none;
+        border-color: rgba(0, 123, 255, 0.1);
+    }
+    
+    .faq-accordion .accordion-body {
+        padding: 1.25rem;
+        line-height: 1.6;
+        color: #6c757d;
+    }
+    
+    /* Call to Action Section */
+    .cta-section {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        border-radius: 15px;
+        margin: 3rem 0;
+        padding: 5rem 0;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .cta-section:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: url('https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80') center/cover no-repeat;
+        opacity: 0.1;
+    }
+    
+    /* Section titles */
+    .section-title {
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+        position: relative;
+        display: inline-block;
+    }
+    
+    .section-title:after {
+        content: '';
+        position: absolute;
+        bottom: -10px;
+        left: 0;
+        width: 50px;
+        height: 4px;
+        background: var(--bs-primary);
+        border-radius: 2px;
+    }
+    
+    /* Action button */
+    .btn-action {
+        border-radius: 50px;
+        padding: 0.8rem 2rem;
+        font-weight: 600;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .btn-action:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+    
+    /* Load more button */
+    .load-more-btn {
+        padding: 0.8rem 2.5rem;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        border-radius: 50px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .load-more-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+    
+    /* Animation classes */
+    .fade-in {
+        animation: fadeIn 1s ease forwards;
+    }
+    
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .fade-up {
+        opacity: 0;
+        transform: translateY(20px);
+        transition: all 0.6s ease;
+    }
+    
+    .fade-up.active {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    
+    .staggered-fade .fade-up:nth-child(2) { transition-delay: 0.1s; }
+    .staggered-fade .fade-up:nth-child(3) { transition-delay: 0.2s; }
+    .staggered-fade .fade-up:nth-child(4) { transition-delay: 0.3s; }
+    .staggered-fade .fade-up:nth-child(5) { transition-delay: 0.4s; }
+    .staggered-fade .fade-up:nth-child(6) { transition-delay: 0.5s; }
+    
+    /* Media Queries */
+    @media (max-width: 992px) {
+        .event-header {
+            min-height: 50vh;
+        }
+        
+        .card-img-container {
+            height: 180px;
+        }
+        
+        .cta-section {
+            padding: 3rem 0;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .event-title {
+            font-size: 2.5rem;
+        }
+        
+        .subevent-card:hover, .review-card:hover {
+            transform: translateY(-5px);
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .event-header {
+            min-height: 40vh;
+        }
+        
+        .event-title {
+            font-size: 2rem;
+        }
+        
+        .card-footer {
+            flex-direction: column;
+            gap: 10px;
+            align-items: stretch;
+        }
+        
+        .card-footer .btn {
+            width: 100%;
+        }
+        
+        .review-avatar img, .avatar-placeholder {
+            width: 45px;
+            height: 45px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Event Header -->
+<section class="event-header position-relative">
+    <div class="event-image-container">
+        {% if event.image %}
+        <img src="{{ event.image.url }}" alt="{{ event.name }}" class="event-header-image">
+        {% else %}
+        <img src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80" alt="{{ event.name }}" class="event-header-image">
+        {% endif %}
+        <div class="overlay"></div>
+    </div>
+    <div class="container position-relative">
+        <div class="row">
+            <div class="col-lg-10 col-md-12 mx-auto text-center text-white py-5">
+                <h1 class="display-3 fw-bold event-title mb-4">{{ event.name }}</h1>
+                <div class="rating my-4 fade-in">
+                    {% if avg_rating %}
+                        <div class="d-flex justify-content-center align-items-center">
+                            <div class="me-3">
+                                {% with ''|center:avg_rating|floatformat:"0" as stars %}
+                                {% for _ in stars %}
+                                    <i class="fas fa-star text-warning fa-lg"></i>
+                                {% endfor %}
+                                {% endwith %}
+                                {% with "5"|add:"-"|add:avg_rating|add:"0" as remaining %}
+                                {% if remaining > 0 %}
+                                    {% with ''|center:remaining as empty_stars %}
+                                    {% for _ in empty_stars %}
+                                        <i class="far fa-star text-warning fa-lg"></i>
+                                    {% endfor %}
+                                    {% endwith %}
+                                {% endif %}
+                                {% endwith %}
+                            </div>
+                            <span class="fs-5 fw-light">{{ avg_rating|floatformat:1 }} ({{ reviews.count }} reviews)</span>
+                        </div>
+                    {% else %}
+                        <span>No ratings yet</span>
+                    {% endif %}
+                </div>
+                <p class="lead mb-4 fade-in">{{ event.description }}</p>
+                <button class="btn btn-lg btn-primary btn-action mt-3 fade-in" data-bs-toggle="modal" data-bs-target="#bookingModal">
+                    <i class="fas fa-calendar-check me-2"></i>Book Now
+                </button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Sub-Events Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-12 text-center">
+                <h2 class="fw-bold section-title">{{ event.name }} Services</h2>
+                <p class="lead mt-4">Explore our comprehensive range of services for your {{ event.name | lower }}</p>
+            </div>
+        </div>
+        
+        <div class="row g-4 staggered-fade">
+            {% for subevent in subevents %}
+            <div class="col-lg-4 col-md-6 fade-up">
+                <div class="card h-100 subevent-card">
+                    <div class="card-img-container">
+                        {% if subevent.image %}
+                        <img src="{{ subevent.image.url }}" class="card-img-top" alt="{{ subevent.name }}">
+                        {% else %}
+                        <img src="https://images.unsplash.com/photo-1505236858219-8359eb29e329?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" class="card-img-top" alt="{{ subevent.name }}">
+                        {% endif %}
+                        <div class="price-tag">${{ subevent.price }}</div>
+                    </div>
+                    <div class="card-body">
+                        <h3 class="card-title">{{ subevent.name }}</h3>
+                        <p class="card-text">{{ subevent.description|truncatechars:120 }}</p>
+                    </div>
+                    <div class="card-footer bg-transparent border-0 d-flex justify-content-between align-items-center">
+                        <a href="{% url 'subevent_detail' event.slug subevent.slug %}" class="btn btn-outline-primary">View Details</a>
+                        <a href="#" class="btn btn-primary book-btn" data-bs-toggle="modal" data-bs-target="#bookingModal" data-subevent-id="{{ subevent.id }}">Book Now</a>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center py-5">
+                <img src="https://cdn.iconscout.com/icon/free/png-256/free-calendar-3006576-2502266.png" alt="No services" class="img-fluid mb-4" style="max-width: 150px;">
+                <h3>No services available for this event.</h3>
+                <p>Please check back later for updates!</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Reviews Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-lg-8 col-md-10 mx-auto">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2 class="fw-bold section-title">Customer Reviews</h2>
+                    {% if user.is_authenticated %}
+                    <button class="btn btn-primary btn-action" data-bs-toggle="modal" data-bs-target="#reviewModal">
+                        <i class="fas fa-pencil-alt me-2"></i>Write a Review
+                    </button>
+                    {% else %}
+                    <button class="btn btn-primary btn-action" data-bs-toggle="modal" data-bs-target="#loginModal">
+                        <i class="fas fa-sign-in-alt me-2"></i>Sign In to Write a Review
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="row g-4 staggered-fade">
+            {% for review in reviews %}
+            <div class="col-lg-4 col-md-6 fade-up">
+                <div class="card h-100 shadow-sm review-card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="review-avatar me-3">
+                                {% if review.user.profile.profile_picture %}
+                                    <img src="{{ review.user.profile.profile_picture.url }}" alt="{{ review.user.username }}" class="rounded-circle">
+                                {% else %}
+                                    <div class="avatar-placeholder rounded-circle bg-primary text-white">{{ review.user.username|first|upper }}</div>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <h5 class="mb-0 fw-bold">{{ review.user.get_full_name|default:review.user.username }}</h5>
+                                <div class="rating">
+                                    {% with ''|center:review.rating as stars %}
+                                    {% for _ in stars %}
+                                        <i class="fas fa-star text-warning"></i>
+                                    {% endfor %}
+                                    {% endwith %}
+                                    {% with "5"|add:"-"|add:review.rating|add:"0" as remaining %}
+                                    {% if remaining > 0 %}
+                                        {% with ''|center:remaining as remaining_stars %}
+                                        {% for _ in remaining_stars %}
+                                            <i class="far fa-star text-warning"></i>
+                                        {% endfor %}
+                                        {% endwith %}
+                                    {% endif %}
+                                    {% endwith %}
+                                </div>
+                                <small class="text-muted">{{ review.created_at|date:"M d, Y" }}</small>
+                            </div>
+                        </div>
+                        <p class="card-text review-text">{{ review.comment }}</p>
+                        {% if review.image %}
+                        <div class="review-image-wrapper">
+                            <img src="{{ review.image.url }}" alt="Review image" class="review-image">
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center py-5">
+                <img src="https://cdn.iconscout.com/icon/free/png-256/free-chat-bubble-3089257-2567399.png" alt="No reviews" class="img-fluid mb-4" style="max-width: 150px; opacity: 0.7;">
+                <h3>No reviews yet.</h3>
+                <p class="text-muted">Be the first to review this event!</p>
+                {% if user.is_authenticated %}
+                <button class="btn btn-primary btn-action mt-3" data-bs-toggle="modal" data-bs-target="#reviewModal">
+                    <i class="fas fa-star me-2"></i>Write a Review
+                </button>
+                {% else %}
+                <button class="btn btn-primary btn-action mt-3" data-bs-toggle="modal" data-bs-target="#loginModal">
+                    <i class="fas fa-sign-in-alt me-2"></i>Sign In to Write a Review
+                </button>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        
+        {% if reviews.count > 6 %}
+        <div class="row mt-5">
+            <div class="col-12 text-center">
+                <a href="#" class="btn btn-outline-primary load-more-btn">
+                    <i class="fas fa-spinner me-2"></i>Load More Reviews
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- FAQ Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-12 text-center">
+                <h2 class="fw-bold section-title">Frequently Asked Questions</h2>
+                <p class="lead mt-4">Everything you need to know about our {{ event.name | lower }} services</p>
+            </div>
+        </div>
+        
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="accordion faq-accordion" id="faqAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingOne">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                                <i class="fas fa-calendar-alt me-2 text-primary"></i>How far in advance should I book?
+                            </button>
+                        </h2>
+                        <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                We recommend booking at least 3-6 months in advance for popular dates, especially for weekend events during peak season. This ensures you get the best choice of services and packages.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingTwo">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                                <i class="fas fa-sliders-h me-2 text-primary"></i>Can I customize the services to fit my needs?
+                            </button>
+                        </h2>
+                        <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Absolutely! We understand that every event is unique. Please contact us to discuss your specific requirements, and we'll be happy to create a custom package tailored to your needs and budget.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingThree">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                                <i class="fas fa-undo-alt me-2 text-primary"></i>What is your cancellation policy?
+                            </button>
+                        </h2>
+                        <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Cancellations made 30 days or more before the event date receive a full refund minus a 10% administrative fee. Cancellations made between 14-29 days receive a 50% refund. Cancellations with less than 14 days notice are non-refundable.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingFour">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
+                                <i class="fas fa-credit-card me-2 text-primary"></i>What payment methods do you accept?
+                            </button>
+                        </h2>
+                        <div id="collapseFour" class="accordion-collapse collapse" aria-labelledby="headingFour" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                We accept all major credit cards, direct bank transfers, and mobile payment options. A 30% deposit is required to secure your booking, with the remaining balance due 14 days before the event.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action Section -->
+<section class="py-5 cta-section">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10 text-center">
+                <h2 class="fw-bold display-5 mb-4 text-white">Ready to Make Your {{ event.name }} Unforgettable?</h2>
+                <p class="lead mb-4 text-white">Book now and let us handle all the details so you can focus on creating memories</p>
+                <button class="btn btn-light btn-lg btn-action" data-bs-toggle="modal" data-bs-target="#bookingModal">
+                    <i class="fas fa-calendar-check me-2"></i>Book Your {{ event.name }} Now
+                </button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Booking Modal -->
+<div class="modal fade" id="bookingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Book Your Event</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                {% if user.is_authenticated %}
+                <form method="post" action="{% url 'add_booking' subevent_id=1 %}" id="bookingForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="subevent_select" class="form-label">Select Service</label>
+                        <select class="form-select" id="subevent_select" name="subevent">
+                            {% for subevent in subevents %}
+                                <option value="{{ subevent.id }}" data-price="{{ subevent.price }}">{{ subevent.name }} - ${{ subevent.price }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="booking_date" class="form-label">Date</label>
+                        <input type="date" class="form-control" id="booking_date" name="booking_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="booking_time" class="form-label">Time</label>
+                        <input type="time" class="form-control" id="booking_time" name="booking_time" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Special Requests (Optional)</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6>Price Summary:</h6>
+                                <div class="d-flex justify-content-between">
+                                    <span>Service Fee:</span>
+                                    <span id="service_price">$0.00</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Tax (10%):</span>
+                                    <span id="tax_amount">$0.00</span>
+                                </div>
+                                <hr>
+                                <div class="d-flex justify-content-between fw-bold">
+                                    <span>Total:</span>
+                                    <span id="total_amount">$0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Confirm Booking</button>
+                </form>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-lock fa-3x text-muted mb-3"></i>
+                    <h5>Please Sign In to Book</h5>
+                    <p>You need to be logged in to make a booking.</p>
+                    <button class="btn btn-primary mt-2" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#loginModal">Sign In</button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Review Modal -->
+{% if user.is_authenticated %}
+<div class="modal fade" id="reviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Write a Review</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" action="{% url 'add_review' event_id=event.id %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="rating" class="form-label">Your Rating</label>
+                        <div class="rating-input">
+                            <input type="range" class="form-range" min="1" max="5" step="1" id="rating" name="rating" value="5">
+                            <div class="rating-stars">
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="comment" class="form-label">Your Review</label>
+                        <textarea class="form-control" id="comment" name="comment" rows="4" placeholder="Share your experience with this event..." required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="image" class="form-label">Add Photo (Optional)</label>
+                        <input type="file" class="form-control" id="image" name="image">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Submit Review</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize animations for fade-up elements
+        const fadeElements = document.querySelectorAll('.fade-up');
+        
+        // Helper function to check if an element is in viewport
+        function isInViewport(element) {
+            const rect = element.getBoundingClientRect();
+            return (
+                rect.top >= 0 &&
+                rect.left >= 0 &&
+                rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+                rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+            );
+        }
+        
+        // Activate elements in viewport on load
+        fadeElements.forEach(function(element) {
+            if (isInViewport(element)) {
+                element.classList.add('active');
+            }
+        });
+        
+        // Activate elements on scroll
+        window.addEventListener('scroll', function() {
+            fadeElements.forEach(function(element) {
+                if (isInViewport(element) && !element.classList.contains('active')) {
+                    element.classList.add('active');
+                }
+            });
+        });
+        
+        // Add touch support for mobile devices
+        if ('ontouchstart' in window) {
+            document.querySelectorAll('.subevent-card, .review-card').forEach(function(card) {
+                card.classList.add('touch-device');
+            });
+        }
+        
+        // Expand review images on click
+        document.querySelectorAll('.review-image').forEach(function(img) {
+            img.addEventListener('click', function() {
+                const modal = new bootstrap.Modal(document.getElementById('imageModal'));
+                const modalImg = document.getElementById('modalImage');
+                modalImg.src = this.src;
+                modal.show();
+            });
+        });
+        
+        // Setup booking modal handlers
+        const bookingModal = document.getElementById('bookingModal');
+        if (bookingModal) {
+            const subEventSelect = bookingModal.querySelector('#subEventSelect');
+            const priceDisplay = bookingModal.querySelector('#priceDisplay');
+            const totalDisplay = bookingModal.querySelector('#totalPriceDisplay');
+            
+            // Update price when selecting a subevent
+            function updatePriceSummary() {
+                const selectedOption = subEventSelect.options[subEventSelect.selectedIndex];
+                if (selectedOption && selectedOption.value) {
+                    const price = selectedOption.dataset.price;
+                    if (price) {
+                        priceDisplay.textContent = '$' + price;
+                        totalDisplay.textContent = '$' + price;
+                    }
+                }
+            }
+            
+            updatePriceSummary();
+            subEventSelect.addEventListener('change', updatePriceSummary);
+        }
+        
+        // Setup for review modal
+        const reviewModal = document.getElementById('reviewModal');
+        if (reviewModal) {
+            const ratingInputs = reviewModal.querySelectorAll('input[name="rating"]');
+            const ratingValue = reviewModal.querySelector('#ratingValue');
+            
+            ratingInputs.forEach(function(input) {
+                input.addEventListener('change', function() {
+                    ratingValue.textContent = this.value;
+                });
+            });
+        }
+        
+        // Load more reviews functionality
+        const loadMoreBtn = document.querySelector('.load-more-btn');
+        if (loadMoreBtn) {
+            loadMoreBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const hiddenReviews = document.querySelectorAll('.review-card-wrapper.d-none');
+                
+                // Show next batch of reviews (up to 3)
+                for (let i = 0; i < Math.min(3, hiddenReviews.length); i++) {
+                    hiddenReviews[i].classList.remove('d-none');
+                    hiddenReviews[i].classList.add('fade-up');
+                    setTimeout(function() {
+                        hiddenReviews[i].classList.add('active');
+                    }, 100 * i);
+                }
+                
+                // Hide button if no more reviews to show
+                if (document.querySelectorAll('.review-card-wrapper.d-none').length === 0) {
+                    this.style.display = 'none';
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

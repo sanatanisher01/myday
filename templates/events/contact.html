@@ -1,0 +1,476 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Contact Us - MyDay{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<section class="page-header bg-primary text-white">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h1 class="display-4 fw-bold mb-3">Contact Us</h1>
+                <p class="lead mb-0">Have questions or feedback? We're here to help you create unforgettable memories.</p>
+            </div>
+            <div class="col-md-6 d-none d-md-block">
+                <img src="{% static 'images/contact-header.svg' %}" alt="Contact Us" class="img-fluid">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Contact Content -->
+<section class="py-5">
+    <div class="container">
+        <div class="row">
+            <!-- Contact Form -->
+            <div class="col-lg-8 mb-4 mb-lg-0">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4 p-md-5">
+                        <h3 class="mb-4">Send us a message</h3>
+                        
+                        {% if messages %}
+                        <div class="messages mb-4">
+                            {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <form method="post" action="{% url 'contact' %}" id="contactForm">
+                            {% csrf_token %}
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="name" class="form-label">Your Name</label>
+                                    <input type="text" class="form-control" id="name" name="name" placeholder="Enter your name" required {% if user.is_authenticated %}value="{{ user.get_full_name }}"{% endif %}>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="email" class="form-label">Email Address</label>
+                                    <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required {% if user.is_authenticated %}value="{{ user.email }}"{% endif %}>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="subject" class="form-label">Subject</label>
+                                <select class="form-select" id="subject" name="subject" required>
+                                    <option value="" selected disabled>Select a subject</option>
+                                    <option value="General Inquiry">General Inquiry</option>
+                                    <option value="Technical Support">Technical Support</option>
+                                    <option value="Booking Issue">Booking Issue</option>
+                                    <option value="Feedback">Feedback</option>
+                                    <option value="Partnership">Partnership Opportunity</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="message" class="form-label">Message</label>
+                                <textarea class="form-control" id="message" name="message" rows="5" placeholder="How can we help you?" required></textarea>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="agreeTOS" name="agree_tos" required>
+                                    <label class="form-check-label" for="agreeTOS">
+                                        I agree to the <a href="#" data-bs-toggle="modal" data-bs-target="#privacyPolicyModal">Privacy Policy</a> and consent to being contacted regarding my inquiry.
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="text-end">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-paper-plane me-2"></i>Send Message
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Contact Information -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body p-4">
+                        <h4 class="mb-4">Get in Touch</h4>
+                        
+                        <div class="d-flex mb-4">
+                            <div class="contact-icon bg-primary-soft me-3">
+                                <i class="fas fa-map-marker-alt text-primary"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-1">Visit Us</h5>
+                                <p class="mb-0">123 Event Street, Suite 500<br>San Francisco, CA 94107</p>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex mb-4">
+                            <div class="contact-icon bg-primary-soft me-3">
+                                <i class="fas fa-phone-alt text-primary"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-1">Call Us</h5>
+                                <p class="mb-0">+1 (555) 123-4567</p>
+                                <p class="mb-0 text-muted small">Mon-Fri, 9AM-6PM PST</p>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex mb-4">
+                            <div class="contact-icon bg-primary-soft me-3">
+                                <i class="fas fa-envelope text-primary"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-1">Email Us</h5>
+                                <p class="mb-0"><a href="mailto:support@mydayevents.com" class="text-decoration-none">support@mydayevents.com</a></p>
+                                <p class="mb-0 text-muted small">We'll respond within 24 hours</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <h4 class="mb-3">Follow Us</h4>
+                        <p class="mb-3">Stay connected with us on social media for the latest updates, inspiration, and event ideas.</p>
+                        <div class="social-links">
+                            <a href="#" class="social-link me-2"><i class="fab fa-facebook-f"></i></a>
+                            <a href="#" class="social-link me-2"><i class="fab fa-twitter"></i></a>
+                            <a href="#" class="social-link me-2"><i class="fab fa-instagram"></i></a>
+                            <a href="#" class="social-link me-2"><i class="fab fa-linkedin-in"></i></a>
+                            <a href="#" class="social-link"><i class="fab fa-pinterest-p"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FAQ Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="mb-3">Frequently Asked Questions</h2>
+            <p class="lead text-muted">Find quick answers to common questions about our services.</p>
+        </div>
+        
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="accordion" id="faqAccordion">
+                    <!-- FAQ Item 1 -->
+                    <div class="accordion-item border-0 mb-3 shadow-sm">
+                        <h2 class="accordion-header" id="headingOne">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                                How do I book an event service?
+                            </button>
+                        </h2>
+                        <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                <p>Booking an event service on MyDay is simple! Browse through our event categories, select the service you're interested in, and click the "Book Now" button. You'll be guided through selecting your date, time, and number of guests. Once submitted, you'll receive a confirmation email with all the details.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- FAQ Item 2 -->
+                    <div class="accordion-item border-0 mb-3 shadow-sm">
+                        <h2 class="accordion-header" id="headingTwo">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                                What is your cancellation policy?
+                            </button>
+                        </h2>
+                        <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                <p>Our standard cancellation policy offers:</p>
+                                <ul>
+                                    <li>Full refund if cancelled 30+ days before the event</li>
+                                    <li>50% refund if cancelled 14-29 days before the event</li>
+                                    <li>No refund if cancelled less than 14 days before the event</li>
+                                </ul>
+                                <p>However, specific services may have different policies, so please check the service details page for exact terms.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- FAQ Item 3 -->
+                    <div class="accordion-item border-0 mb-3 shadow-sm">
+                        <h2 class="accordion-header" id="headingThree">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                                Can I modify my booking after confirmation?
+                            </button>
+                        </h2>
+                        <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                <p>Yes, you can modify your booking details (like guest count or special requests) up to 14 days before your event date. For date or time changes, please contact us directly as availability will need to be confirmed. All modifications are subject to availability and may incur additional charges depending on the changes requested.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- FAQ Item 4 -->
+                    <div class="accordion-item border-0 mb-3 shadow-sm">
+                        <h2 class="accordion-header" id="headingFour">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
+                                How do I leave a review for a service?
+                            </button>
+                        </h2>
+                        <div id="collapseFour" class="accordion-collapse collapse" aria-labelledby="headingFour" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                <p>After your event is completed, you'll receive an email inviting you to leave a review. Alternatively, you can log into your account, go to "My Bookings," find the completed event, and click on "Write Review." Your feedback is extremely valuable to us and helps other users make informed decisions.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- FAQ Item 5 -->
+                    <div class="accordion-item border-0 shadow-sm">
+                        <h2 class="accordion-header" id="headingFive">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFive" aria-expanded="false" aria-controls="collapseFive">
+                                Do you offer custom event packages?
+                            </button>
+                        </h2>
+                        <div id="collapseFive" class="accordion-collapse collapse" aria-labelledby="headingFive" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                <p>Absolutely! We specialize in creating custom event packages tailored to your specific needs and budget. Whether you're planning a small gathering or a large corporate event, our team can help design a package that perfectly suits your requirements. Contact us directly to discuss your vision, and we'll work with you to create a memorable experience.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-4">
+                    <p>Still have questions? <a href="#contactForm" class="text-decoration-none" data-scroll>Contact us directly</a> and we'll get back to you soon.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Map Section -->
+<section class="map-section">
+    <div class="container-fluid p-0">
+        <div class="row g-0">
+            <div class="col-12">
+                <div class="map-container">
+                    <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3153.6974331292257!2d-122.4018833!3d37.7857399!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8085807c3dadc5db%3A0xb63c0d0c29b948c9!2sSan%20Francisco%2C%20CA%2094107!5e0!3m2!1sen!2sus!4v1648681354252!5m2!1sen!2sus" style="border:0; width: 100%; height: 450px;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Privacy Policy Modal -->
+<div class="modal fade" id="privacyPolicyModal" tabindex="-1" aria-labelledby="privacyPolicyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="privacyPolicyModalLabel">Privacy Policy</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h4>Privacy Policy for MyDay Events</h4>
+                <p class="mb-4">Last Updated: March 31, 2025</p>
+                
+                <p>At MyDay Events, we value your privacy and are committed to protecting your personal data. This Privacy Policy explains how we collect, use, and safeguard your information when you use our website and services.</p>
+                
+                <h5 class="mt-4">Information We Collect</h5>
+                <p>We collect information you provide directly to us, including:</p>
+                <ul>
+                    <li>Personal identification information (name, email address, phone number)</li>
+                    <li>Booking details and preferences</li>
+                    <li>Payment information</li>
+                    <li>Communications with our team</li>
+                    <li>Reviews and feedback</li>
+                </ul>
+                
+                <h5 class="mt-4">How We Use Your Information</h5>
+                <p>We use the information we collect to:</p>
+                <ul>
+                    <li>Process bookings and manage your account</li>
+                    <li>Communicate with you about bookings, services, and promotions</li>
+                    <li>Improve our services and develop new offerings</li>
+                    <li>Personalize your experience on our platform</li>
+                    <li>Ensure the security of our website and services</li>
+                </ul>
+                
+                <h5 class="mt-4">Information Sharing</h5>
+                <p>We do not sell or rent your personal information. We may share your information with:</p>
+                <ul>
+                    <li>Service providers necessary to deliver our services</li>
+                    <li>Partners with your explicit consent</li>
+                    <li>Legal authorities when required by law</li>
+                </ul>
+                
+                <h5 class="mt-4">Data Security</h5>
+                <p>We implement appropriate security measures to protect your personal information from unauthorized access, alteration, disclosure, or destruction.</p>
+                
+                <h5 class="mt-4">Your Rights</h5>
+                <p>You have the right to:</p>
+                <ul>
+                    <li>Access your personal data</li>
+                    <li>Request correction of inaccurate data</li>
+                    <li>Request deletion of your data</li>
+                    <li>Withdraw consent for data processing</li>
+                    <li>Opt out of marketing communications</li>
+                </ul>
+                
+                <h5 class="mt-4">Changes to This Policy</h5>
+                <p>We may update this Privacy Policy periodically. We will notify you of significant changes by posting the new policy on our website.</p>
+                
+                <h5 class="mt-4">Contact Us</h5>
+                <p>If you have any questions about this Privacy Policy, please contact us at privacy@mydayevents.com.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Page Header */
+    .page-header {
+        padding: 5rem 0;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    /* Contact Form */
+    .form-control:focus, .form-select:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.25rem rgba(var(--primary-rgb), 0.25);
+    }
+    
+    /* Contact Information */
+    .contact-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+    
+    .bg-primary-soft {
+        background-color: rgba(var(--primary-rgb), 0.15);
+    }
+    
+    /* Social Links */
+    .social-links {
+        display: flex;
+        flex-wrap: wrap;
+    }
+    
+    .social-link {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #f8f9fa;
+        color: #495057;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+    
+    .social-link:hover {
+        background-color: var(--primary-color);
+        color: white;
+    }
+    
+    /* FAQ Accordion */
+    .accordion-button:not(.collapsed) {
+        background-color: rgba(var(--primary-rgb), 0.1);
+        color: var(--primary-color);
+        box-shadow: none;
+    }
+    
+    .accordion-button:focus {
+        box-shadow: none;
+        border-color: rgba(var(--primary-rgb), 0.5);
+    }
+    
+    /* Map Section */
+    .map-container {
+        overflow: hidden;
+        position: relative;
+    }
+    
+    /* Cards */
+    .card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize animations
+        gsap.registerPlugin(ScrollTrigger);
+        
+        // Animate page header
+        gsap.from('.page-header h1', {
+            y: 50,
+            opacity: 0,
+            duration: 1,
+            ease: 'power3.out'
+        });
+        
+        gsap.from('.page-header p', {
+            y: 30,
+            opacity: 0,
+            duration: 1,
+            delay: 0.3,
+            ease: 'power3.out'
+        });
+        
+        gsap.from('.page-header img', {
+            x: 100,
+            opacity: 0,
+            duration: 1,
+            delay: 0.5,
+            ease: 'power3.out'
+        });
+        
+        // Animate cards on scroll
+        gsap.utils.toArray('.card').forEach((card, i) => {
+            gsap.from(card, {
+                scrollTrigger: {
+                    trigger: card,
+                    start: "top 80%"
+                },
+                y: 30,
+                opacity: 0,
+                duration: 0.6,
+                delay: 0.1 * i,
+                ease: 'power2.out'
+            });
+        });
+        
+        // Smooth scroll to elements
+        document.querySelectorAll('[data-scroll]').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                
+                if (targetElement) {
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 100,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

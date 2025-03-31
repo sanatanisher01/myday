@@ -1,0 +1,285 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Manage Bookings - Manager Dashboard{% endblock %}
+
+{% block content %}
+<section class="py-4">
+    <div class="container">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h1 class="mb-0">Manage Bookings</h1>
+                    <div>
+                        <a href="{% url 'manager_dashboard' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Dashboard
+                        </a>
+                    </div>
+                </div>
+                <hr>
+            </div>
+        </div>
+        
+        <!-- Filters -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">Filter Bookings</h5>
+                        <form method="get" action="{% url 'manager_bookings' %}" class="row g-3">
+                            <div class="col-md-4">
+                                <label for="status" class="form-label">Booking Status</label>
+                                <select name="status" id="status" class="form-select">
+                                    <option value="all" {% if request.GET.status == 'all' or not request.GET.status %}selected{% endif %}>All Statuses</option>
+                                    <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Pending</option>
+                                    <option value="confirmed" {% if request.GET.status == 'confirmed' %}selected{% endif %}>Confirmed</option>
+                                    <option value="cancelled" {% if request.GET.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="search" class="form-label">Search</label>
+                                <input type="text" name="search" id="search" class="form-control" placeholder="Search by name, email, etc." value="{{ request.GET.search|default:'' }}">
+                            </div>
+                            <div class="col-md-4 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Bookings List -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">All Bookings</h5>
+                            <span class="badge bg-primary">{{ bookings.count }} Bookings</span>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>User</th>
+                                        <th>Event/Subevent</th>
+                                        <th>Date</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                        <th style="width: 150px;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for booking in bookings %}
+                                    <tr>
+                                        <td>#{{ booking.id }}</td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <a href="{% url 'manager_user_detail' booking.user.id %}">
+                                                    {{ booking.user.username }}
+                                                </a>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div>
+                                                <strong>{{ booking.subevent.event.name }}</strong>
+                                                <div class="small text-muted">{{ booking.subevent.name }}</div>
+                                            </div>
+                                        </td>
+                                        <td>{{ booking.created_at|date:"M d, Y" }}</td>
+                                        <td>${{ booking.total_amount }}</td>
+                                        <td>
+                                            {% if booking.status == 'pending' %}
+                                            <span class="badge bg-warning">Pending</span>
+                                            {% elif booking.status == 'confirmed' %}
+                                            <span class="badge bg-success">Confirmed</span>
+                                            {% elif booking.status == 'cancelled' %}
+                                            <span class="badge bg-danger">Cancelled</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#manageBookingModal{{ booking.id }}">
+                                                Manage
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="7" class="text-center py-4">
+                                            <div class="py-5">
+                                                <i class="fas fa-ticket-alt fa-3x text-muted mb-3"></i>
+                                                <h5>No Bookings Found</h5>
+                                                <p class="text-muted">There are no bookings matching your filter criteria.</p>
+                                                <a href="{% url 'manager_bookings' %}" class="btn btn-primary">View All Bookings</a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Booking Management Modals -->
+{% for booking in bookings %}
+<div class="modal fade" id="manageBookingModal{{ booking.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Manage Booking #{{ booking.id }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">Booking Details</h6>
+                            </div>
+                            <div class="card-body">
+                                <table class="table table-sm table-borderless">
+                                    <tr>
+                                        <th style="width: 40%;">ID:</th>
+                                        <td>#{{ booking.id }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Date:</th>
+                                        <td>{{ booking.created_at|date:"M d, Y h:i A" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Event:</th>
+                                        <td>{{ booking.subevent.event.name }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Subevent:</th>
+                                        <td>{{ booking.subevent.name }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Quantity:</th>
+                                        <td>{{ booking.quantity }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Total Amount:</th>
+                                        <td>${{ booking.total_amount }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Status:</th>
+                                        <td>
+                                            {% if booking.status == 'pending' %}
+                                            <span class="badge bg-warning">Pending</span>
+                                            {% elif booking.status == 'confirmed' %}
+                                            <span class="badge bg-success">Confirmed</span>
+                                            {% elif booking.status == 'cancelled' %}
+                                            <span class="badge bg-danger">Cancelled</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% if booking.notes %}
+                                    <tr>
+                                        <th>Notes:</th>
+                                        <td>
+                                            <div style="white-space: pre-line;">{{ booking.notes }}</div>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">User Information</h6>
+                            </div>
+                            <div class="card-body">
+                                <table class="table table-sm table-borderless">
+                                    <tr>
+                                        <th style="width: 40%;">Username:</th>
+                                        <td>{{ booking.user.username }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Name:</th>
+                                        <td>{{ booking.user.get_full_name|default:booking.user.username }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Email:</th>
+                                        <td>{{ booking.user.email }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Phone:</th>
+                                        <td>
+                                            {% if booking.user.userprofile.phone %}
+                                            {{ booking.user.userprofile.phone }}
+                                            {% else %}
+                                            <span class="text-muted">Not provided</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>Address:</th>
+                                        <td>
+                                            {% if booking.user.userprofile.address %}
+                                            <div style="white-space: pre-line;">{{ booking.user.userprofile.address }}</div>
+                                            {% else %}
+                                            <span class="text-muted">Not provided</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                </table>
+                                <a href="{% url 'manager_user_detail' booking.user.id %}" class="btn btn-sm btn-outline-primary mt-2">View User Profile</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">Update Booking</h6>
+                            </div>
+                            <div class="card-body">
+                                <form method="post" action="{% url 'manager_update_booking' booking.id %}">
+                                    {% csrf_token %}
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label for="status" class="form-label">Update Status</label>
+                                            <select name="status" id="status" class="form-select">
+                                                <option value="pending" {% if booking.status == 'pending' %}selected{% endif %}>Pending</option>
+                                                <option value="confirmed" {% if booking.status == 'confirmed' %}selected{% endif %}>Confirmed</option>
+                                                <option value="cancelled" {% if booking.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-12">
+                                            <label for="message" class="form-label">Send Message to User</label>
+                                            <textarea name="message" id="message" class="form-control" rows="3" placeholder="Optional: Send a message to the user regarding this booking"></textarea>
+                                        </div>
+                                        <div class="col-12">
+                                            <button type="submit" class="btn btn-primary">Update Booking</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% endblock %}

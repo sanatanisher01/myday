@@ -1,0 +1,604 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Bookings - MyDay{% endblock %}
+
+{% block content %}
+<!-- User Dashboard -->
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-lg-3 col-md-4 sidebar py-4 px-0">
+            <div class="sticky-top pt-3">
+                <div class="text-center mb-4">
+                    <div class="avatar mx-auto mb-3">
+                        {% if user.profile.profile_picture %}
+                            <img src="{{ user.profile.profile_picture.url }}" alt="{{ user.username }}" class="rounded-circle img-fluid">
+                        {% else %}
+                            <div class="avatar-placeholder rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto" style="width: 100px; height: 100px; font-size: 2rem;">
+                                {{ user.username|first|upper }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <h4>{{ user.get_full_name|default:user.username }}</h4>
+                    <p class="text-muted">Member since {{ user.date_joined|date:"M Y" }}</p>
+                </div>
+                
+                <div class="nav flex-column">
+                    <a href="{% url 'user_dashboard' %}" class="sidebar-link mb-2 {% if request.path == '/dashboard/' %}active{% endif %}">
+                        <i class="fas fa-home"></i> Dashboard
+                    </a>
+                    <a href="{% url 'user_bookings' %}" class="sidebar-link mb-2 {% if '/dashboard/bookings/' in request.path %}active{% endif %}">
+                        <i class="fas fa-calendar-alt"></i> My Bookings
+                    </a>
+                    <a href="{% url 'user_profile' %}" class="sidebar-link mb-2 {% if '/dashboard/profile/' in request.path %}active{% endif %}">
+                        <i class="fas fa-user"></i> Profile
+                    </a>
+                    <a href="{% url 'user_settings' %}" class="sidebar-link mb-2 {% if '/dashboard/settings/' in request.path %}active{% endif %}">
+                        <i class="fas fa-cog"></i> Settings
+                    </a>
+                    <a href="{% url 'logout' %}" class="sidebar-link mb-2 text-danger">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-lg-9 col-md-8 py-4">
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">My Bookings</h2>
+                <a href="{% url 'event_list' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i> Book New Event
+                </a>
+            </div>
+            
+            <!-- Booking Tabs -->
+            <ul class="nav nav-tabs mb-4" id="bookingTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="upcoming-tab" data-bs-toggle="tab" data-bs-target="#upcoming" type="button" role="tab" aria-controls="upcoming" aria-selected="true">
+                        Upcoming
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="past-tab" data-bs-toggle="tab" data-bs-target="#past" type="button" role="tab" aria-controls="past" aria-selected="false">
+                        Past Events
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="cancelled-tab" data-bs-toggle="tab" data-bs-target="#cancelled" type="button" role="tab" aria-controls="cancelled" aria-selected="false">
+                        Cancelled
+                    </button>
+                </li>
+            </ul>
+            
+            <!-- Tab Content -->
+            <div class="tab-content" id="bookingTabsContent">
+                <!-- Upcoming Bookings Tab -->
+                <div class="tab-pane fade show active" id="upcoming" role="tabpanel" aria-labelledby="upcoming-tab">
+                    {% if upcoming_bookings %}
+                    <div class="row g-4">
+                        {% for booking in upcoming_bookings %}
+                        <div class="col-lg-6">
+                            <div class="card booking-card h-100">
+                                <div class="booking-status-badge status-{{ booking.status }}">{{ booking.get_status_display }}</div>
+                                <div class="row g-0">
+                                    <div class="col-md-4">
+                                        <img src="{{ booking.subevent.image.url }}" class="img-fluid rounded-start h-100" alt="{{ booking.subevent.name }}" style="object-fit: cover;">
+                                    </div>
+                                    <div class="col-md-8">
+                                        <div class="card-body">
+                                            <h5 class="card-title">{{ booking.subevent.name }}</h5>
+                                            <p class="card-text mb-1">
+                                                <i class="far fa-calendar-alt text-primary me-2"></i> {{ booking.booking_date|date:"M d, Y" }}
+                                            </p>
+                                            <p class="card-text mb-1">
+                                                <i class="far fa-clock text-primary me-2"></i> {{ booking.booking_time|time:"g:i A" }}
+                                            </p>
+                                            <p class="card-text mb-3">
+                                                <i class="fas fa-users text-primary me-2"></i> {{ booking.guests }} Guest{{ booking.guests|pluralize }}
+                                            </p>
+                                            
+                                            <div class="booking-actions">
+                                                <button class="btn btn-sm btn-outline-primary me-2" data-bs-toggle="modal" data-bs-target="#viewBookingModal{{ booking.id }}">
+                                                    View Details
+                                                </button>
+                                                {% if booking.status == 'pending' or booking.status == 'confirmed' %}
+                                                <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#cancelBookingModal{{ booking.id }}">
+                                                    Cancel
+                                                </button>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-calendar-day fa-4x text-muted mb-3"></i>
+                        <h4>No upcoming bookings</h4>
+                        <p>You don't have any upcoming events scheduled. Ready to create some memories?</p>
+                        <a href="{% url 'event_list' %}" class="btn btn-primary mt-2">Browse Events</a>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Past Bookings Tab -->
+                <div class="tab-pane fade" id="past" role="tabpanel" aria-labelledby="past-tab">
+                    {% if past_bookings %}
+                    <div class="row g-4">
+                        {% for booking in past_bookings %}
+                        <div class="col-lg-6">
+                            <div class="card booking-card h-100">
+                                <div class="booking-status-badge status-completed">Completed</div>
+                                <div class="row g-0">
+                                    <div class="col-md-4">
+                                        <img src="{{ booking.subevent.image.url }}" class="img-fluid rounded-start h-100" alt="{{ booking.subevent.name }}" style="object-fit: cover;">
+                                    </div>
+                                    <div class="col-md-8">
+                                        <div class="card-body">
+                                            <h5 class="card-title">{{ booking.subevent.name }}</h5>
+                                            <p class="card-text mb-1">
+                                                <i class="far fa-calendar-alt text-primary me-2"></i> {{ booking.booking_date|date:"M d, Y" }}
+                                            </p>
+                                            <p class="card-text mb-1">
+                                                <i class="far fa-clock text-primary me-2"></i> {{ booking.booking_time|time:"g:i A" }}
+                                            </p>
+                                            <p class="card-text mb-3">
+                                                <i class="fas fa-users text-primary me-2"></i> {{ booking.guests }} Guest{{ booking.guests|pluralize }}
+                                            </p>
+                                            
+                                            <div class="booking-actions">
+                                                <button class="btn btn-sm btn-outline-primary me-2" data-bs-toggle="modal" data-bs-target="#viewBookingModal{{ booking.id }}">
+                                                    View Details
+                                                </button>
+                                                {% if not booking.has_review %}
+                                                <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#reviewBookingModal{{ booking.id }}">
+                                                    Write Review
+                                                </button>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-history fa-4x text-muted mb-3"></i>
+                        <h4>No past bookings</h4>
+                        <p>You don't have any past events. Book your first event to see it here after it's completed.</p>
+                        <a href="{% url 'event_list' %}" class="btn btn-primary mt-2">Browse Events</a>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Cancelled Bookings Tab -->
+                <div class="tab-pane fade" id="cancelled" role="tabpanel" aria-labelledby="cancelled-tab">
+                    {% if cancelled_bookings %}
+                    <div class="row g-4">
+                        {% for booking in cancelled_bookings %}
+                        <div class="col-lg-6">
+                            <div class="card booking-card h-100">
+                                <div class="booking-status-badge status-cancelled">Cancelled</div>
+                                <div class="row g-0">
+                                    <div class="col-md-4">
+                                        <img src="{{ booking.subevent.image.url }}" class="img-fluid rounded-start h-100" alt="{{ booking.subevent.name }}" style="object-fit: cover;">
+                                    </div>
+                                    <div class="col-md-8">
+                                        <div class="card-body">
+                                            <h5 class="card-title">{{ booking.subevent.name }}</h5>
+                                            <p class="card-text mb-1">
+                                                <i class="far fa-calendar-alt text-primary me-2"></i> {{ booking.booking_date|date:"M d, Y" }}
+                                            </p>
+                                            <p class="card-text mb-1">
+                                                <i class="far fa-clock text-primary me-2"></i> {{ booking.booking_time|time:"g:i A" }}
+                                            </p>
+                                            <p class="card-text mb-1">
+                                                <i class="fas fa-users text-primary me-2"></i> {{ booking.guests }} Guest{{ booking.guests|pluralize }}
+                                            </p>
+                                            <p class="card-text mb-0">
+                                                <i class="fas fa-info-circle text-primary me-2"></i> Cancelled on {{ booking.updated_at|date:"M d, Y" }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-ban fa-4x text-muted mb-3"></i>
+                        <h4>No cancelled bookings</h4>
+                        <p>You don't have any cancelled events. That's great!</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Booking Detail Modals -->
+{% for booking in all_bookings %}
+<!-- View Booking Modal -->
+<div class="modal fade" id="viewBookingModal{{ booking.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Booking Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="booking-detail-header mb-4">
+                    <img src="{{ booking.subevent.image.url }}" alt="{{ booking.subevent.name }}" class="img-fluid rounded mb-3">
+                    <h4>{{ booking.subevent.name }}</h4>
+                    <div class="badge bg-{{ booking.status_color }}">{{ booking.get_status_display }}</div>
+                </div>
+                
+                <div class="booking-info">
+                    <div class="row mb-2">
+                        <div class="col-5 fw-bold">Booking ID:</div>
+                        <div class="col-7">{{ booking.id }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-5 fw-bold">Event Date:</div>
+                        <div class="col-7">{{ booking.booking_date|date:"F d, Y" }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-5 fw-bold">Event Time:</div>
+                        <div class="col-7">{{ booking.booking_time|time:"g:i A" }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-5 fw-bold">Number of Guests:</div>
+                        <div class="col-7">{{ booking.guests }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-5 fw-bold">Booking Date:</div>
+                        <div class="col-7">{{ booking.created_at|date:"F d, Y" }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-5 fw-bold">Total Amount:</div>
+                        <div class="col-7">${{ booking.total_amount }}</div>
+                    </div>
+                    
+                    {% if booking.notes %}
+                    <div class="row mb-2">
+                        <div class="col-5 fw-bold">Special Requests:</div>
+                        <div class="col-7">{{ booking.notes }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <hr>
+                
+                <div class="venue-info mt-3">
+                    <h5>Venue Information</h5>
+                    <p><i class="fas fa-map-marker-alt text-primary me-2"></i> {{ booking.subevent.location|default:"To be determined" }}</p>
+                    <p class="mb-0"><i class="fas fa-phone text-primary me-2"></i> +1 (123) 456-7890</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                {% if booking.status == 'pending' or booking.status == 'confirmed' %}
+                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#cancelBookingModal{{ booking.id }}" data-bs-dismiss="modal">
+                    Cancel Booking
+                </button>
+                {% endif %}
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cancel Booking Modal -->
+{% if booking.status == 'pending' or booking.status == 'confirmed' %}
+<div class="modal fade" id="cancelBookingModal{{ booking.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cancel Booking</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <i class="fas fa-exclamation-triangle text-warning fa-3x mb-3"></i>
+                    <h4>Are you sure you want to cancel this booking?</h4>
+                    <p>This action cannot be undone. Please review our cancellation policy below.</p>
+                </div>
+                
+                <div class="alert alert-info">
+                    <h6 class="mb-2">Cancellation Policy</h6>
+                    <ul class="mb-0">
+                        <li>Full refund if cancelled 30+ days before the event</li>
+                        <li>50% refund if cancelled 14-29 days before the event</li>
+                        <li>No refund if cancelled less than 14 days before the event</li>
+                    </ul>
+                </div>
+                
+                <div class="booking-summary">
+                    <h6>Booking Summary</h6>
+                    <p class="mb-1"><strong>Service:</strong> {{ booking.subevent.name }}</p>
+                    <p class="mb-1"><strong>Date:</strong> {{ booking.booking_date|date:"F d, Y" }}</p>
+                    <p class="mb-0"><strong>Time:</strong> {{ booking.booking_time|time:"g:i A" }}</p>
+                </div>
+                
+                <form method="post" action="{% url 'cancel_booking' booking.id %}" class="mt-4">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="cancellationReason{{ booking.id }}" class="form-label">Reason for Cancellation</label>
+                        <select class="form-select" id="cancellationReason{{ booking.id }}" name="reason" required>
+                            <option value="">Select a reason</option>
+                            <option value="schedule_conflict">Schedule Conflict</option>
+                            <option value="change_of_plans">Change of Plans</option>
+                            <option value="found_alternative">Found an Alternative Service</option>
+                            <option value="financial_reasons">Financial Reasons</option>
+                            <option value="other">Other Reason</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="cancellationNotes{{ booking.id }}" class="form-label">Additional Notes (Optional)</label>
+                        <textarea class="form-control" id="cancellationNotes{{ booking.id }}" name="notes" rows="3"></textarea>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-danger">Confirm Cancellation</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+
+<!-- Review Booking Modal -->
+{% for booking in past_bookings %}
+{% if not booking.has_review %}
+<div class="modal fade" id="reviewBookingModal{{ booking.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Write a Review</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="review-event-info mb-4">
+                    <div class="d-flex align-items-center">
+                        <img src="{{ booking.subevent.image.url }}" alt="{{ booking.subevent.name }}" class="review-event-image rounded me-3">
+                        <div>
+                            <h5 class="mb-1">{{ booking.subevent.name }}</h5>
+                            <p class="text-muted mb-0">{{ booking.booking_date|date:"F d, Y" }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <form method="post" action="{% url 'add_review' event_id=booking.subevent.event.id %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="subevent_id" value="{{ booking.subevent.id }}">
+                    <input type="hidden" name="booking_id" value="{{ booking.id }}">
+                    
+                    <div class="mb-3">
+                        <label for="rating{{ booking.id }}" class="form-label">Your Rating</label>
+                        <div class="rating-input">
+                            <input type="range" class="form-range" min="1" max="5" step="1" id="rating{{ booking.id }}" name="rating" value="5">
+                            <div class="rating-stars" id="ratingStars{{ booking.id }}">
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="comment{{ booking.id }}" class="form-label">Your Review</label>
+                        <textarea class="form-control" id="comment{{ booking.id }}" name="comment" rows="4" placeholder="Share your experience with this service..." required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="image{{ booking.id }}" class="form-label">Add Photo (Optional)</label>
+                        <input type="file" class="form-control" id="image{{ booking.id }}" name="image">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Submit Review</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Sidebar */
+    .sidebar {
+        background-color: #f8f9fa;
+        min-height: calc(100vh - 76px);
+    }
+    
+    .sidebar-link {
+        display: block;
+        padding: 0.75rem 1.5rem;
+        color: #495057;
+        text-decoration: none;
+        border-left: 3px solid transparent;
+        transition: all 0.3s ease;
+    }
+    
+    .sidebar-link:hover, .sidebar-link.active {
+        background-color: rgba(var(--primary-rgb), 0.1);
+        color: var(--primary-color);
+        border-left-color: var(--primary-color);
+    }
+    
+    .avatar-placeholder {
+        font-weight: bold;
+    }
+    
+    /* Booking Cards */
+    .booking-card {
+        border: 1px solid rgba(0,0,0,0.1);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .booking-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .booking-status-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: bold;
+        z-index: 1;
+        color: white;
+    }
+    
+    .status-pending {
+        background-color: #ffc107;
+    }
+    
+    .status-confirmed {
+        background-color: #28a745;
+    }
+    
+    .status-cancelled {
+        background-color: #dc3545;
+    }
+    
+    .status-completed {
+        background-color: #6c757d;
+    }
+    
+    /* Modal Styles */
+    .booking-detail-header {
+        text-align: center;
+    }
+    
+    .booking-detail-header img {
+        max-height: 200px;
+        object-fit: cover;
+        width: 100%;
+    }
+    
+    .review-event-image {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+    }
+    
+    .rating-input {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .rating-stars {
+        margin-top: 10px;
+    }
+    
+    /* Empty State */
+    .tab-pane .fas {
+        opacity: 0.7;
+    }
+    
+    /* Status Colors */
+    .bg-pending {
+        background-color: #ffc107;
+    }
+    
+    .bg-confirmed {
+        background-color: #28a745;
+    }
+    
+    .bg-cancelled {
+        background-color: #dc3545;
+    }
+    
+    .bg-completed {
+        background-color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize animations
+        gsap.registerPlugin(ScrollTrigger);
+        
+        // Animate booking cards on scroll
+        gsap.utils.toArray('.booking-card').forEach((card, i) => {
+            gsap.from(card, {
+                scrollTrigger: {
+                    trigger: card,
+                    start: "top 80%"
+                },
+                y: 30,
+                opacity: 0,
+                duration: 0.5,
+                delay: 0.1 * (i % 2),
+                ease: 'power2.out'
+            });
+        });
+        
+        // Rating slider functionality for all review modals
+        const ratingSliders = document.querySelectorAll('input[type="range"][id^="rating"]');
+        
+        ratingSliders.forEach(slider => {
+            const sliderID = slider.id;
+            const bookingID = sliderID.replace('rating', '');
+            const starsContainer = document.getElementById('ratingStars' + bookingID);
+            
+            if (starsContainer) {
+                const stars = starsContainer.querySelectorAll('.fa-star');
+                
+                slider.addEventListener('input', function() {
+                    const rating = parseInt(this.value);
+                    
+                    stars.forEach((star, index) => {
+                        if (index < rating) {
+                            star.classList.add('text-warning');
+                            star.classList.remove('text-muted');
+                        } else {
+                            star.classList.remove('text-warning');
+                            star.classList.add('text-muted');
+                        }
+                    });
+                });
+            }
+        });
+        
+        // Remember active tab after page reload
+        const activeTab = localStorage.getItem('activeBookingTab');
+        if (activeTab) {
+            const tab = document.querySelector(`#bookingTabs button[data-bs-target="${activeTab}"]`);
+            if (tab) {
+                const bsTab = new bootstrap.Tab(tab);
+                bsTab.show();
+            }
+        }
+        
+        // Store active tab on change
+        const tabLinks = document.querySelectorAll('#bookingTabs button');
+        tabLinks.forEach(link => {
+            link.addEventListener('shown.bs.tab', function(e) {
+                localStorage.setItem('activeBookingTab', e.target.getAttribute('data-bs-target'));
+            });
+        });
+    });
+</script>
+{% endblock %}

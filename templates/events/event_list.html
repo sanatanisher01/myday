@@ -1,0 +1,622 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Browse Events - MyDay{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<section class="page-header">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 text-center">
+                <h1 class="display-4 fw-bold">Browse Events</h1>
+                <p class="lead">Discover the perfect event services for your special occasions</p>
+                
+                <!-- Search Form -->
+                <div class="search-container my-4">
+                    <form method="get" action="{% url 'event_list' %}" class="search-form">
+                        <div class="input-group">
+                            <input type="text" name="search" class="form-control form-control-lg" placeholder="Search events..." value="{{ request.GET.search|default:'' }}">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Events Grid -->
+<section class="py-5">
+    <div class="container">
+        <!-- Filter Options -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm filter-card">
+                    <div class="card-body">
+                        <form method="get" action="{% url 'event_list' %}" id="filterForm">
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-3">
+                                    <label for="sort" class="form-label">Sort By</label>
+                                    <select class="form-select" id="sort" name="sort">
+                                        <option value="name" {% if request.GET.sort == 'name' %}selected{% endif %}>Name (A-Z)</option>
+                                        <option value="-name" {% if request.GET.sort == '-name' %}selected{% endif %}>Name (Z-A)</option>
+                                        <option value="-created_at" {% if request.GET.sort == '-created_at' %}selected{% endif %}>Newest First</option>
+                                        <option value="created_at" {% if request.GET.sort == 'created_at' %}selected{% endif %}>Oldest First</option>
+                                        <option value="-reviews" {% if request.GET.sort == '-reviews' %}selected{% endif %}>Most Reviewed</option>
+                                        <option value="-avg_rating" {% if request.GET.sort == '-avg_rating' %}selected{% endif %}>Highest Rated</option>
+                                        <option value="min_price" {% if request.GET.sort == 'min_price' %}selected{% endif %}>Price: Low to High</option>
+                                        <option value="-min_price" {% if request.GET.sort == '-min_price' %}selected{% endif %}>Price: High to Low</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="category" class="form-label">Category</label>
+                                    <select class="form-select" id="category" name="category">
+                                        <option value="">All Categories</option>
+                                        {% for cat in categories %}
+                                        <option value="{{ cat.id }}" {% if request.GET.category == cat.id|stringformat:'i' %}selected{% endif %}>{{ cat.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="rating" class="form-label">Min Rating</label>
+                                    <select class="form-select" id="rating" name="rating">
+                                        <option value="">Any Rating</option>
+                                        <option value="4" {% if request.GET.rating == '4' %}selected{% endif %}>4+ Stars</option>
+                                        <option value="3" {% if request.GET.rating == '3' %}selected{% endif %}>3+ Stars</option>
+                                        <option value="2" {% if request.GET.rating == '2' %}selected{% endif %}>2+ Stars</option>
+                                        <option value="1" {% if request.GET.rating == '1' %}selected{% endif %}>1+ Stars</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <button type="submit" class="btn btn-primary w-100 filter-btn">
+                                        <i class="fas fa-filter me-2"></i> Apply Filters
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Event Cards -->
+        <div class="row g-4 staggered-fade">
+            {% for event in events %}
+            <div class="col-lg-4 col-md-6 event-card-wrapper fade-up">
+                <div class="card h-100 event-card">
+                    <div class="card-img-container">
+                        {% if event.image %}
+                        <img src="{{ event.image.url }}" class="card-img-top" alt="{{ event.name }}">
+                        {% else %}
+                        <img src="https://images.unsplash.com/photo-1511795409834-ef04bbd61622?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" class="card-img-top" alt="{{ event.name }}">
+                        {% endif %}
+                        {% if event.min_price %}
+                        <div class="price-range">Starting at ${{ event.min_price }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        <h3 class="card-title">{{ event.name }}</h3>
+                        <div class="ratings-container">
+                            {% if event.avg_rating %}
+                                <div class="d-flex align-items-center">
+                                    <div class="me-2">
+                                        {% with ''|center:event.avg_rating|floatformat:"0" as stars %}
+                                        {% for _ in stars %}
+                                            <i class="fas fa-star text-warning"></i>
+                                        {% endfor %}
+                                        {% endwith %}
+                                        {% with remaining=5|add:"-"|add:event.avg_rating|floatformat:"0" %}
+                                        {% if remaining|floatformat:"0" > "0" %}
+                                            {% with ''|center:remaining as empty_stars %}
+                                            {% for _ in empty_stars %}
+                                                <i class="far fa-star text-warning"></i>
+                                            {% endfor %}
+                                            {% endwith %}
+                                        {% endif %}
+                                        {% endwith %}
+                                    </div>
+                                    <span class="text-muted">({{ event.review_count }})</span>
+                                </div>
+                            {% else %}
+                                <div class="text-muted small">No ratings yet</div>
+                            {% endif %}
+                        </div>
+                        <p class="card-text">{{ event.description|truncatechars:100 }}</p>
+                        <div class="event-meta">
+                            <span><i class="far fa-calendar-alt"></i> {{ event.created_at|date:"M d, Y" }}</span>
+                            <span><i class="far fa-bookmark"></i> {{ event.category.name }}</span>
+                        </div>
+                        <a href="{% url 'event_detail' event.slug %}" class="btn btn-primary w-100">View Details</a>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 empty-state">
+                <img src="https://cdn.iconscout.com/icon/free/png-256/free-search-1767836-1502110.png" alt="No results" class="img-fluid">
+                <h3>No events found</h3>
+                <p>We couldn't find any events matching your criteria. Try adjusting your filters or search query.</p>
+                <a href="{% url 'event_list' %}" class="btn btn-primary">View All Events</a>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Pagination if needed -->
+        {% if events.has_other_pages %}
+        <nav aria-label="Page navigation" class="mt-5">
+            <ul class="pagination">
+                {% if events.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ events.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Previous">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for i in events.paginator.page_range %}
+                {% if events.number == i %}
+                <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
+                {% elif i > events.number|add:'-3' and i < events.number|add:'3' %}
+                <li class="page-item"><a class="page-link" href="?page={{ i }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ i }}</a></li>
+                {% endif %}
+                {% endfor %}
+                
+                {% if events.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ events.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Next">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        
+        {% if events and not events.has_other_pages and events.paginator.num_pages > 1 %}
+        <div class="text-center mt-5">
+            <a href="?page=all{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="btn btn-outline-primary load-more-btn">
+                <i class="fas fa-spinner me-2"></i> Load All Events
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Newsletter Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="newsletter-section">
+            <div class="row justify-content-center">
+                <div class="col-lg-8 text-center">
+                    <h2 class="mb-3">Subscribe to Our Newsletter</h2>
+                    <p class="mb-4">Stay updated with our latest events and exclusive offers</p>
+                    <div class="newsletter-form">
+                        <div class="input-group mb-3">
+                            <input type="email" class="form-control" placeholder="Your email address" aria-label="Your email address">
+                            <button class="btn" type="button">Subscribe</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Header styling */
+    .page-header {
+        background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1511795409834-ef04bbd61622?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80');
+        background-size: cover;
+        background-position: center;
+        padding: 5rem 0;
+        color: white;
+        position: relative;
+    }
+    
+    .page-header h1 {
+        font-weight: 700;
+        margin-bottom: 1rem;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    }
+    
+    .page-header p {
+        font-size: 1.25rem;
+        margin-bottom: 2rem;
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+    }
+    
+    .search-container {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .search-form .input-group {
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        border-radius: 50px;
+        overflow: hidden;
+    }
+    
+    .search-form .form-control {
+        border: none;
+        padding: 0.8rem 1.5rem;
+        font-size: 1rem;
+    }
+    
+    .search-form .btn {
+        padding: 0.8rem 1.8rem;
+        border-radius: 0 50px 50px 0;
+    }
+    
+    /* Filter options */
+    .filter-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        margin-bottom: 2rem;
+        transition: all 0.3s ease;
+    }
+    
+    .filter-card:hover {
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+    
+    .filter-btn {
+        border-radius: 30px;
+        padding: 0.6rem 1.5rem;
+        font-weight: 500;
+    }
+    
+    /* Event cards */
+    .event-card {
+        border: none;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+    
+    .event-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+    }
+    
+    /* Touch device specific styles */
+    .event-card.touch-device:hover {
+        transform: none;
+    }
+    
+    .event-card.touch-device:active {
+        transform: scale(0.98);
+    }
+    
+    .card-img-container {
+        height: 220px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .card-img-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+    }
+    
+    .event-card:hover .card-img-container img {
+        transform: scale(1.1);
+    }
+    
+    .price-range {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: rgba(0,123,255,0.9);
+        color: white;
+        padding: 5px 12px;
+        border-radius: 30px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        z-index: 2;
+    }
+    
+    .card-body {
+        padding: 1.5rem;
+    }
+    
+    .card-title {
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+        font-size: 1.35rem;
+    }
+    
+    .card-text {
+        color: #6c757d;
+        margin-bottom: 1rem;
+        font-size: 0.95rem;
+    }
+    
+    .ratings-container {
+        margin-bottom: 1rem;
+    }
+    
+    .event-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.9rem;
+        color: #6c757d;
+        margin-bottom: 1rem;
+    }
+    
+    .event-meta span {
+        display: flex;
+        align-items: center;
+    }
+    
+    .event-meta i {
+        margin-right: 5px;
+    }
+    
+    /* Newsletter section */
+    .newsletter-section {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        padding: 5rem 0;
+        color: white;
+        border-radius: 15px;
+        margin: 3rem 0;
+    }
+    
+    .newsletter-section h2 {
+        font-weight: 700;
+        margin-bottom: 1rem;
+    }
+    
+    .newsletter-form {
+        max-width: 500px;
+        margin: 0 auto;
+    }
+    
+    .newsletter-form .input-group {
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        border-radius: 50px;
+        overflow: hidden;
+    }
+    
+    .newsletter-form .form-control {
+        border: none;
+        padding: 0.8rem 1.5rem;
+    }
+    
+    .newsletter-form .btn {
+        padding: 0.8rem 1.8rem;
+        border-radius: 0 50px 50px 0;
+        background: #fff;
+        color: #4e73df;
+        font-weight: 600;
+    }
+    
+    /* Load more button */
+    .load-more-btn {
+        padding: 0.8rem 2.5rem;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        border-radius: 50px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .load-more-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    /* Empty state */
+    .empty-state {
+        text-align: center;
+        padding: 3rem 0;
+    }
+    
+    .empty-state img {
+        max-width: 250px;
+        margin-bottom: 2rem;
+    }
+    
+    .empty-state h3 {
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+    
+    .empty-state p {
+        color: #6c757d;
+        margin-bottom: 2rem;
+    }
+    
+    /* Pagination */
+    .pagination {
+        justify-content: center;
+        margin-top: 3rem;
+    }
+    
+    .pagination .page-item .page-link {
+        border: none;
+        color: #4e73df;
+        margin: 0 5px;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+    
+    .pagination .page-item.active .page-link,
+    .pagination .page-item .page-link:hover {
+        background-color: #4e73df;
+        color: white;
+        box-shadow: 0 5px 15px rgba(78, 115, 223, 0.2);
+    }
+    
+    /* Animation classes */
+    .fade-up {
+        opacity: 0;
+        transform: translateY(20px);
+        transition: all 0.6s ease;
+    }
+    
+    .fade-up.active {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    
+    .staggered-fade .fade-up:nth-child(2) { transition-delay: 0.1s; }
+    .staggered-fade .fade-up:nth-child(3) { transition-delay: 0.2s; }
+    .staggered-fade .fade-up:nth-child(4) { transition-delay: 0.3s; }
+    .staggered-fade .fade-up:nth-child(5) { transition-delay: 0.4s; }
+    .staggered-fade .fade-up:nth-child(6) { transition-delay: 0.5s; }
+    
+    /* Mobile responsiveness improvements */
+    @media (max-width: 992px) {
+        .page-header {
+            padding: 3rem 0;
+        }
+        
+        .card-img-container {
+            height: 180px;
+        }
+        
+        .newsletter-section {
+            padding: 3rem 0;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .page-header h1 {
+            font-size: 2rem;
+        }
+        
+        .page-header p {
+            font-size: 1rem;
+        }
+        
+        .filter-btn {
+            padding: 0.5rem 1rem;
+        }
+        
+        .event-card:hover {
+            transform: translateY(-5px);
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .event-meta {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .event-meta span:first-child {
+            margin-bottom: 0.5rem;
+        }
+        
+        .pagination .page-item .page-link {
+            width: 35px;
+            height: 35px;
+            font-size: 0.9rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Make sure all cards are visible initially
+        document.querySelectorAll('.event-card').forEach(function(card) {
+            card.style.opacity = '1';
+            card.style.transform = 'none';
+        });
+        
+        // Activate animations
+        const fadeElements = document.querySelectorAll('.fade-up');
+        
+        // Helper function to check if an element is in viewport
+        function isInViewport(element) {
+            const rect = element.getBoundingClientRect();
+            return (
+                rect.top >= 0 &&
+                rect.left >= 0 &&
+                rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+                rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+            );
+        }
+        
+        // Activate elements in viewport on load
+        fadeElements.forEach(function(element) {
+            if (isInViewport(element)) {
+                element.classList.add('active');
+            }
+        });
+        
+        // Activate elements on scroll
+        window.addEventListener('scroll', function() {
+            fadeElements.forEach(function(element) {
+                if (isInViewport(element) && !element.classList.contains('active')) {
+                    element.classList.add('active');
+                }
+            });
+        });
+        
+        // Auto-submit form when select options change
+        document.querySelectorAll('#sort, #category, #rating').forEach(function(select) {
+            select.addEventListener('change', function() {
+                document.getElementById('filterForm').submit();
+            });
+        });
+        
+        // Handle filters clearance
+        const urlParams = new URLSearchParams(window.location.search);
+        const filterBtn = document.querySelector('.filter-btn');
+        
+        if (urlParams.toString() && urlParams.toString() !== 'page=1') {
+            filterBtn.innerHTML = '<i class="fas fa-times me-2"></i> Clear Filters';
+            filterBtn.addEventListener('click', function(e) {
+                if (this.innerHTML.includes('Clear')) {
+                    e.preventDefault();
+                    window.location.href = '{% url "event_list" %}';
+                }
+            });
+        }
+        
+        // Add touch support for mobile devices
+        if ('ontouchstart' in window) {
+            document.querySelectorAll('.event-card').forEach(function(card) {
+                card.classList.add('touch-device');
+            });
+        }
+        
+        // Handle responsive layout adjustments
+        function handleResponsiveLayout() {
+            const windowWidth = window.innerWidth;
+            if (windowWidth < 768) {
+                document.querySelectorAll('.filter-btn').forEach(function(btn) {
+                    btn.classList.add('btn-sm');
+                });
+            } else {
+                document.querySelectorAll('.filter-btn').forEach(function(btn) {
+                    btn.classList.remove('btn-sm');
+                });
+            }
+        }
+        
+        // Initial call and window resize listener
+        handleResponsiveLayout();
+        window.addEventListener('resize', handleResponsiveLayout);
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,452 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Profile - MyDay{% endblock %}
+
+{% block content %}
+<!-- User Dashboard -->
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-lg-3 col-md-4 sidebar py-4 px-0">
+            <div class="sticky-top pt-3">
+                <div class="text-center mb-4">
+                    <div class="avatar mx-auto mb-3">
+                        {% if user.profile.profile_picture %}
+                            <img src="{{ user.profile.profile_picture.url }}" alt="{{ user.username }}" class="rounded-circle img-fluid">
+                        {% else %}
+                            <div class="avatar-placeholder rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto" style="width: 100px; height: 100px; font-size: 2rem;">
+                                {{ user.username|first|upper }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <h4>{{ user.get_full_name|default:user.username }}</h4>
+                    <p class="text-muted">Member since {{ user.date_joined|date:"M Y" }}</p>
+                </div>
+                
+                <div class="nav flex-column">
+                    <a href="{% url 'user_dashboard' %}" class="sidebar-link mb-2 {% if request.path == '/dashboard/' %}active{% endif %}">
+                        <i class="fas fa-home"></i> Dashboard
+                    </a>
+                    <a href="{% url 'user_bookings' %}" class="sidebar-link mb-2 {% if '/dashboard/bookings/' in request.path %}active{% endif %}">
+                        <i class="fas fa-calendar-alt"></i> My Bookings
+                    </a>
+                    <a href="{% url 'user_profile' %}" class="sidebar-link mb-2 {% if '/dashboard/profile/' in request.path %}active{% endif %}">
+                        <i class="fas fa-user"></i> Profile
+                    </a>
+                    <a href="{% url 'user_settings' %}" class="sidebar-link mb-2 {% if '/dashboard/settings/' in request.path %}active{% endif %}">
+                        <i class="fas fa-cog"></i> Settings
+                    </a>
+                    <a href="{% url 'logout' %}" class="sidebar-link mb-2 text-danger">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-lg-9 col-md-8 py-4">
+            <!-- Profile Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">My Profile</h2>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+                    <i class="fas fa-edit me-2"></i> Edit Profile
+                </button>
+            </div>
+            
+            {% if messages %}
+            <div class="messages mb-4">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <!-- Profile Content -->
+            <div class="row">
+                <!-- Personal Information -->
+                <div class="col-lg-6 mb-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-transparent py-3">
+                            <h5 class="mb-0"><i class="fas fa-user-circle me-2 text-primary"></i> Personal Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="profile-info">
+                                <div class="row mb-3">
+                                    <div class="col-4 text-muted">Full Name</div>
+                                    <div class="col-8 fw-medium">{{ user.get_full_name|default:user.username }}</div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-4 text-muted">Email</div>
+                                    <div class="col-8 fw-medium">{{ user.email }}</div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-4 text-muted">Phone</div>
+                                    <div class="col-8 fw-medium">{{ user.profile.phone|default:"Not provided" }}</div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-4 text-muted">Birthday</div>
+                                    <div class="col-8 fw-medium">{{ user.profile.date_of_birth|date:"F d, Y"|default:"Not provided" }}</div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-4 text-muted">Bio</div>
+                                    <div class="col-8 fw-medium">
+                                        {% if user.profile.bio %}
+                                            {{ user.profile.bio }}
+                                        {% else %}
+                                            <span class="text-muted fst-italic">No bio provided</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Contact & Address Information -->
+                <div class="col-lg-6 mb-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-transparent py-3">
+                            <h5 class="mb-0"><i class="fas fa-map-marker-alt me-2 text-primary"></i> Contact & Location</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="profile-info">
+                                <div class="row mb-3">
+                                    <div class="col-4 text-muted">Address</div>
+                                    <div class="col-8 fw-medium">{{ user.profile.address|default:"Not provided" }}</div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-4 text-muted">City</div>
+                                    <div class="col-8 fw-medium">{{ user.profile.city|default:"Not provided" }}</div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-4 text-muted">State</div>
+                                    <div class="col-8 fw-medium">{{ user.profile.state|default:"Not provided" }}</div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-4 text-muted">Zip Code</div>
+                                    <div class="col-8 fw-medium">{{ user.profile.zip_code|default:"Not provided" }}</div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-4 text-muted">Country</div>
+                                    <div class="col-8 fw-medium">{{ user.profile.country|default:"Not provided" }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Activity Statistics -->
+                <div class="col-12 mb-4">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-transparent py-3">
+                            <h5 class="mb-0"><i class="fas fa-chart-line me-2 text-primary"></i> Activity Statistics</h5>
+                        </div>
+                        <div class="card-body pb-0">
+                            <div class="row g-4">
+                                <div class="col-md-3 col-6">
+                                    <div class="stat-card text-center mb-4">
+                                        <div class="stat-icon bg-primary-soft mb-3">
+                                            <i class="fas fa-calendar-check text-primary"></i>
+                                        </div>
+                                        <h3 class="stat-count">{{ bookings_count }}</h3>
+                                        <p class="stat-label mb-0">Total Bookings</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <div class="stat-card text-center mb-4">
+                                        <div class="stat-icon bg-success-soft mb-3">
+                                            <i class="fas fa-check-circle text-success"></i>
+                                        </div>
+                                        <h3 class="stat-count">{{ completed_bookings_count }}</h3>
+                                        <p class="stat-label mb-0">Completed Events</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <div class="stat-card text-center mb-4">
+                                        <div class="stat-icon bg-warning-soft mb-3">
+                                            <i class="fas fa-star text-warning"></i>
+                                        </div>
+                                        <h3 class="stat-count">{{ reviews_count }}</h3>
+                                        <p class="stat-label mb-0">Reviews Given</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <div class="stat-card text-center mb-4">
+                                        <div class="stat-icon bg-info-soft mb-3">
+                                            <i class="fas fa-bookmark text-info"></i>
+                                        </div>
+                                        <h3 class="stat-count">{{ saved_events_count|default:"0" }}</h3>
+                                        <p class="stat-label mb-0">Saved Events</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Profile Modal -->
+<div class="modal fade" id="editProfileModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Profile</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" action="{% url 'user_profile' %}" enctype="multipart/form-data" id="profileForm">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-12 mb-4 text-center">
+                            <div class="avatar-upload">
+                                <div class="avatar-preview mx-auto position-relative">
+                                    {% if user.profile.profile_picture %}
+                                        <img src="{{ user.profile.profile_picture.url }}" alt="{{ user.username }}" class="preview-image img-fluid rounded-circle" id="imagePreview">
+                                    {% else %}
+                                        <div class="avatar-placeholder rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto" id="profilePicturePlaceholder" style="width: 120px; height: 120px; font-size: 3rem;">
+                                            {{ user.username|first|upper }}
+                                        </div>
+                                        <img src="" alt="{{ user.username }}" class="preview-image img-fluid rounded-circle d-none" id="imagePreview">
+                                    {% endif %}
+                                </div>
+                                <div class="mt-3">
+                                    <label for="profilePictureInput" class="btn btn-outline-primary btn-sm">Change Photo</label>
+                                    <input type="file" id="profilePictureInput" name="profile_picture" accept="image/*" class="d-none">
+                                    {% if user.profile.profile_picture %}
+                                    <button type="button" class="btn btn-outline-danger btn-sm" id="removeProfilePicture">Remove Photo</button>
+                                    <input type="hidden" name="remove_profile_picture" id="removeProfilePictureInput" value="false">
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <label for="firstName" class="form-label">First Name</label>
+                            <input type="text" class="form-control" id="firstName" name="first_name" value="{{ user.first_name }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="lastName" class="form-label">Last Name</label>
+                            <input type="text" class="form-control" id="lastName" name="last_name" value="{{ user.last_name }}">
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="phone" class="form-label">Phone Number</label>
+                            <input type="tel" class="form-control" id="phone" name="phone" value="{{ user.profile.phone|default:'' }}">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="dateOfBirth" class="form-label">Date of Birth</label>
+                        <input type="date" class="form-control" id="dateOfBirth" name="date_of_birth" value="{% if user.profile.date_of_birth %}{{ user.profile.date_of_birth|date:'Y-m-d' }}{% endif %}">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="bio" class="form-label">Bio</label>
+                        <textarea class="form-control" id="bio" name="bio" rows="3">{{ user.profile.bio|default:'' }}</textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="address" class="form-label">Address</label>
+                        <input type="text" class="form-control" id="address" name="address" value="{{ user.profile.address|default:'' }}">
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <label for="city" class="form-label">City</label>
+                            <input type="text" class="form-control" id="city" name="city" value="{{ user.profile.city|default:'' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="state" class="form-label">State</label>
+                            <input type="text" class="form-control" id="state" name="state" value="{{ user.profile.state|default:'' }}">
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <label for="zipCode" class="form-label">Zip Code</label>
+                            <input type="text" class="form-control" id="zipCode" name="zip_code" value="{{ user.profile.zip_code|default:'' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="country" class="form-label">Country</label>
+                            <input type="text" class="form-control" id="country" name="country" value="{{ user.profile.country|default:'' }}">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="profileForm" class="btn btn-primary">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Sidebar */
+    .sidebar {
+        background-color: #f8f9fa;
+        min-height: calc(100vh - 76px);
+    }
+    
+    .sidebar-link {
+        display: block;
+        padding: 0.75rem 1.5rem;
+        color: #495057;
+        text-decoration: none;
+        border-left: 3px solid transparent;
+        transition: all 0.3s ease;
+    }
+    
+    .sidebar-link:hover, .sidebar-link.active {
+        background-color: rgba(var(--primary-rgb), 0.1);
+        color: var(--primary-color);
+        border-left-color: var(--primary-color);
+    }
+    
+    .avatar-placeholder {
+        font-weight: bold;
+    }
+    
+    /* Profile Info */
+    .card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+    }
+    
+    /* Statistics */
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        font-size: 1.5rem;
+    }
+    
+    .stat-count {
+        font-size: 2rem;
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+    
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    
+    .bg-primary-soft {
+        background-color: rgba(var(--primary-rgb), 0.15);
+    }
+    
+    .bg-success-soft {
+        background-color: rgba(40, 167, 69, 0.15);
+    }
+    
+    .bg-warning-soft {
+        background-color: rgba(255, 193, 7, 0.15);
+    }
+    
+    .bg-info-soft {
+        background-color: rgba(23, 162, 184, 0.15);
+    }
+    
+    /* Avatar Preview */
+    .avatar-preview {
+        width: 120px;
+        height: 120px;
+        overflow: hidden;
+    }
+    
+    .preview-image {
+        width: 120px;
+        height: 120px;
+        object-fit: cover;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize animations
+        gsap.registerPlugin(ScrollTrigger);
+        
+        // Animate cards on scroll
+        gsap.utils.toArray('.card').forEach((card, i) => {
+            gsap.from(card, {
+                scrollTrigger: {
+                    trigger: card,
+                    start: "top 80%"
+                },
+                y: 30,
+                opacity: 0,
+                duration: 0.5,
+                delay: 0.1 * i,
+                ease: 'power2.out'
+            });
+        });
+        
+        // Handle avatar preview
+        const profilePictureInput = document.getElementById('profilePictureInput');
+        const imagePreview = document.getElementById('imagePreview');
+        const profilePicturePlaceholder = document.getElementById('profilePicturePlaceholder');
+        
+        if (profilePictureInput && imagePreview) {
+            profilePictureInput.addEventListener('change', function() {
+                const file = this.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        imagePreview.src = e.target.result;
+                        imagePreview.classList.remove('d-none');
+                        if (profilePicturePlaceholder) {
+                            profilePicturePlaceholder.classList.add('d-none');
+                        }
+                    }
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+        
+        // Handle avatar removal
+        const removeProfilePictureBtn = document.getElementById('removeProfilePicture');
+        const removeProfilePictureInput = document.getElementById('removeProfilePictureInput');
+        
+        if (removeProfilePictureBtn && removeProfilePictureInput) {
+            removeProfilePictureBtn.addEventListener('click', function() {
+                if (profilePicturePlaceholder) {
+                    profilePicturePlaceholder.classList.remove('d-none');
+                }
+                imagePreview.classList.add('d-none');
+                imagePreview.src = '';
+                profilePictureInput.value = '';
+                removeProfilePictureInput.value = 'true';
+            });
+        }
+    });
+</script>
+{% endblock %}

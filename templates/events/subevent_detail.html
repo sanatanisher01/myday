@@ -1,0 +1,749 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ subevent.name }} - {{ subevent.event.name }} - MyDay{% endblock %}
+
+{% block content %}
+<!-- SubEvent Header -->
+<section class="subevent-header position-relative">
+    <div class="subevent-image-container">
+        <img src="{{ subevent.image.url }}" alt="{{ subevent.name }}" class="subevent-header-image">
+        <div class="overlay"></div>
+    </div>
+    <div class="container position-relative">
+        <div class="row">
+            <div class="col-lg-8 col-md-10 mx-auto text-center text-white py-5">
+                <p class="mb-2"><a href="{% url 'event_detail' subevent.event.slug %}" class="text-white">{{ subevent.event.name }}</a> / {{ subevent.name }}</p>
+                <h1 class="display-4 fw-bold subevent-title">{{ subevent.name }}</h1>
+                <div class="rating my-3">
+                    {% if avg_rating %}
+                        {% with ''|center:avg_rating|floatformat:"0" as stars %}
+                        {% for _ in stars %}
+                            <i class="fas fa-star text-warning fa-lg"></i>
+                        {% endfor %}
+                        {% endwith %}
+                        <span class="ms-2 fs-5">{{ avg_rating|floatformat:1 }} ({{ reviews.count }} reviews)</span>
+                    {% else %}
+                        <span>No ratings yet</span>
+                    {% endif %}
+                </div>
+                <p class="lead">{{ subevent.short_description }}</p>
+                <div class="mt-4">
+                    <span class="price-badge bg-white text-primary p-2 px-3 rounded-pill fw-bold fs-5 me-3">
+                        ₹{{ subevent.price|floatformat:2 }}
+                    </span>
+                    <button class="btn btn-lg btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#bookingModal">Book Now</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Service Details -->
+<section class="py-5">
+    <div class="container">
+        <div class="row">
+            <!-- Main Content -->
+            <div class="col-lg-8">
+                <!-- Description -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h3 class="mb-0">About This Service</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="rich-text-content">
+                            {{ subevent.description|safe }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Features -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h3 class="mb-0">Service Features</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <div class="d-flex">
+                                    <div class="feature-icon bg-primary text-white rounded-circle p-3 me-3">
+                                        <i class="fas fa-clock"></i>
+                                    </div>
+                                    <div>
+                                        <h5>Duration</h5>
+                                        <p>{{ subevent.duration }} hours</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex">
+                                    <div class="feature-icon bg-primary text-white rounded-circle p-3 me-3">
+                                        <i class="fas fa-users"></i>
+                                    </div>
+                                    <div>
+                                        <h5>Capacity</h5>
+                                        <p>Up to {{ subevent.capacity }} guests</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex">
+                                    <div class="feature-icon bg-primary text-white rounded-circle p-3 me-3">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                    </div>
+                                    <div>
+                                        <h5>Location</h5>
+                                        <p>{{ subevent.location|default:"Various locations available" }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex">
+                                    <div class="feature-icon bg-primary text-white rounded-circle p-3 me-3">
+                                        <i class="fas fa-tag"></i>
+                                    </div>
+                                    <div>
+                                        <h5>Pricing</h5>
+                                        <p>₹{{ subevent.price|floatformat:2 }} (all inclusive)</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- What's Included -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h3 class="mb-0">What's Included</h3>
+                    </div>
+                    <div class="card-body">
+                        <ul class="included-list">
+                            {% for item in included_items %}
+                                <li><i class="fas fa-check-circle text-success me-2"></i> {{ item }}</li>
+                            {% empty %}
+                                <li><i class="fas fa-check-circle text-success me-2"></i> Professional service providers</li>
+                                <li><i class="fas fa-check-circle text-success me-2"></i> All necessary equipment and materials</li>
+                                <li><i class="fas fa-check-circle text-success me-2"></i> Setup and cleanup</li>
+                                <li><i class="fas fa-check-circle text-success me-2"></i> Digital copies of all media</li>
+                                <li><i class="fas fa-check-circle text-success me-2"></i> Post-event support</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Gallery -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h3 class="mb-0">Gallery</h3>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="row g-0">
+                            {% for image in gallery_images %}
+                                <div class="col-md-4 col-6 gallery-item">
+                                    <a href="{{ image.image.url }}" data-lightbox="gallery" data-title="{{ image.caption }}">
+                                        <img src="{{ image.image.url }}" alt="{{ image.caption }}" class="img-fluid gallery-thumbnail">
+                                    </a>
+                                </div>
+                            {% empty %}
+                                {% for i in '123456'|make_list %}
+                                    <div class="col-md-4 col-6 gallery-item">
+                                        <a href="{% static 'images/placeholder-' %}{{ forloop.counter }}.jpg" data-lightbox="gallery">
+                                            <img src="{% static 'images/placeholder-' %}{{ forloop.counter }}.jpg" alt="Gallery image" class="img-fluid gallery-thumbnail">
+                                        </a>
+                                    </div>
+                                {% endfor %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Booking Widget -->
+                <div class="card mb-4 shadow booking-widget sticky-top" style="top: 100px;">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0 fs-5">Book This Service</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="price-section mb-3 d-flex justify-content-between align-items-center">
+                            <span class="fw-bold fs-4">₹{{ subevent.price|floatformat:2 }}</span>
+                            <span class="badge bg-success">Available</span>
+                        </div>
+                        
+                        <ul class="booking-features mb-4">
+                            <li><i class="fas fa-calendar-check me-2"></i> Instant confirmation</li>
+                            <li><i class="fas fa-clock me-2"></i> 24/7 customer support</li>
+                            <li><i class="fas fa-money-bill-wave me-2"></i> Free cancellation up to 30 days before</li>
+                        </ul>
+                        
+                        <button class="btn btn-primary w-100 mb-3" data-bs-toggle="modal" data-bs-target="#bookingModal">Book Now</button>
+                        
+                        <button class="btn btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#inquiryModal">
+                            <i class="fas fa-question-circle me-2"></i> Ask a Question
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Contact Info -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h4 class="mb-0 fs-5">Need Help?</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex mb-3">
+                            <div class="contact-icon bg-light rounded-circle p-3 me-3">
+                                <i class="fas fa-phone"></i>
+                            </div>
+                            <div>
+                                <h6>Call Us</h6>
+                                <p class="mb-0">+1 (123) 456-7890</p>
+                            </div>
+                        </div>
+                        <div class="d-flex mb-3">
+                            <div class="contact-icon bg-light rounded-circle p-3 me-3">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <div>
+                                <h6>Email Us</h6>
+                                <p class="mb-0">info@myday.com</p>
+                            </div>
+                        </div>
+                        <div class="d-flex">
+                            <div class="contact-icon bg-light rounded-circle p-3 me-3">
+                                <i class="fas fa-comment"></i>
+                            </div>
+                            <div>
+                                <h6>Live Chat</h6>
+                                <p class="mb-0">Available 9 AM - 8 PM</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Reviews Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col-12 d-flex justify-content-between align-items-center">
+                <h2 class="fw-bold mb-0">Customer Reviews</h2>
+                {% if user.is_authenticated %}
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#reviewModal">Write a Review</button>
+                {% else %}
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#loginModal">Sign In to Write a Review</button>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            {% for review in reviews %}
+            <div class="col-lg-4 col-md-6 review-card-wrapper">
+                <div class="card h-100 shadow-sm review-card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="review-avatar me-3">
+                                {% if review.user.profile.profile_picture %}
+                                    <img src="{{ review.user.profile.profile_picture.url }}" alt="{{ review.user.username }}" class="rounded-circle">
+                                {% else %}
+                                    <div class="avatar-placeholder rounded-circle bg-primary text-white">{{ review.user.username|first|upper }}</div>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <h5 class="mb-0">{{ review.user.get_full_name|default:review.user.username }}</h5>
+                                <div class="rating">
+                                    {% with ''|center:review.rating as stars %}
+                                    {% for _ in stars %}
+                                        <i class="fas fa-star text-warning"></i>
+                                    {% endfor %}
+                                    {% endwith %}
+                                </div>
+                                <small class="text-muted">{{ review.created_at|date:"M d, Y" }}</small>
+                            </div>
+                        </div>
+                        <p class="card-text review-text">{{ review.comment }}</p>
+                        {% if review.image %}
+                        <div class="mt-3">
+                            <img src="{{ review.image.url }}" alt="Review image" class="img-fluid rounded review-image">
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center py-5">
+                <h3>No reviews yet.</h3>
+                <p>Be the first to review this service!</p>
+            </div>
+            {% endfor %}
+        </div>
+        
+        {% if reviews.count > 6 %}
+        <div class="row mt-4">
+            <div class="col-12 text-center">
+                <a href="#" class="btn btn-outline-primary">Load More Reviews</a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Related Services -->
+<section class="py-5">
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col-12 text-center">
+                <h2 class="fw-bold">Related Services</h2>
+                <p class="lead">You might also be interested in these services</p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            {% for service in related_services %}
+            <div class="col-lg-4 col-md-6 subevent-card-wrapper">
+                <div class="card h-100 subevent-card">
+                    <div class="card-img-container">
+                        <img src="{{ service.image.url }}" class="card-img-top" alt="{{ service.name }}">
+                        <div class="price-tag">₹{{ service.price|floatformat:2 }}</div>
+                    </div>
+                    <div class="card-body">
+                        <h3 class="card-title h5">{{ service.name }}</h3>
+                        <p class="card-text">{{ service.description|truncatechars:120 }}</p>
+                    </div>
+                    <div class="card-footer bg-transparent border-0 d-flex justify-content-between align-items-center">
+                        <a href="{% url 'subevent_detail' service.event.slug service.slug %}" class="btn btn-outline-primary">View Details</a>
+                        <a href="#" class="btn btn-primary book-btn" data-bs-toggle="modal" data-bs-target="#bookingModal" data-subevent-id="{{ service.id }}">Book Now</a>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-lg-4 col-md-6 mx-auto text-center py-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                        <h5>No related services found</h5>
+                        <p>Check out our other event categories</p>
+                        <a href="{% url 'event_list' %}" class="btn btn-primary mt-2">Browse All Events</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Booking Modal -->
+<div class="modal fade" id="bookingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Book {{ subevent.name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                {% if user.is_authenticated %}
+                <form method="post" action="{% url 'add_booking' subevent_id=subevent.id %}" id="bookingForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="booking_date" class="form-label">Date</label>
+                        <input type="date" class="form-control" id="booking_date" name="booking_date" required min="{{ today|date:'Y-m-d' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="booking_time" class="form-label">Time</label>
+                        <input type="time" class="form-control" id="booking_time" name="booking_time" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="guests" class="form-label">Number of Guests</label>
+                        <input type="number" class="form-control" id="guests" name="guests" min="1" max="{{ subevent.capacity }}" value="1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Special Requests (Optional)</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6>Price Summary:</h6>
+                                <div class="d-flex justify-content-between">
+                                    <span>Service Fee:</span>
+                                    <span id="service_price">₹{{ subevent.price|floatformat:2 }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Tax (10%):</span>
+                                    <span id="tax_amount">₹{{ subevent.price|floatformat:2|multiply:0.1 }}</span>
+                                </div>
+                                <hr>
+                                <div class="d-flex justify-content-between fw-bold">
+                                    <span>Total:</span>
+                                    <span id="total_amount">₹{{ subevent.price|floatformat:2|multiply:1.1 }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Confirm Booking</button>
+                </form>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-lock fa-3x text-muted mb-3"></i>
+                    <h5>Please Sign In to Book</h5>
+                    <p>You need to be logged in to make a booking.</p>
+                    <button class="btn btn-primary mt-2" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#loginModal">Sign In</button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Inquiry Modal -->
+<div class="modal fade" id="inquiryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Ask a Question</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="inquiryForm">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Your Name</label>
+                        {% if user.is_authenticated %}
+                        <input type="text" class="form-control" id="name" name="name" value="{{ user.get_full_name|default:user.username }}" readonly>
+                        {% else %}
+                        <input type="text" class="form-control" id="name" name="name" required>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Your Email</label>
+                        {% if user.is_authenticated %}
+                        <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" readonly>
+                        {% else %}
+                        <input type="email" class="form-control" id="email" name="email" required>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label for="subject" class="form-label">Subject</label>
+                        <input type="text" class="form-control" id="subject" name="subject" value="Question about {{ subevent.name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="message" class="form-label">Your Question</label>
+                        <textarea class="form-control" id="message" name="message" rows="4" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Send Message</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Review Modal -->
+{% if user.is_authenticated %}
+<div class="modal fade" id="reviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Write a Review</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" action="{% url 'add_review' event_id=subevent.event.id %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="subevent_id" value="{{ subevent.id }}">
+                    <div class="mb-3">
+                        <label for="rating" class="form-label">Your Rating</label>
+                        <div class="rating-input">
+                            <input type="range" class="form-range" min="1" max="5" step="1" id="rating" name="rating" value="5">
+                            <div class="rating-stars">
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="comment" class="form-label">Your Review</label>
+                        <textarea class="form-control" id="comment" name="comment" rows="4" placeholder="Share your experience with this service..." required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="image" class="form-label">Add Photo (Optional)</label>
+                        <input type="file" class="form-control" id="image" name="image">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Submit Review</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* SubEvent Header */
+    .subevent-header {
+        overflow: hidden;
+    }
+    
+    .subevent-image-container {
+        height: 400px;
+        position: relative;
+    }
+    
+    .subevent-header-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.7));
+    }
+    
+    /* Feature Icons */
+    .feature-icon, .contact-icon {
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    
+    /* What's Included List */
+    .included-list {
+        list-style: none;
+        padding-left: 0;
+    }
+    
+    .included-list li {
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    .included-list li:last-child {
+        border-bottom: none;
+    }
+    
+    /* Gallery */
+    .gallery-item {
+        overflow: hidden;
+        position: relative;
+        height: 200px;
+    }
+    
+    .gallery-thumbnail {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+    
+    .gallery-item:hover .gallery-thumbnail {
+        transform: scale(1.05);
+    }
+    
+    /* Booking Features */
+    .booking-features {
+        list-style: none;
+        padding-left: 0;
+    }
+    
+    .booking-features li {
+        padding: 6px 0;
+        font-size: 0.9rem;
+    }
+    
+    /* Review Cards */
+    .review-card {
+        transition: transform 0.3s ease;
+    }
+    
+    .review-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .review-avatar {
+        width: 50px;
+        height: 50px;
+        overflow: hidden;
+    }
+    
+    .review-avatar img, .avatar-placeholder {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+    
+    .review-text {
+        font-family: 'Lora', serif;
+        font-style: italic;
+    }
+    
+    .review-image {
+        max-height: 150px;
+        object-fit: cover;
+    }
+    
+    /* Related Services */
+    .subevent-card {
+        transition: transform 0.3s ease;
+        border: 1px solid rgba(0,0,0,0.1);
+    }
+    
+    .subevent-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .card-img-container {
+        height: 200px;
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .card-img-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+    
+    .subevent-card:hover .card-img-container img {
+        transform: scale(1.05);
+    }
+    
+    .price-tag {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: var(--primary-color);
+        color: white;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-weight: bold;
+    }
+    
+    /* Rating Stars */
+    .rating-input {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .rating-stars {
+        margin-top: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize animations
+        gsap.registerPlugin(ScrollTrigger);
+        
+        // Header animations
+        gsap.from('.subevent-title', { opacity: 0, y: 30, duration: 1, delay: 0.3 });
+        gsap.from('.rating', { opacity: 0, y: 10, duration: 0.5, delay: 0.6 });
+        
+        // Scroll animations
+        gsap.utils.toArray('.card').forEach((card, i) => {
+            gsap.from(card, {
+                scrollTrigger: {
+                    trigger: card,
+                    start: "top 80%"
+                },
+                y: 50,
+                opacity: 0,
+                duration: 0.6,
+                delay: 0.1 * i,
+                ease: 'power2.out'
+            });
+        });
+        
+        // Rating slider functionality
+        const ratingSlider = document.getElementById('rating');
+        const ratingStars = document.querySelectorAll('.rating-stars .fa-star');
+        
+        if (ratingSlider && ratingStars.length) {
+            ratingSlider.addEventListener('input', function() {
+                const rating = parseInt(this.value);
+                
+                ratingStars.forEach((star, index) => {
+                    if (index < rating) {
+                        star.classList.add('text-warning');
+                    } else {
+                        star.classList.remove('text-warning');
+                        star.classList.add('text-muted');
+                    }
+                });
+            });
+        }
+        
+        // Booking form price calculation
+        const guestsInput = document.getElementById('guests');
+        const servicePrice = document.getElementById('service_price');
+        const taxAmount = document.getElementById('tax_amount');
+        const totalAmount = document.getElementById('total_amount');
+        
+        if (guestsInput && servicePrice && taxAmount && totalAmount) {
+            const basePrice = parseFloat("{{ subevent.price|escapejs }}");
+            
+            function updatePricing() {
+                const guests = parseInt(guestsInput.value);
+                const total = basePrice * guests;
+                const tax = total * 0.1;
+                
+                servicePrice.textContent = `₹${total.toFixed(2)}`;
+                taxAmount.textContent = `₹${tax.toFixed(2)}`;
+                totalAmount.textContent = `₹${(total + tax).toFixed(2)}`;
+            }
+            
+            guestsInput.addEventListener('input', updatePricing);
+        }
+        
+        // Inquiry form submission
+        const inquiryForm = document.getElementById('inquiryForm');
+        if (inquiryForm) {
+            inquiryForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // In a real application, you would submit the form data to the server
+                // For now, just show a success message
+                this.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="fas fa-check-circle text-success fa-3x mb-3"></i>
+                        <h5>Message Sent!</h5>
+                        <p>We'll get back to you as soon as possible.</p>
+                    </div>
+                `;
+            });
+        }
+        
+        // Initialize lightbox for gallery if available
+        if (typeof lightbox !== 'undefined') {
+            lightbox.option({
+                'resizeDuration': 200,
+                'wrapAround': true,
+                'albumLabel': "Image %1 of %2"
+            });
+        }
+    });
+</script>
+{% endblock %}
