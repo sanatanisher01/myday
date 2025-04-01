@@ -187,7 +187,7 @@
                             {% empty %}
                                 {% for i in '123456'|make_list %}
                                     <div class="col-md-4 col-6 gallery-item">
-                                        <div class="placeholder-gallery-item" style="background-color: {% cycle '#4e73df' '#1cc88a' '#36b9cc' '#f6c23e' '#e74a3b' '#858796' %}; height: 200px;">
+                                        <div class="placeholder-gallery-item" style="background-color: #4e73df; height: 200px;">
                                             <i class="fas fa-image"></i>
                                         </div>
                                     </div>
@@ -807,6 +807,7 @@
         justify-content: center;
         font-size: 2rem;
         color: white;
+        background-color: #4e73df;
     }
 </style>
 {% endblock %}
@@ -864,11 +865,10 @@
         const ratingAnim = gsap.from('.rating', {
             opacity: 0,
             scale: 0.9,
-            duration: 0.8,
-            delay: 0.3,
-            ease: 'power3.out',
+            duration: 0.5,
+            delay: 0.8,
             onComplete: function() {
-                gsap.set('.rating', {clearProps: 'all'});
+                // Animation complete
             }
         });
         
@@ -897,48 +897,29 @@
     }
     
     function updatePricing() {
-        const serviceElement = document.getElementById('service_price');
-        const categoriesElement = document.getElementById('categories_price');
-        const taxElement = document.getElementById('tax_amount');
-        const totalElement = document.getElementById('total_amount');
-        const guestsInput = document.getElementById('guests');
+        // Get base price
+        const basePrice = parseFloat("{{ subevent.price }}");
+        let totalPrice = basePrice;
         
-        if (!serviceElement || !categoriesElement || !taxElement || !totalElement || !guestsInput) {
-            return;
-        }
+        // Get selected categories
+        const selectedCategories = document.querySelectorAll('.category-checkbox:checked');
+        let categoryTotal = 0;
         
-        const basePrice = {{ subevent.price }};
-        const guests = parseInt(guestsInput.value) || 1;
-        
-        // Calculate base service price (price * guests)
-        const servicePrice = basePrice * guests;
-        serviceElement.textContent = '₹' + servicePrice.toFixed(2);
-        
-        // Calculate categories price
-        let categoriesTotal = 0;
-        const checkedCategories = document.querySelectorAll('input[name="categories"]:checked');
-        
-        checkedCategories.forEach(function(checkbox) {
-            const label = checkbox.closest('.form-check').querySelector('.form-check-label');
-            if (label) {
-                const priceText = label.textContent;
-                const priceMatch = priceText.match(/₹([\d.]+)/);
-                if (priceMatch && priceMatch[1]) {
-                    const categoryPrice = parseFloat(priceMatch[1]);
-                    categoriesTotal += categoryPrice;
-                }
-            }
+        selectedCategories.forEach(function(checkbox) {
+            categoryTotal += parseFloat(checkbox.getAttribute('data-price'));
         });
         
-        categoriesElement.textContent = '₹' + categoriesTotal.toFixed(2);
+        // Add category prices
+        totalPrice += categoryTotal;
         
-        // Calculate tax and total
-        const subtotal = servicePrice + categoriesTotal;
-        const tax = subtotal * 0.1; // 10% tax
-        const total = subtotal + tax;
+        // Get number of guests
+        const guests = parseInt(document.getElementById('guests').value) || 1;
         
-        taxElement.textContent = '₹' + tax.toFixed(2);
-        totalElement.textContent = '₹' + total.toFixed(2);
+        // Update displayed prices
+        document.getElementById('base_price').textContent = basePrice.toFixed(2);
+        document.getElementById('category_price').textContent = categoryTotal.toFixed(2);
+        document.getElementById('total_price').textContent = totalPrice.toFixed(2);
+        document.getElementById('total_amount').value = totalPrice.toFixed(2);
     }
 </script>
 {% endblock %}

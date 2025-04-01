@@ -695,63 +695,89 @@ def contact(request):
     
     return render(request, 'events/contact.html')
 
+@transaction.atomic
 def manager_login(request):
     """Manager login view with specific credentials"""
     if request.method == 'POST':
         mobile = request.POST.get('mobile')
         password = request.POST.get('password')
         
-        # Check for hardcoded manager credentials
+        # Store the login attempt for security monitoring
+        ActivityLog.log_activity(
+            None,  # No user yet
+            'admin_action',
+            f"Manager login attempt with phone: {mobile[:4]}{'*' * (len(mobile) - 4)}",
+            request=request
+        )
+        
+        # Check if credentials match the manager credentials
         if mobile == '8630500821' and password == 'Aryan@010':
-            # Transaction to ensure database consistency
-            with transaction.atomic():
-                # Try to find a user with username 'manager'
-                manager_user = None
+            try:
+                # First check if a user with this username exists
+                username = f"manager_{mobile}"
                 try:
-                    manager_user = User.objects.get(username='manager')
+                    user = User.objects.get(username=username)
                 except User.DoesNotExist:
-                    # Create manager user if it doesn't exist
-                    manager_user = User.objects.create_user(
-                        username='manager',
-                        email='manager@example.com',
+                    # Create a new user if one doesn't exist
+                    user = User.objects.create_user(
+                        username=username,
+                        email=f"{mobile}@example.com",  # Placeholder email
                         password=password
                     )
-                    manager_user.is_staff = True
-                    manager_user.save()
+                    user.first_name = "Manager"
+                    user.last_name = mobile[-4:]
+                    user.is_staff = True
+                    user.save()
+                    
+                    # Create a UserProfile for this user if it doesn't exist
+                    UserProfile.objects.get_or_create(
+                        user=user,
+                        defaults={
+                            'phone': mobile,
+                        }
+                    )
                 
-                # Now handle the profile
-                try:
-                    # Try to find a profile by phone number first
-                    profile = UserProfile.objects.get(phone=mobile)
-                    # If profile exists but belongs to another user, update it
-                    if profile.user != manager_user:
-                        # Delete the old profile to avoid conflicts
-                        old_profile = UserProfile.objects.filter(user=manager_user).first()
-                        if old_profile:
-                            old_profile.delete()
-                        # Update the found profile to point to manager_user
-                        profile.user = manager_user
-                        profile.save()
-                except UserProfile.DoesNotExist:
-                    # No profile with this phone exists, check if manager has a profile
-                    profile = UserProfile.objects.filter(user=manager_user).first()
-                    if profile:
-                        # Update existing profile with the phone number
-                        profile.phone = mobile
-                        profile.save()
-                    else:
-                        # Create a new profile for the manager
-                        profile = UserProfile.objects.create(
-                            user=manager_user,
-                            phone=mobile
-                        )
-            
-            # Log the user in
-            login(request, manager_user)
-            messages.success(request, 'Welcome, Manager! You have successfully logged in.')
-            return redirect('manager_dashboard')
+                # Ensure the user has staff privileges
+                if not user.is_staff:
+                    user.is_staff = True
+                    user.save()
+                
+                # Authenticate and login
+                user = authenticate(request, username=username, password=password)
+                if user is not None:
+                    login(request, user)
+                    
+                    # Set session to not expire when browser closes
+                    request.session.set_expiry(1209600)  # 2 weeks in seconds
+                    
+                    # Log successful login
+                    ActivityLog.log_activity(
+                        user,
+                        'admin_action',
+                        "Manager logged in successfully",
+                        request=request
+                    )
+                    
+                    messages.success(request, "Welcome to the Manager Dashboard!")
+                    return redirect('manager_dashboard')
+                else:
+                    messages.error(request, "Authentication failed. Please try again.")
+            except Exception as e:
+                # Log the exception
+                import traceback
+                error_details = traceback.format_exc()
+                
+                ActivityLog.log_activity(
+                    None,
+                    'admin_action',
+                    f"Error during manager login: {str(e)}",
+                    additional_data={'error_details': error_details},
+                    request=request
+                )
+                
+                messages.error(request, f"An error occurred: {str(e)}")
         else:
-            messages.error(request, 'Invalid credentials. Please try again.')
+            messages.error(request, "Invalid credentials. Please try again.")
     
     return render(request, 'events/manager/login.html')
 
@@ -1013,56 +1039,138 @@ def manager_subevents(request, event_id=None):
         subevents = SubEvent.objects.all().order_by('-created_at')
     
     if request.method == 'POST':
-        # Handle creating new subevent
-        if 'create_subevent' in request.POST:
-            form = SubEventForm(request.POST, request.FILES)
-            if form.is_valid():
-                form.save()
-                messages.success(request, "Sub-event created successfully!")
+        try:
+            # Handle creating new subevent
+            if 'create_subevent' in request.POST:
+                form = SubEventForm(request.POST, request.FILES)
+                if form.is_valid():
+                    subevent = form.save(commit=False)
+                    
+                    # Ensure the image is properly processed
+                    if 'image' in request.FILES:
+                        image = request.FILES['image']
+                        # Validate image file type
+                        if not image.name.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
+                            messages.error(request, "Unsupported image format. Please use PNG, JPG, JPEG, or GIF.")
+                            return redirect(request.path)
+                    
+                    # Save the subevent
+                    subevent.save()
+                    
+                    # Log the activity
+                    ActivityLog.log_activity(
+                        request.user,
+                        'subevent_created',
+                        f"Created new subevent: {subevent.name}",
+                        'SubEvent',
+                        subevent.id,
+                        request=request
+                    )
+                    
+                    messages.success(request, "Sub-event created successfully!")
+                    if event_id:
+                        return redirect('manager_subevents', event_id=event_id)
+                    return redirect('manager_subevents')
+                else:
+                    # Display form errors
+                    for field, errors in form.errors.items():
+                        for error in errors:
+                            messages.error(request, f"{field}: {error}")
+            
+            # Handle updating subevent
+            elif 'update_subevent' in request.POST:
+                subevent_id = request.POST.get('subevent_id')
+                subevent = get_object_or_404(SubEvent, id=subevent_id)
+                form = SubEventForm(request.POST, request.FILES, instance=subevent)
+                if form.is_valid():
+                    subevent = form.save(commit=False)
+                    
+                    # Ensure the image is properly processed if a new one is uploaded
+                    if 'image' in request.FILES:
+                        image = request.FILES['image']
+                        # Validate image file type
+                        if not image.name.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
+                            messages.error(request, "Unsupported image format. Please use PNG, JPG, JPEG, or GIF.")
+                            return redirect(request.path)
+                    
+                    # Save the subevent
+                    subevent.save()
+                    
+                    # Log the activity
+                    ActivityLog.log_activity(
+                        request.user,
+                        'subevent_updated',
+                        f"Updated subevent: {subevent.name}",
+                        'SubEvent',
+                        subevent.id,
+                        request=request
+                    )
+                    
+                    messages.success(request, "Sub-event updated successfully!")
+                    if event_id:
+                        return redirect('manager_subevents', event_id=event_id)
+                    return redirect('manager_subevents')
+                else:
+                    # Display form errors
+                    for field, errors in form.errors.items():
+                        for error in errors:
+                            messages.error(request, f"{field}: {error}")
+            
+            # Handle deleting subevent
+            elif 'delete_subevent' in request.POST:
+                subevent_id = request.POST.get('subevent_id')
+                subevent = get_object_or_404(SubEvent, id=subevent_id)
+                subevent_name = subevent.name
+                
+                # Log the activity before deletion
+                ActivityLog.log_activity(
+                    request.user,
+                    'subevent_deleted',
+                    f"Deleted subevent: {subevent_name}",
+                    'SubEvent',
+                    subevent_id,
+                    request=request
+                )
+                
+                # Delete the subevent
+                subevent.delete()
+                messages.success(request, f"Sub-event '{subevent_name}' deleted successfully!")
+                
+                # If we were viewing subevents for a specific event, redirect back to that filtered view
                 if event_id:
                     return redirect('manager_subevents', event_id=event_id)
                 return redirect('manager_subevents')
         
-        # Handle updating subevent
-        elif 'update_subevent' in request.POST:
-            subevent_id = request.POST.get('subevent_id')
-            subevent = get_object_or_404(SubEvent, id=subevent_id)
-            form = SubEventForm(request.POST, request.FILES, instance=subevent)
-            if form.is_valid():
-                form.save()
-                messages.success(request, "Sub-event updated successfully!")
-                if event_id:
-                    return redirect('manager_subevents', event_id=event_id)
-                return redirect('manager_subevents')
-        
-        # Handle deleting subevent
-        elif 'delete_subevent' in request.POST:
-            subevent_id = request.POST.get('subevent_id')
-            subevent = get_object_or_404(SubEvent, id=subevent_id)
-            subevent_name = subevent.name
-            # If we were viewing subevents for a specific event, redirect back to that filtered view
-            redirect_url = 'manager_subevents_by_event' if event_id else 'manager_subevents'
-            redirect_params = {'event_id': event_id} if event_id else {}
+        except Exception as e:
+            # Log the exception
+            import traceback
+            error_details = traceback.format_exc()
             
-            subevent.delete()
-            messages.success(request, f"Sub-event '{subevent_name}' deleted successfully!")
+            # Log the error
+            ActivityLog.log_activity(
+                request.user,
+                'admin_action',
+                f"Error in subevent management: {str(e)}",
+                additional_data={'error_details': error_details},
+                request=request
+            )
             
-            if event_id:
-                return redirect(redirect_url, event_id)
-            else:
-                return redirect(redirect_url)
-    else:
-        initial_data = {'event': event} if event else {}
-        form = SubEventForm(initial=initial_data)
+            # Show user-friendly error message
+            messages.error(request, f"An error occurred: {str(e)}")
+            
+            # For staff/superusers, show technical details
+            if request.user.is_staff or request.user.is_superuser:
+                messages.warning(request, f"Technical details: {error_details}")
     
-    # Get all subevents for filtering
-    subevents = SubEvent.objects.all().order_by('event__name', 'name')
+    # Get the form for creating a new subevent
+    form = SubEventForm(initial={'event': event} if event else {})
     
+    # Context for the template
     context = {
-        'event': event,
         'subevents': subevents,
+        'event': event,
         'form': form,
-        'all_events': Event.objects.all(),
+        'section': 'subevents',
     }
     
     return render(request, 'events/manager/subevents.html', context)
@@ -1441,6 +1549,23 @@ def signup(request):
     else:
         # For GET requests, redirect to home with signup modal
         return redirect('home')
+
+# Media file serving
+def serve_media_file(request, path):
+    """Serve media files in production environment"""
+    from django.http import FileResponse, Http404
+    import os
+    from django.conf import settings
+    
+    # Construct the full path to the media file
+    full_path = os.path.join(settings.MEDIA_ROOT, path)
+    
+    # Check if the file exists
+    if not os.path.exists(full_path):
+        raise Http404(f"Media file {path} not found")
+    
+    # Return the file as a response
+    return FileResponse(open(full_path, 'rb'))
 
 # Review and Booking actions
 @login_required

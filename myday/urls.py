@@ -32,6 +32,14 @@ def custom_500(request):
     error_html = debug.technical_500_response(request, *sys.exc_info()).content
     return HttpResponse(error_html)
 
+# Custom 500 error handler
+def custom_500(request):
+    return HttpResponse("<h1>500 Server Error</h1>", content_type='text/html', status=500)
+
+# Health check endpoint
+def health_check(request):
+    return HttpResponse("OK", content_type='text/plain')
+
 # Test view to check if basic routing works
 def test_view(request):
     return HttpResponse("""
@@ -58,6 +66,7 @@ urlpatterns = [
     path('', include('events.urls')),
     path('accounts/', include('django.contrib.auth.urls')),
     path('test/', test_view, name='test_view'),
+    path('health/', health_check, name='health_check'),
 ]
 
 # Add custom error handlers
@@ -70,3 +79,9 @@ handler500 = 'events.views.custom_server_error'
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# For production, ensure media files are served
+else:
+    # This helps with serving media files in production
+    urlpatterns += [
+        path('media/<path:path>', event_views.serve_media_file, name='serve_media'),
+    ]
