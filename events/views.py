@@ -1108,15 +1108,15 @@ def manager_events(request):
 @user_passes_test(lambda u: u.is_staff or u.is_superuser)
 def manager_subevents(request, event_id=None):
     """Manager subevents management page"""
-    event = None
-    if event_id:
-        event = get_object_or_404(Event, id=event_id)
-        subevents = SubEvent.objects.filter(event=event).order_by('-created_at')
-    else:
-        subevents = SubEvent.objects.all().order_by('-created_at')
-    
-    if request.method == 'POST':
-        try:
+    try:
+        event = None
+        if event_id:
+            event = get_object_or_404(Event, id=event_id)
+            subevents = SubEvent.objects.filter(event=event).order_by('-created_at')
+        else:
+            subevents = SubEvent.objects.all().order_by('-created_at')
+        
+        if request.method == 'POST':
             # Handle creating new subevent
             if 'create_subevent' in request.POST:
                 form = SubEventForm(request.POST, request.FILES)
@@ -1145,8 +1145,9 @@ def manager_subevents(request, event_id=None):
                     )
                     
                     messages.success(request, "Sub-event created successfully!")
+                    # Fix the URL routing issue by using the correct URL name
                     if event_id:
-                        return redirect('manager_subevents', event_id=event_id)
+                        return redirect('manager_subevents_by_event', event_id=event_id)
                     return redirect('manager_subevents')
                 else:
                     # Display form errors
@@ -1184,8 +1185,9 @@ def manager_subevents(request, event_id=None):
                     )
                     
                     messages.success(request, "Sub-event updated successfully!")
+                    # Fix the URL routing issue by using the correct URL name
                     if event_id:
-                        return redirect('manager_subevents', event_id=event_id)
+                        return redirect('manager_subevents_by_event', event_id=event_id)
                     return redirect('manager_subevents')
                 else:
                     # Display form errors
@@ -1213,44 +1215,53 @@ def manager_subevents(request, event_id=None):
                 subevent.delete()
                 messages.success(request, f"Sub-event '{subevent_name}' deleted successfully!")
                 
-                # If we were viewing subevents for a specific event, redirect back to that filtered view
+                # Fix the URL routing issue by using the correct URL name
                 if event_id:
-                    return redirect('manager_subevents', event_id=event_id)
+                    return redirect('manager_subevents_by_event', event_id=event_id)
                 return redirect('manager_subevents')
         
-        except Exception as e:
-            # Log the exception
-            import traceback
-            error_details = traceback.format_exc()
+        # Get the form for creating a new subevent
+        form = SubEventForm(initial={'event': event} if event else {})
+        
+        # Context for the template
+        context = {
+            'subevents': subevents,
+            'event': event,
+            'form': form,
+            'section': 'subevents',
+        }
+        
+        return render(request, 'events/manager/subevents.html', context)
+    except Exception as e:
+        # Log the exception
+        import traceback
+        error_details = traceback.format_exc()
+        
+        # Log the error
+        ActivityLog.log_activity(
+            request.user,
+            'admin_action',
+            f"Error in subevent management: {str(e)}",
+            additional_data={'error_details': error_details},
+            request=request
+        )
+        
+        # Show user-friendly error message
+        messages.error(request, f"An error occurred: {str(e)}")
+        
+        # For staff/superusers, show technical details
+        if request.user.is_staff or request.user.is_superuser:
+            messages.warning(request, f"Technical details: {error_details}")
             
-            # Log the error
-            ActivityLog.log_activity(
-                request.user,
-                'admin_action',
-                f"Error in subevent management: {str(e)}",
-                additional_data={'error_details': error_details},
-                request=request
-            )
-            
-            # Show user-friendly error message
-            messages.error(request, f"An error occurred: {str(e)}")
-            
-            # For staff/superusers, show technical details
-            if request.user.is_staff or request.user.is_superuser:
-                messages.warning(request, f"Technical details: {error_details}")
-    
-    # Get the form for creating a new subevent
-    form = SubEventForm(initial={'event': event} if event else {})
-    
-    # Context for the template
-    context = {
-        'subevents': subevents,
-        'event': event,
-        'form': form,
-        'section': 'subevents',
-    }
-    
-    return render(request, 'events/manager/subevents.html', context)
+        return redirect('manager_dashboard')
+
+# Create a separate view function for manager_subevents_by_event to match the URL pattern
+@login_required
+@user_passes_test(lambda u: u.is_staff or u.is_superuser)
+def manager_subevents_by_event(request, event_id):
+    """Manager subevents management page filtered by event"""
+    # Simply call the main manager_subevents function with the event_id parameter
+    return manager_subevents(request, event_id=event_id)
 
 @login_required
 @user_passes_test(lambda u: u.is_staff or u.is_superuser)
