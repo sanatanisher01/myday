@@ -63,7 +63,7 @@
             </div>
             <div class="col-lg-6">
                 <div class="welcome-image">
-                    <img src="{% static 'images/welcome-image.jpg' %}" alt="Welcome to MyDay" class="img-fluid rounded-3 shadow">
+                    <div class="placeholder-image rounded-3 shadow"></div>
                 </div>
             </div>
         </div>
@@ -620,6 +620,15 @@
         background-position: center;
         background-repeat: no-repeat;
         background-size: cover;
+    }
+    
+    /* Welcome image placeholder */
+    .placeholder-image {
+        width: 100%;
+        height: 200px;
+        background: linear-gradient(90deg, #2196F3, #4CAF50);
+        border-radius: 10px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
     }
 </style>
 {% endblock %}
