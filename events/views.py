@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, JsonResponse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
-from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth.forms import PasswordChangeForm, UserCreationForm
 from django.contrib import messages
 from django.db.models import Avg, Count, Sum, Q, Min
 from django.utils import timezone
@@ -11,7 +11,7 @@ from django.views.decorators.csrf import csrf_exempt
 from decimal import Decimal
 from rest_framework import viewsets, permissions
 
-from .models import Event, SubEvent, Review, Booking, UserProfile, ContactMessage, User, GalleryItem, SubEventCategory, CartItem, UserMessage
+from .models import Event, SubEvent, Review, Booking, UserProfile, ContactMessage, User, GalleryItem, SubEventCategory, CartItem, UserMessage, ActivityLog
 from .serializers import EventSerializer, SubEventSerializer, ReviewSerializer
 from .forms import ReviewForm, BookingForm, EventForm, SubEventForm, GalleryItemForm, SubEventCategoryForm, UserMessageForm
 
@@ -99,14 +99,52 @@ def subevent_detail(request, event_slug, subevent_slug):
     event = get_object_or_404(Event, slug=event_slug)
     subevent = get_object_or_404(SubEvent, slug=subevent_slug, event=event)
     
+    # Check if user profile is complete
+    profile_complete = False
+    if request.user.is_authenticated:
+        try:
+            profile = UserProfile.objects.get(user=request.user)
+            # Check if all required fields are filled
+            profile_complete = (
+                profile.profile_picture and
+                profile.phone and
+                profile.date_of_birth and
+                profile.address and
+                profile.city and
+                profile.state and
+                profile.zip_code and
+                profile.country and
+                request.user.first_name and
+                request.user.last_name and
+                request.user.email
+            )
+        except UserProfile.DoesNotExist:
+            profile_complete = False
+    
     # Handle booking form
     if request.method == 'POST' and request.user.is_authenticated:
+        if not profile_complete:
+            messages.error(request, "Please complete your profile before booking. Upload a profile picture and fill all required fields.")
+            return redirect('user_profile')
+            
         form = BookingForm(request.POST)
         if form.is_valid():
             booking = form.save(commit=False)
             booking.user = request.user
             booking.subevent = subevent
             booking.save()
+            
+            # Log the booking creation activity
+            activity_description = f"New booking created for {subevent.name} on {booking.booking_date}"
+            ActivityLog.log_activity(
+                user=request.user,
+                action_type='booking_created',
+                description=activity_description,
+                target_model='Booking',
+                target_id=booking.id,
+                request=request
+            )
+            
             messages.success(request, "Booking created successfully!")
             return redirect('user_bookings')
     else:
@@ -116,6 +154,7 @@ def subevent_detail(request, event_slug, subevent_slug):
         'event': event,
         'subevent': subevent,
         'booking_form': form,
+        'profile_complete': profile_complete,
     }
     return render(request, 'events/subevent_detail.html', context)
 
@@ -123,24 +162,60 @@ def subevent_detail(request, event_slug, subevent_slug):
 @login_required
 def user_dashboard(request):
     """User dashboard view"""
-    user_bookings = Booking.objects.filter(user=request.user).order_by('-created_at')[:5]
-    upcoming_bookings = Booking.objects.filter(
-        user=request.user,
+    # Get all user bookings
+    all_user_bookings = Booking.objects.filter(user=request.user)
+    
+    # Recent bookings for the main list
+    user_bookings = all_user_bookings.order_by('-created_at')[:5]
+    
+    # Calculate stats for dashboard cards
+    total_bookings = all_user_bookings.count()
+    
+    # Upcoming bookings (pending or confirmed and in the future)
+    upcoming_bookings = all_user_bookings.filter(
         booking_date__gte=timezone.now().date(),
         status__in=['pending', 'confirmed']
-    ).order_by('booking_date', 'booking_time')[:3]
+    ).order_by('booking_date', 'booking_time')
+    
+    # Count of upcoming bookings for stats card
+    upcoming_count = upcoming_bookings.count()
+    
+    # Show only 3 upcoming bookings in the list
+    upcoming_bookings_display = upcoming_bookings[:3]
+    
+    # Completed events count
+    completed_count = all_user_bookings.filter(
+        status='completed'
+    ).count()
     
     # Get user messages
-    all_user_messages = UserMessage.objects.filter(user=request.user)
-    user_messages = all_user_messages.order_by('-created_at')[:5]
-    unread_count = all_user_messages.filter(is_read=False).count()
+    # Messages received by the user
+    received_messages = UserMessage.objects.filter(user=request.user).order_by('-created_at')
+    
+    # Messages sent by the user
+    sent_messages = UserMessage.objects.filter(created_by=request.user).order_by('-created_at')
+    
+    # Combine both types of messages and sort by created_at
+    from itertools import chain
+    all_user_messages = list(chain(received_messages, sent_messages))
+    all_user_messages.sort(key=lambda x: x.created_at, reverse=True)
+    
+    # Get the 5 most recent messages
+    user_messages = all_user_messages[:5]
+    
+    # Count of unread messages
+    unread_count = received_messages.filter(is_read=False).count()
     
     context = {
         'user_bookings': user_bookings,
-        'upcoming_bookings': upcoming_bookings,
+        'upcoming_bookings': upcoming_bookings_display,
         'user_messages': user_messages,
         'unread_count': unread_count,
+        'total_bookings': total_bookings,
+        'upcoming_count': upcoming_count,
+        'completed_count': completed_count,
     }
+    
     return render(request, 'events/user/dashboard.html', context)
 
 @login_required
@@ -212,6 +287,18 @@ def cancel_booking(request, booking_id):
         booking.notes = f"{booking.notes}\n\nCancellation notes: {notes}" if booking.notes else f"Cancellation notes: {notes}"
         booking.save()
         
+        # Log the booking cancellation activity
+        activity_description = f"Booking for {booking.subevent.name} on {booking.booking_date} was cancelled. Reason: {reason}"
+        ActivityLog.log_activity(
+            user=request.user,
+            action_type='booking_cancelled',
+            description=activity_description,
+            target_model='Booking',
+            target_id=booking.id,
+            additional_data={'reason': reason, 'notes': notes},
+            request=request
+        )
+        
         messages.success(request, "Your booking has been successfully cancelled.")
         
         # Send notification or email about cancellation
@@ -225,6 +312,24 @@ def cancel_booking(request, booking_id):
 @login_required
 def user_profile(request):
     """User profile page"""
+    # Get or create user profile
+    profile, created = UserProfile.objects.get_or_create(user=request.user)
+    
+    # Check if profile is complete
+    profile_complete = (
+        profile.profile_picture and
+        profile.phone and
+        profile.date_of_birth and
+        profile.address and
+        profile.city and
+        profile.state and
+        profile.zip_code and
+        profile.country and
+        request.user.first_name and
+        request.user.last_name and
+        request.user.email
+    )
+    
     if request.method == 'POST':
         # Get profile data from form
         first_name = request.POST.get('first_name', '')
@@ -246,8 +351,7 @@ def user_profile(request):
         user.email = email
         user.save()
         
-        # Update or create user profile
-        profile, created = UserProfile.objects.get_or_create(user=user)
+        # Update user profile
         profile.phone = phone
         
         if date_of_birth:
@@ -260,21 +364,56 @@ def user_profile(request):
         profile.zip_code = zip_code
         profile.country = country
         
-        # Handle avatar upload
-        if 'avatar' in request.FILES:
-            profile.avatar = request.FILES['avatar']
+        # Handle profile picture upload
+        if 'profile_picture' in request.FILES:
+            # Delete old profile picture if it exists
+            if profile.profile_picture:
+                if os.path.isfile(profile.profile_picture.path):
+                    os.remove(profile.profile_picture.path)
+            
+            # Save new profile picture
+            profile.profile_picture = request.FILES['profile_picture']
         
-        # Handle avatar removal
-        if request.POST.get('remove_avatar') == 'true':
+        # Handle profile picture removal
+        if request.POST.get('remove_profile_picture') == 'true':
             # Delete the old image file if it exists
-            if profile.avatar:
-                if os.path.isfile(profile.avatar.path):
-                    os.remove(profile.avatar.path)
-            profile.avatar = None
+            if profile.profile_picture:
+                if os.path.isfile(profile.profile_picture.path):
+                    os.remove(profile.profile_picture.path)
+            profile.profile_picture = None
         
         profile.save()
         
-        messages.success(request, 'Your profile has been updated successfully.')
+        # Log profile update activity
+        ActivityLog.log_activity(
+            user=request.user,
+            action_type='user_updated',
+            description=f"User {request.user.username} updated their profile",
+            target_model='UserProfile',
+            target_id=profile.id,
+            request=request
+        )
+        
+        # Check if profile is now complete
+        profile_complete = (
+            profile.profile_picture and
+            profile.phone and
+            profile.date_of_birth and
+            profile.address and
+            profile.city and
+            profile.state and
+            profile.zip_code and
+            profile.country and
+            request.user.first_name and
+            request.user.last_name and
+            request.user.email
+        )
+        
+        if profile_complete:
+            messages.success(request, 'Your profile has been updated successfully. You can now book events!')
+        else:
+            messages.warning(request, 'Your profile has been updated, but it is not complete yet. Please fill all required fields and upload a profile picture to book events.')
+        
         return redirect('user_profile')
     
     # Get statistics for the user
@@ -294,6 +433,8 @@ def user_profile(request):
         'completed_bookings_count': completed_bookings_count,
         'reviews_count': reviews_count,
         'saved_events_count': saved_events_count,
+        'profile': profile,
+        'profile_complete': profile_complete,
     }
     
     return render(request, 'events/user/profile.html', context)
@@ -452,26 +593,65 @@ def delete_account(request):
 @login_required
 def user_messages(request):
     """User messages view"""
-    user_messages = UserMessage.objects.filter(user=request.user).order_by('-created_at')
+    # Get messages received by the user
+    received_messages = UserMessage.objects.filter(user=request.user)
+    
+    # Get messages sent by the user
+    sent_messages = UserMessage.objects.filter(created_by=request.user)
+    
+    # Combine both types of messages
+    from itertools import chain
+    all_messages = list(chain(received_messages, sent_messages))
+    all_messages.sort(key=lambda x: x.created_at, reverse=True)
+    
+    # Apply filters if provided
+    message_filter = request.GET.get('filter', 'all')
+    if message_filter == 'unread':
+        filtered_messages = [msg for msg in all_messages if hasattr(msg, 'is_read') and not msg.is_read and msg.user == request.user]
+    elif message_filter == 'read':
+        filtered_messages = [msg for msg in all_messages if hasattr(msg, 'is_read') and msg.is_read and msg.user == request.user]
+    elif message_filter == 'sent':
+        filtered_messages = [msg for msg in all_messages if msg.created_by == request.user]
+    elif message_filter == 'received':
+        filtered_messages = [msg for msg in all_messages if msg.user == request.user]
+    else:
+        filtered_messages = all_messages
     
     # Mark all messages as read if requested
     if request.method == 'POST' and 'mark_all_read' in request.POST:
-        user_messages.filter(is_read=False).update(is_read=True)
-        messages.success(request, "All messages marked as read.")
+        unread_count = received_messages.filter(is_read=False).count()
+        received_messages.filter(is_read=False).update(is_read=True)
+        if unread_count > 0:
+            messages.success(request, f"{unread_count} message{'s' if unread_count != 1 else ''} marked as read.")
+        else:
+            messages.info(request, "No unread messages to mark.")
         return redirect('user_messages')
     
+    # Get unread count for badge display
+    unread_count = received_messages.filter(is_read=False).count()
+    
     context = {
-        'user_messages': user_messages,
+        'user_messages': filtered_messages,
+        'unread_count': unread_count,
+        'active_filter': message_filter,
     }
+    
     return render(request, 'events/user/messages.html', context)
 
 @login_required
 def mark_message_read(request, message_id):
     """Mark a message as read"""
     message = get_object_or_404(UserMessage, id=message_id, user=request.user)
-    message.is_read = True
-    message.save()
-    return redirect('user_messages')
+    
+    # Only update if message is not already read
+    if not message.is_read:
+        message.is_read = True
+        message.save()
+        messages.success(request, "Message marked as read.")
+    
+    # Redirect back to the referring page or messages page
+    next_url = request.GET.get('next', 'user_messages')
+    return redirect(next_url)
 
 def contact(request):
     """Contact page with form for user inquiries."""
@@ -801,6 +981,9 @@ def manager_dashboard(request):
     recent_events = Event.objects.all().order_by('-created_at')[:5]
     recent_users = User.objects.filter(is_staff=False, is_superuser=False).order_by('-date_joined')[:5]
     
+    # Get recent system activities
+    recent_activities = ActivityLog.objects.all().order_by('-timestamp')[:10]
+    
     # Calculate revenue
     total_revenue = Booking.objects.filter(status='confirmed').aggregate(Sum('total_amount'))['total_amount__sum'] or 0
     
@@ -812,6 +995,7 @@ def manager_dashboard(request):
         'recent_bookings': recent_bookings,
         'recent_events': recent_events,
         'recent_users': recent_users,
+        'recent_activities': recent_activities,
         'total_revenue': total_revenue,
     }
     
@@ -914,6 +1098,9 @@ def manager_subevents(request, event_id=None):
         initial_data = {'event': event} if event else {}
         form = SubEventForm(initial=initial_data)
     
+    # Get all subevents for filtering
+    subevents = SubEvent.objects.all().order_by('event__name', 'name')
+    
     context = {
         'event': event,
         'subevents': subevents,
@@ -1012,10 +1199,48 @@ def manager_user_detail(request, user_id):
 @user_passes_test(lambda u: u.is_staff or u.is_superuser)
 def manager_contacts(request):
     """Manager view for contact messages"""
-    contact_messages = ContactMessage.objects.all().order_by('-created_at')
+    # Get all contact messages
+    all_contact_messages = ContactMessage.objects.all()
+    
+    # Apply filters if provided
+    message_filter = request.GET.get('filter', 'all')
+    if message_filter == 'unread':
+        contact_messages = all_contact_messages.filter(is_read=False).order_by('-created_at')
+    elif message_filter == 'read':
+        contact_messages = all_contact_messages.filter(is_read=True).order_by('-created_at')
+    else:
+        contact_messages = all_contact_messages.order_by('-created_at')
+    
+    # Handle marking messages as read
+    if request.method == 'POST' and 'mark_read' in request.POST:
+        message_id = request.POST.get('message_id')
+        if message_id:
+            try:
+                contact = ContactMessage.objects.get(id=message_id)
+                contact.is_read = True
+                contact.save()
+                messages.success(request, "Message marked as read.")
+            except ContactMessage.DoesNotExist:
+                messages.error(request, "Message not found.")
+        return redirect(request.get_full_path())
+    
+    # Handle marking all messages as read
+    if request.method == 'POST' and 'mark_all_read' in request.POST:
+        unread_count = all_contact_messages.filter(is_read=False).count()
+        all_contact_messages.filter(is_read=False).update(is_read=True)
+        if unread_count > 0:
+            messages.success(request, f"{unread_count} message{'s' if unread_count != 1 else ''} marked as read.")
+        else:
+            messages.info(request, "No unread messages to mark.")
+        return redirect('manager_contacts')
+    
+    # Get unread count for badge display
+    unread_count = all_contact_messages.filter(is_read=False).count()
     
     context = {
-        'contact_messages': contact_messages,
+        'contacts': contact_messages,
+        'unread_count': unread_count,
+        'active_filter': message_filter,
     }
     
     return render(request, 'events/manager/contacts.html', context)
@@ -1024,7 +1249,8 @@ def manager_contacts(request):
 @user_passes_test(lambda u: u.is_staff or u.is_superuser)
 def manager_messages(request):
     """Manager view for sending and viewing messages to users"""
-    messages_sent = UserMessage.objects.all().order_by('-created_at')
+    messages_list = UserMessage.objects.all().order_by('-created_at')
+    users = User.objects.filter(is_staff=False, is_superuser=False)
     
     if request.method == 'POST':
         form = UserMessageForm(request.POST)
@@ -1032,6 +1258,17 @@ def manager_messages(request):
             message = form.save(commit=False)
             message.created_by = request.user
             message.save()
+            
+            # Log the activity
+            ActivityLog.log_activity(
+                request.user,
+                'message_sent',
+                f"Message sent to {message.user.username}: {message.subject}",
+                'UserMessage',
+                message.id,
+                request=request
+            )
+            
             messages.success(request, "Message sent successfully!")
             return redirect('manager_messages')
     else:
@@ -1039,7 +1276,8 @@ def manager_messages(request):
     
     context = {
         'form': form,
-        'messages_sent': messages_sent,
+        'messages': messages_list,
+        'users': users,
     }
     
     return render(request, 'events/manager/messages.html', context)
@@ -1048,9 +1286,27 @@ def manager_messages(request):
 @user_passes_test(lambda u: u.is_staff or u.is_superuser)
 def delete_message(request, message_id):
     """Delete a message"""
-    message = get_object_or_404(UserMessage, id=message_id)
-    message.delete()
-    messages.success(request, "Message deleted successfully!")
+    try:
+        message = get_object_or_404(UserMessage, id=message_id)
+        recipient = message.user.username
+        subject = message.subject
+        
+        # Log the activity before deleting
+        ActivityLog.log_activity(
+            request.user,
+            'admin_action',
+            f"Deleted message to {recipient}: {subject}",
+            'UserMessage',
+            message_id,
+            request=request
+        )
+        
+        # Delete the message
+        message.delete()
+        messages.success(request, "Message deleted successfully!")
+    except Exception as e:
+        messages.error(request, f"Error deleting message: {str(e)}")
+    
     return redirect('manager_messages')
 
 @login_required
@@ -1122,6 +1378,9 @@ def manager_categories(request, subevent_id=None):
     else:
         categories = SubEventCategory.objects.all().order_by('subevent', 'order', 'name')
     
+    # Initialize the form
+    form = SubEventCategoryForm(subevent_id=subevent_id)
+    
     if request.method == 'POST':
         # Handle creating new category
         if 'create_category' in request.POST:
@@ -1137,7 +1396,7 @@ def manager_categories(request, subevent_id=None):
         elif 'update_category' in request.POST:
             category_id = request.POST.get('category_id')
             category = get_object_or_404(SubEventCategory, id=category_id)
-            form = SubEventCategoryForm(request.POST, request.FILES, instance=category)
+            form = SubEventCategoryForm(request.POST, request.FILES, instance=category, subevent_id=subevent_id)
             if form.is_valid():
                 form.save()
                 messages.success(request, "Category updated successfully!")
@@ -1167,8 +1426,6 @@ def manager_categories(request, subevent_id=None):
             if subevent_id:
                 return redirect('manager_categories', subevent_id=subevent_id)
             return redirect('manager_categories')
-    else:
-        form = SubEventCategoryForm(subevent_id=subevent_id)
     
     # Get all subevents for filtering
     subevents = SubEvent.objects.all().order_by('event__name', 'name')
@@ -1211,14 +1468,22 @@ def signup(request):
         form = UserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
+            # Set email if provided
+            if 'email' in request.POST and request.POST['email']:
+                user.email = request.POST['email']
+                user.save()
             login(request, user)
             messages.success(request, "Account created successfully!")
             return redirect('user_dashboard')
+        else:
+            # If form is invalid, add error messages
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
+            return redirect('home')
     else:
-        form = UserCreationForm()
-    
-    context = {'form': form}
-    return render(request, 'authentication/signup.html', context)
+        # For GET requests, redirect to home with signup modal
+        return redirect('home')
 
 # Review and Booking actions
 @login_required
@@ -1252,6 +1517,14 @@ def add_booking(request, subevent_id):
     if request.method == 'POST':
         form = BookingForm(request.POST)
         if form.is_valid():
+            # Check if address and mobile number are provided
+            address = form.cleaned_data.get('address')
+            mobile_number = form.cleaned_data.get('mobile_number')
+            
+            if not address or not mobile_number:
+                messages.error(request, "Address and mobile number are required to complete your booking.")
+                return redirect('subevent_detail', event_slug=subevent.event.slug, subevent_slug=subevent.slug)
+            
             booking = form.save(commit=False)
             booking.user = request.user
             booking.subevent = subevent
@@ -1280,8 +1553,22 @@ def add_booking(request, subevent_id):
                 for category_id in selected_categories:
                     booking.categories.add(category_id)
             
+            # Log the activity
+            ActivityLog.log_activity(
+                user=request.user,
+                action_type='booking_created',
+                description=f"Created booking for {subevent.name}",
+                target_model='Booking',
+                target_id=booking.id,
+                request=request
+            )
+            
             messages.success(request, "Your booking has been confirmed! You can view your bookings in your dashboard.")
             return redirect('user_bookings')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
     else:
         form = BookingForm()
     

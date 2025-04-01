@@ -9,7 +9,7 @@ pip install -r requirements.txt
 mkdir -p staticfiles
 
 # Collect static files
-python manage.py collectstatic --no-input
+python manage.py collectstatic --noinput
 
-# Run migrations
+# Apply database migrations
 python manage.py migrate

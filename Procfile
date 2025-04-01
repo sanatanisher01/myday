@@ -1,1 +1,1 @@
-web: gunicorn myday.wsgi:application
+web: gunicorn myday.wsgi --log-file -

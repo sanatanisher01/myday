@@ -5,25 +5,35 @@
 {% block title %}Gallery Management{% endblock %}
 
 {% block content %}
+<!-- Back to Dashboard Button -->
+<div class="container-fluid py-2">
+    <a href="{% url 'manager_dashboard' %}" class="back-to-dashboard">
+        <i class="fas fa-arrow-left"></i> Back to Dashboard
+    </a>
+</div>
+
 <div class="container-fluid py-4">
     <div class="row">
         <div class="col-12">
-            <div class="card mb-4">
+            <div class="card mb-4 manager-card">
                 <div class="card-header pb-0">
                     <div class="d-flex justify-content-between align-items-center">
                         <h6>Gallery Management</h6>
                         {% if subevent %}
-                            <span class="badge bg-primary">{{ subevent.name }}</span>
+                            <span class="badge bg-primary manager-badge">{{ subevent.name }}</span>
                         {% endif %}
                     </div>
                 </div>
                 <div class="card-body px-0 pt-0 pb-2">
                     <!-- Filter by subevent -->
-                    <div class="p-4">
+                    <div class="p-4 filter-section">
                         <form method="get" action="{% url 'manager_gallery' %}">
-                            <div class="row">
+                            <div class="row align-items-center">
                                 <div class="col-md-8">
-                                    <select name="subevent_id" class="form-select" onchange="this.form.submit()">
+                                    <label for="subevent-select" class="form-label">
+                                        <i class="fas fa-filter me-2"></i>Filter by Subevent:
+                                    </label>
+                                    <select id="subevent-select" name="subevent_id" class="form-select enhanced" onchange="this.form.submit()">
                                         <option value="">All Subevents</option>
                                         {% for se in subevents %}
                                             <option value="{{ se.id }}" {% if subevent.id == se.id %}selected{% endif %}>
@@ -31,9 +41,14 @@
                                             </option>
                                         {% endfor %}
                                     </select>
+                                    <small class="text-muted mt-2 d-block">
+                                        <i class="fas fa-info-circle me-1"></i>Select a subevent to filter gallery items
+                                    </small>
                                 </div>
                                 <div class="col-md-4">
-                                    <button type="submit" class="btn btn-primary">Filter</button>
+                                    <button type="submit" class="btn btn-primary mt-4">
+                                        <i class="fas fa-search me-2"></i>Apply Filter
+                                    </button>
                                 </div>
                             </div>
                         </form>
@@ -41,17 +56,29 @@
 
                     <!-- Add New Gallery Item Form -->
                     <div class="p-4 border-top">
-                        <h5>Add New Gallery Item</h5>
-                        <form method="post" enctype="multipart/form-data">
+                        <h5 class="mb-3">
+                            <i class="fas fa-plus-circle me-2"></i>Add New Gallery Item
+                        </h5>
+                        <form method="post" enctype="multipart/form-data" class="row g-3">
                             {% csrf_token %}
                             <input type="hidden" name="create_gallery_item" value="1">
-                            {% crispy form %}
+                            
+                            <div class="col-md-12 mb-3">
+                                <div class="card bg-light border-0 p-3">
+                                    <div class="card-body">
+                                        <h6 class="card-subtitle mb-3 text-muted">
+                                            <i class="fas fa-image me-2"></i>Gallery Item Details
+                                        </h6>
+                                        {% crispy form %}
+                                    </div>
+                                </div>
+                            </div>
                         </form>
                     </div>
 
                     <!-- Gallery Items List -->
                     <div class="table-responsive p-0">
-                        <table class="table align-items-center mb-0">
+                        <table class="table align-items-center mb-0 manager-table">
                             <thead>
                                 <tr>
                                     <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Image</th>
@@ -67,9 +94,13 @@
                                 <tr>
                                     <td>
                                         <div class="d-flex px-2 py-1">
-                                            <div>
-                                                <img src="{{ item.image.url }}" class="img-thumbnail" style="width: 200px; height: 300px; object-fit: cover;" alt="{{ item.caption }}">
-                                            </div>
+                                            {% if item.image %}
+                                                <img src="{{ item.image.url }}" class="avatar avatar-sm me-3" alt="{{ item.caption }}">
+                                            {% else %}
+                                                <div class="avatar avatar-sm me-3 bg-gradient-primary">
+                                                    <i class="fas fa-image text-white"></i>
+                                                </div>
+                                            {% endif %}
                                         </div>
                                     </td>
                                     <td>
@@ -86,11 +117,11 @@
                                         <span class="text-secondary text-xs font-weight-bold">{{ item.created_at|date:"d M Y" }}</span>
                                     </td>
                                     <td class="align-middle">
-                                        <button type="button" class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#editModal{{ item.id }}">
-                                            Edit
+                                        <button type="button" class="btn btn-link text-secondary mb-0" data-bs-toggle="modal" data-bs-target="#editModal{{ item.id }}">
+                                            <i class="fas fa-edit text-xs"></i>
                                         </button>
-                                        <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ item.id }}">
-                                            Delete
+                                        <button type="button" class="btn btn-link text-danger mb-0" data-bs-toggle="modal" data-bs-target="#deleteModal{{ item.id }}">
+                                            <i class="fas fa-trash text-xs"></i>
                                         </button>
                                     </td>
                                 </tr>
@@ -126,7 +157,13 @@
                                                     </div>
                                                     
                                                     <div class="mb-3">
-                                                        <img src="{{ item.image.url }}" class="img-thumbnail" style="max-height: 100px;" alt="{{ item.caption }}">
+                                                        {% if item.image %}
+                                                            <img src="{{ item.image.url }}" class="img-thumbnail" style="max-height: 100px;" alt="{{ item.caption }}">
+                                                        {% else %}
+                                                            <div class="avatar avatar-sm me-3 bg-gradient-primary">
+                                                                <i class="fas fa-image text-white"></i>
+                                                            </div>
+                                                        {% endif %}
                                                     </div>
                                                     
                                                     <button type="submit" class="btn btn-primary">Save changes</button>
@@ -146,7 +183,13 @@
                                             </div>
                                             <div class="modal-body">
                                                 <p>Are you sure you want to delete this gallery item?</p>
-                                                <img src="{{ item.image.url }}" class="img-thumbnail" style="max-height: 100px;" alt="{{ item.caption }}">
+                                                {% if item.image %}
+                                                    <img src="{{ item.image.url }}" class="img-thumbnail" style="max-height: 100px;" alt="{{ item.caption }}">
+                                                {% else %}
+                                                    <div class="avatar avatar-sm me-3 bg-gradient-primary">
+                                                        <i class="fas fa-image text-white"></i>
+                                                    </div>
+                                                {% endif %}
                                             </div>
                                             <div class="modal-footer">
                                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>

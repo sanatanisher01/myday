@@ -27,15 +27,25 @@
                 <div class="card shadow-sm">
                     <div class="card-header bg-white">
                         <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">All Messages</h5>
+                            <h5 class="mb-0">All Messages {% if unread_count > 0 %}<span class="badge bg-danger ms-2">{{ unread_count }} unread</span>{% endif %}</h5>
                             <div class="filters">
-                                <button class="btn btn-outline-primary btn-sm me-2" onclick="filterMessages('all')">All</button>
-                                <button class="btn btn-outline-danger btn-sm me-2" onclick="filterMessages('unread')">Unread</button>
-                                <button class="btn btn-outline-success btn-sm" onclick="filterMessages('read')">Read</button>
+                                <a href="{% url 'manager_contacts' %}?filter=all" class="btn btn-outline-primary btn-sm me-2 {% if active_filter == 'all' or not active_filter %}active{% endif %}">All</a>
+                                <a href="{% url 'manager_contacts' %}?filter=unread" class="btn btn-outline-danger btn-sm me-2 {% if active_filter == 'unread' %}active{% endif %}">Unread</a>
+                                <a href="{% url 'manager_contacts' %}?filter=read" class="btn btn-outline-success btn-sm {% if active_filter == 'read' %}active{% endif %}">Read</a>
                             </div>
                         </div>
                     </div>
                     <div class="card-body p-0">
+                        {% if unread_count > 0 %}
+                        <div class="p-3 bg-light border-bottom">
+                            <form method="post" class="text-end">
+                                {% csrf_token %}
+                                <button type="submit" name="mark_all_read" class="btn btn-success btn-sm">
+                                    <i class="fas fa-check-double me-1"></i> Mark All as Read
+                                </button>
+                            </form>
+                        </div>
+                        {% endif %}
                         <div class="table-responsive">
                             <table class="table table-hover align-middle mb-0">
                                 <thead>
@@ -153,21 +163,26 @@
 
 {% block extra_js %}
 <script>
-    function filterMessages(filter) {
-        const rows = document.querySelectorAll('.message-row');
-        
-        rows.forEach(row => {
-            if (filter === 'all') {
-                row.style.display = '';
-            } else if (filter === 'read' && row.classList.contains('read')) {
-                row.style.display = '';
-            } else if (filter === 'unread' && row.classList.contains('unread')) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize animations
+        AOS.init({
+            duration: 800,
+            easing: 'ease-in-out',
+            once: true
         });
-    }
+        
+        // Add hover effect to message rows
+        const messageRows = document.querySelectorAll('.message-row');
+        messageRows.forEach(row => {
+            row.addEventListener('mouseenter', function() {
+                this.classList.add('bg-light');
+            });
+            
+            row.addEventListener('mouseleave', function() {
+                this.classList.remove('bg-light');
+            });
+        });
+    });
 </script>
 {% endblock %}
 

@@ -442,7 +442,7 @@
                         {% else %}
                         <img src="https://images.unsplash.com/photo-1505236858219-8359eb29e329?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" class="card-img-top" alt="{{ subevent.name }}">
                         {% endif %}
-                        <div class="price-tag">${{ subevent.price }}</div>
+                        <div class="price-tag">₹{{ subevent.price }}</div>
                     </div>
                     <div class="card-body">
                         <h3 class="card-title">{{ subevent.name }}</h3>
@@ -656,7 +656,7 @@
                         <label for="subevent_select" class="form-label">Select Service</label>
                         <select class="form-select" id="subevent_select" name="subevent">
                             {% for subevent in subevents %}
-                                <option value="{{ subevent.id }}" data-price="{{ subevent.price }}">{{ subevent.name }} - ${{ subevent.price }}</option>
+                                <option value="{{ subevent.id }}" data-price="{{ subevent.price }}">{{ subevent.name }} - ₹{{ subevent.price }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -678,16 +678,16 @@
                                 <h6>Price Summary:</h6>
                                 <div class="d-flex justify-content-between">
                                     <span>Service Fee:</span>
-                                    <span id="service_price">$0.00</span>
+                                    <span id="service_price">₹0.00</span>
                                 </div>
                                 <div class="d-flex justify-content-between">
                                     <span>Tax (10%):</span>
-                                    <span id="tax_amount">$0.00</span>
+                                    <span id="tax_amount">₹0.00</span>
                                 </div>
                                 <hr>
                                 <div class="d-flex justify-content-between fw-bold">
                                     <span>Total:</span>
-                                    <span id="total_amount">$0.00</span>
+                                    <span id="total_amount">₹0.00</span>
                                 </div>
                             </div>
                         </div>
@@ -812,8 +812,8 @@
                 if (selectedOption && selectedOption.value) {
                     const price = selectedOption.dataset.price;
                     if (price) {
-                        priceDisplay.textContent = '$' + price;
-                        totalDisplay.textContent = '$' + price;
+                        priceDisplay.textContent = '₹' + price;
+                        totalDisplay.textContent = '₹' + price;
                     }
                 }
             }

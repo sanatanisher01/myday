@@ -63,10 +63,12 @@ class BookingForm(forms.ModelForm):
     """Form for creating bookings"""
     class Meta:
         model = Booking
-        fields = ['booking_date', 'booking_time', 'notes']
+        fields = ['booking_date', 'booking_time', 'address', 'mobile_number', 'notes']
         widgets = {
             'booking_date': forms.DateInput(attrs={'type': 'date'}),
             'booking_time': forms.TimeInput(attrs={'type': 'time'}),
+            'address': forms.TextInput(attrs={'placeholder': 'Enter your full address', 'class': 'form-control'}),
+            'mobile_number': forms.TextInput(attrs={'placeholder': 'Enter your mobile number', 'class': 'form-control'}),
             'notes': forms.Textarea(attrs={'rows': 3}),
         }
         
@@ -80,6 +82,8 @@ class BookingForm(forms.ModelForm):
                 Column('booking_time', css_class='form-group col-md-6'),
                 css_class='form-row'
             ),
+            'address',
+            'mobile_number',
             'notes',
             Submit('submit', 'Book Now', css_class='btn-primary mt-3')
         )
@@ -139,21 +143,34 @@ class SubEventCategoryForm(forms.ModelForm):
     """Form for creating and updating subevent categories"""
     class Meta:
         model = SubEventCategory
-        fields = ['name', 'description', 'image', 'price', 'is_active', 'order']
+        fields = ['name', 'description', 'image', 'price', 'is_active', 'order', 'subevent']
         widgets = {
             'description': forms.Textarea(attrs={'rows': 3}),
         }
+    
+    def __init__(self, *args, **kwargs):
+        subevent_id = kwargs.pop('subevent_id', None)
+        super().__init__(*args, **kwargs)
+        
+        # If a specific subevent_id is provided, filter the subevent field
+        if subevent_id:
+            self.fields['subevent'].initial = subevent_id
+            self.fields['subevent'].widget = forms.HiddenInput()
+        else:
+            # Otherwise, show all subevents in a dropdown
+            self.fields['subevent'].queryset = SubEvent.objects.all().order_by('event__name', 'name')
+            self.fields['subevent'].label_from_instance = lambda obj: f"{obj.event.name} - {obj.name}"
 
 
 class UserMessageForm(forms.ModelForm):
     """Form for sending messages to users"""
     class Meta:
         model = UserMessage
-        fields = ['user', 'subject', 'message', 'message_type']
+        fields = ['user', 'subject', 'message', 'message_type', 'section']
         widgets = {
             'message': forms.Textarea(attrs={'rows': 5}),
         }
-    
+        
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Only show regular users (not staff or superusers)

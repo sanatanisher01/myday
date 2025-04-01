@@ -47,37 +47,64 @@
                 <div class="card shadow-sm">
                     <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
                         <h5 class="mb-0">My Messages</h5>
-                        <div class="message-filters">
+                        <div class="message-filters d-flex align-items-center">
+                            <div class="section-filter me-3">
+                                <select id="sectionFilter" class="form-select form-select-sm">
+                                    <option value="all">All Sections</option>
+                                    <option value="general">General</option>
+                                    <option value="bookings">Bookings</option>
+                                    <option value="events">Events</option>
+                                    <option value="gallery">Gallery</option>
+                                    <option value="categories">Categories</option>
+                                    <option value="support">Support</option>
+                                </select>
+                            </div>
                             <div class="btn-group" role="group">
-                                <button type="button" class="btn btn-sm btn-outline-primary active filter-btn" data-filter="all">All</button>
-                                <button type="button" class="btn btn-sm btn-outline-primary filter-btn" data-filter="unread">Unread</button>
-                                <button type="button" class="btn btn-sm btn-outline-primary filter-btn" data-filter="read">Read</button>
+                                <a href="{% url 'user_messages' %}?filter=all" class="btn btn-sm btn-outline-primary {% if active_filter == 'all' or not active_filter %}active{% endif %} filter-btn">All</a>
+                                <a href="{% url 'user_messages' %}?filter=received" class="btn btn-sm btn-outline-primary {% if active_filter == 'received' %}active{% endif %} filter-btn">Received</a>
+                                <a href="{% url 'user_messages' %}?filter=sent" class="btn btn-sm btn-outline-primary {% if active_filter == 'sent' %}active{% endif %} filter-btn">Sent</a>
+                                <a href="{% url 'user_messages' %}?filter=unread" class="btn btn-sm btn-outline-primary {% if active_filter == 'unread' %}active{% endif %} filter-btn">Unread 
+                                    {% if unread_count > 0 %}<span class="badge rounded-pill bg-danger">{{ unread_count }}</span>{% endif %}
+                                </a>
+                                <a href="{% url 'user_messages' %}?filter=read" class="btn btn-sm btn-outline-primary {% if active_filter == 'read' %}active{% endif %} filter-btn">Read</a>
                             </div>
                         </div>
                     </div>
                     <div class="card-body p-0">
                         <div class="list-group list-group-flush" id="messagesList">
                             {% for message in user_messages %}
-                            <div class="list-group-item message-item {% if not message.is_read %}unread-message{% else %}read-message{% endif %}" data-aos="fade-up" data-aos-delay="{{ forloop.counter|add:100 }}">
+                            <div class="list-group-item message-item {% if message.user == request.user and message.created_by != request.user %}message-received{% if not message.is_read %} unread-message{% endif %}{% else %}message-sent{% endif %}" data-aos="fade-up" data-aos-delay="{{ forloop.counter|add:100 }}">
                                 <div class="d-flex w-100 justify-content-between align-items-center">
                                     <h5 class="mb-1">
-                                        {% if not message.is_read %}
+                                        {% if not message.is_read and message.user == request.user %}
                                         <span class="badge bg-danger rounded-pill me-2">New</span>
                                         {% endif %}
                                         <span class="badge bg-{{ message.message_type }} me-2">{{ message.get_message_type_display }}</span>
+                                        {% if message.user == request.user and message.created_by != request.user %}
+                                        <span class="badge-message-received me-2">Received</span>
+                                        {% else %}
+                                        <span class="badge-message-sent me-2">Sent</span>
+                                        {% endif %}
+                                        <span class="badge-section badge-section-{{ message.section }} me-2">{{ message.get_section_display }}</span>
                                         {{ message.subject }}
                                     </h5>
                                     <small class="text-muted"><i class="far fa-clock me-1"></i>{{ message.created_at|date:"M d, Y" }}</small>
                                 </div>
                                 <p class="mb-1 message-preview">{{ message.message|truncatechars:150 }}</p>
                                 <div class="d-flex justify-content-between align-items-center mt-2">
+                                    {% if message.user == request.user and message.created_by != request.user %}
                                     <small class="text-muted"><i class="far fa-user me-1"></i>From: {{ message.created_by.get_full_name|default:message.created_by.username }}</small>
+                                    <small class="text-muted"><i class="far fa-envelope me-1"></i>Received</small>
+                                    {% else %}
+                                    <small class="text-muted"><i class="far fa-user me-1"></i>To: {{ message.user.get_full_name|default:message.user.username }}</small>
+                                    <small class="text-muted"><i class="far fa-paper-plane me-1"></i>Sent</small>
+                                    {% endif %}
                                     <div>
                                         <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#messageModal{{ message.id }}">
                                             <i class="far fa-eye me-1"></i> Read Full Message
                                         </button>
                                         {% if not message.is_read %}
-                                        <a href="{% url 'mark_message_read' message.id %}" class="btn btn-sm btn-outline-success ms-1">
+                                        <a href="{% url 'mark_message_read' message.id %}?next={{ request.get_full_path|urlencode }}" class="btn btn-sm btn-outline-success ms-1">
                                             <i class="far fa-check-circle me-1"></i> Mark as Read
                                         </a>
                                         {% endif %}
@@ -86,32 +113,60 @@
                             </div>
                             
                             <!-- Message Modal -->
-                            <div class="modal fade" id="messageModal{{ message.id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal fade" id="messageModal{{ message.id }}" tabindex="-1" aria-labelledby="messageModalLabel{{ message.id }}" aria-hidden="true">
                                 <div class="modal-dialog modal-dialog-centered">
-                                    <div class="modal-content border-0 shadow">
-                                        <div class="modal-header bg-{{ message.message_type }} text-white">
-                                            <h5 class="modal-title"><i class="fas fa-envelope me-2"></i>{{ message.subject }}</h5>
+                                    <div class="modal-content">
+                                        <div class="modal-header {% if message.user == request.user and message.created_by != request.user %}bg-primary{% else %}bg-success{% endif %} text-white">
+                                            <h5 class="modal-title" id="messageModalLabel{{ message.id }}">
+                                                <i class="fas {% if message.user == request.user and message.created_by != request.user %}fa-envelope{% else %}fa-paper-plane{% endif %} me-2"></i>
+                                                {{ message.subject }}
+                                            </h5>
                                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                                         </div>
                                         <div class="modal-body">
-                                            <div class="mb-3 p-2 bg-light rounded">
-                                                <div class="d-flex justify-content-between">
-                                                    <small class="text-muted">
-                                                        <i class="far fa-user me-1"></i> From: {{ message.created_by.get_full_name|default:message.created_by.username }}
-                                                    </small>
+                                            <div class="message-meta d-flex justify-content-between mb-3">
+                                                <div>
+                                                    <span class="badge bg-{{ message.message_type }} me-2">{{ message.get_message_type_display }}</span>
+                                                    <span class="badge-section badge-section-{{ message.section }}">{{ message.get_section_display }}</span>
+                                                    {% if message.user == request.user and message.created_by != request.user %}
+                                                    <span class="badge-message-received ms-2">Received</span>
+                                                    {% else %}
+                                                    <span class="badge-message-sent ms-2">Sent</span>
+                                                    {% endif %}
+                                                </div>
+                                                <div>
                                                     <small class="text-muted">
                                                         <i class="far fa-calendar-alt me-1"></i> {{ message.created_at|date:"F d, Y H:i" }}
                                                     </small>
                                                 </div>
                                             </div>
-                                            <div class="message-content p-2">
+                                            <div class="message-details mb-3">
+                                                {% if message.user == request.user and message.created_by != request.user %}
+                                                <p><strong>From:</strong> {{ message.created_by.get_full_name|default:message.created_by.username }}</p>
+                                                {% else %}
+                                                <p><strong>To:</strong> {{ message.user.get_full_name|default:message.user.username }}</p>
+                                                {% endif %}
+                                            </div>
+                                            <div class="message-content p-3 border rounded bg-light">
                                                 {{ message.message|linebreaks }}
                                             </div>
+                                            {% if message.user == request.user and message.created_by != request.user %}
+                                            <div class="message-status mt-3">
+                                                <small class="text-muted">
+                                                    <i class="far fa-eye me-1"></i> 
+                                                    {% if message.is_read %}
+                                                    Read on {{ message.updated_at|date:"F d, Y" }}
+                                                    {% else %}
+                                                    Not read yet
+                                                    {% endif %}
+                                                </small>
+                                            </div>
+                                            {% endif %}
                                         </div>
                                         <div class="modal-footer">
-                                            {% if not message.is_read %}
-                                            <a href="{% url 'mark_message_read' message.id %}" class="btn btn-success">
-                                                <i class="far fa-check-circle me-1"></i> Mark as Read
+                                            {% if message.user == request.user and message.created_by != request.user and not message.is_read %}
+                                            <a href="{% url 'mark_message_read' message.id %}?next=user_messages" class="btn btn-success read-message-btn" data-message-id="{{ message.id }}">
+                                                <i class="fas fa-check me-1"></i> Mark as Read
                                             </a>
                                             {% endif %}
                                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -157,82 +212,102 @@
         color: white;
         border-color: var(--primary-color);
     }
+    
+    .badge-section {
+        font-size: 0.8rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: 0.2rem;
+    }
+    
+    .badge-section-announcement {
+        background-color: #ff9800;
+    }
+    
+    .badge-section-event {
+        background-color: #2196f3;
+    }
+    
+    .badge-section-notification {
+        background-color: #4caf50;
+    }
+    
+    .message-received {
+        background-color: #f7f7f7;
+    }
+    
+    .message-sent {
+        background-color: #dff0d8;
+    }
+    
+    .badge-message-received {
+        background-color: #4caf50;
+        color: white;
+        padding: 0.2rem 0.5rem;
+        border-radius: 0.2rem;
+    }
+    
+    .badge-message-sent {
+        background-color: #2196f3;
+        color: white;
+        padding: 0.2rem 0.5rem;
+        border-radius: 0.2rem;
+    }
 </style>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialize AOS animations
-        if (typeof AOS !== 'undefined') {
-            AOS.init({
-                duration: 800,
-                easing: 'ease',
-                once: true
-            });
-        }
-        
-        // Fix for stuck modal backdrop
-        if (document.querySelector('.modal-backdrop')) {
-            document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
-                backdrop.remove();
-            });
-            document.body.classList.remove('modal-open');
-            document.body.style.overflow = '';
-            document.body.style.paddingRight = '';
-        }
-        
-        // Message filtering
-        const filterButtons = document.querySelectorAll('.filter-btn');
+        // Initialize AOS
+        AOS.init({
+            duration: 800,
+            easing: 'ease-in-out',
+            once: true
+        });
+
+        // Section filter functionality
+        const sectionFilter = document.getElementById('sectionFilter');
         const messageItems = document.querySelectorAll('.message-item');
-        
-        filterButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                // Remove active class from all buttons
-                filterButtons.forEach(btn => btn.classList.remove('active'));
+
+        if (sectionFilter) {
+            sectionFilter.addEventListener('change', function() {
+                const selectedSection = this.value;
                 
-                // Add active class to clicked button
-                this.classList.add('active');
-                
-                const filter = this.getAttribute('data-filter');
-                
-                // Show/hide messages based on filter
                 messageItems.forEach(item => {
-                    if (filter === 'all') {
-                        item.style.display = 'block';
-                    } else if (filter === 'unread' && item.classList.contains('unread-message')) {
-                        item.style.display = 'block';
-                    } else if (filter === 'read' && !item.classList.contains('unread-message')) {
-                        item.style.display = 'block';
+                    const messageSectionBadge = item.querySelector('.badge-section');
+                    
+                    if (selectedSection === 'all' || (messageSectionBadge && messageSectionBadge.classList.contains('badge-section-' + selectedSection))) {
+                        item.style.display = '';
                     } else {
                         item.style.display = 'none';
                     }
                 });
             });
-        });
-        
-        // Auto-mark as read when opening modal
+        }
+
+        // Auto-mark messages as read when opened in modal
         const messageModals = document.querySelectorAll('.modal');
         messageModals.forEach(modal => {
             modal.addEventListener('shown.bs.modal', function() {
                 const messageId = this.id.replace('messageModal', '');
-                const readButton = this.querySelector('a[href*="mark_message_read"]');
+                const readButton = this.querySelector('.btn-success');
                 
                 if (readButton) {
-                    // After 2 seconds, mark as read automatically
+                    // Simulate a click on the "Mark as Read" button when modal is opened
                     setTimeout(() => {
                         readButton.click();
-                    }, 2000);
+                    }, 1000);
                 }
             });
+        });
+        
+        // Add hover effect to message items
+        const messageItemsHover = document.querySelectorAll('.message-item');
+        messageItemsHover.forEach(item => {
+            item.addEventListener('mouseenter', function() {
+                this.classList.add('shadow-sm');
+            });
             
-            // Ensure proper cleanup when modal is hidden
-            modal.addEventListener('hidden.bs.modal', function() {
-                // Remove any lingering backdrops
-                document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
-                    backdrop.remove();
-                });
-                document.body.classList.remove('modal-open');
-                document.body.style.overflow = '';
-                document.body.style.paddingRight = '';
+            item.addEventListener('mouseleave', function() {
+                this.classList.remove('shadow-sm');
             });
         });
     });

@@ -9,9 +9,9 @@
     <div class="row">
         <!-- Sidebar -->
         <div class="col-lg-3 col-md-4 sidebar py-4 px-0">
-            <div class="sticky-top pt-3">
+            <div class="sidebar-enhanced sticky-top pt-3">
                 <div class="text-center mb-4">
-                    <div class="avatar mx-auto mb-3">
+                    <div class="avatar avatar-xl mx-auto mb-3">
                         {% if user.profile.profile_picture %}
                             <img src="{{ user.profile.profile_picture.url }}" alt="{{ user.username }}" class="rounded-circle img-fluid">
                         {% else %}
@@ -20,30 +20,30 @@
                             </div>
                         {% endif %}
                     </div>
-                    <h4>{{ user.get_full_name|default:user.username }}</h4>
-                    <p class="text-muted">Member since {{ user.date_joined|date:"M Y" }}</p>
+                    <h4 class="slide-up">{{ user.get_full_name|default:user.username }}</h4>
+                    <p class="text-muted slide-up" style="animation-delay: 0.2s;">Member since {{ user.date_joined|date:"M Y" }}</p>
                 </div>
                 
                 <div class="nav flex-column">
-                    <a href="{% url 'user_dashboard' %}" class="sidebar-link mb-2 {% if request.path == '/dashboard/' %}active{% endif %}">
+                    <a href="{% url 'user_dashboard' %}" class="sidebar-link mb-2 {% if request.path == '/dashboard/' %}active{% endif %} slide-left" style="animation-delay: 0.1s;">
                         <i class="fas fa-home"></i> Dashboard
                     </a>
-                    <a href="{% url 'user_bookings' %}" class="sidebar-link mb-2 {% if '/dashboard/bookings/' in request.path %}active{% endif %}">
+                    <a href="{% url 'user_bookings' %}" class="sidebar-link mb-2 {% if '/dashboard/bookings/' in request.path %}active{% endif %} slide-left" style="animation-delay: 0.2s;">
                         <i class="fas fa-calendar-alt"></i> My Bookings
                     </a>
-                    <a href="{% url 'user_messages' %}" class="sidebar-link mb-2 {% if '/dashboard/messages/' in request.path %}active{% endif %}">
+                    <a href="{% url 'user_messages' %}" class="sidebar-link mb-2 {% if '/dashboard/messages/' in request.path %}active{% endif %} slide-left" style="animation-delay: 0.3s;">
                         <i class="fas fa-envelope"></i> Messages
                         {% if unread_count %}
-                        <span class="badge bg-danger rounded-pill ms-1">{{ unread_count }}</span>
+                        <span class="badge bg-danger rounded-pill ms-1 pulse">{{ unread_count }}</span>
                         {% endif %}
                     </a>
-                    <a href="{% url 'user_profile' %}" class="sidebar-link mb-2 {% if '/dashboard/profile/' in request.path %}active{% endif %}">
+                    <a href="{% url 'user_profile' %}" class="sidebar-link mb-2 {% if '/dashboard/profile/' in request.path %}active{% endif %} slide-left" style="animation-delay: 0.4s;">
                         <i class="fas fa-user"></i> Profile
                     </a>
-                    <a href="{% url 'user_settings' %}" class="sidebar-link mb-2 {% if '/dashboard/settings/' in request.path %}active{% endif %}">
+                    <a href="{% url 'user_settings' %}" class="sidebar-link mb-2 {% if '/dashboard/settings/' in request.path %}active{% endif %} slide-left" style="animation-delay: 0.5s;">
                         <i class="fas fa-cog"></i> Settings
                     </a>
-                    <a href="{% url 'logout' %}" class="sidebar-link mb-2 text-danger">
+                    <a href="{% url 'logout' %}" class="sidebar-link mb-2 text-danger slide-left" style="animation-delay: 0.6s;">
                         <i class="fas fa-sign-out-alt"></i> Logout
                     </a>
                 </div>
@@ -54,27 +54,75 @@
         <div class="col-lg-9 col-md-8 py-4">
             <div class="row">
                 <div class="col-md-12 mb-4">
-                    <div class="welcome-card bg-primary text-white rounded p-4">
-                        <h2>Welcome back, {{ user.first_name|default:user.username }}!</h2>
-                        <p>Here's what's happening with your MyDay events.</p>
+                    <div class="welcome-card neumorphic p-4 gsap-reveal">
+                        <div class="welcome-card-content">
+                            <h2>Welcome back, {{ user.first_name|default:user.username }}!</h2>
+                            <p>Here's what's happening with your MyDay events.</p>
+                            <div class="welcome-card-decoration"></div>
+                        </div>
                     </div>
                 </div>
             </div>
             
             <div class="row">
+                <!-- Stats Overview -->
+                <div class="col-md-12 mb-4">
+                    <div class="row">
+                        <div class="col-xl-3 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="100">
+                            <div class="stat-card primary">
+                                <div class="stat-icon">
+                                    <i class="fas fa-calendar-check"></i>
+                                </div>
+                                <div class="stat-value">{{ total_bookings|default:"0" }}</div>
+                                <div class="stat-label">Total Bookings</div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-xl-3 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="200">
+                            <div class="stat-card success">
+                                <div class="stat-icon">
+                                    <i class="fas fa-calendar-alt"></i>
+                                </div>
+                                <div class="stat-value">{{ upcoming_count|default:"0" }}</div>
+                                <div class="stat-label">Upcoming Events</div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-xl-3 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="300">
+                            <div class="stat-card warning">
+                                <div class="stat-icon">
+                                    <i class="fas fa-envelope"></i>
+                                </div>
+                                <div class="stat-value">{{ unread_count|default:"0" }}</div>
+                                <div class="stat-label">Unread Messages</div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-xl-3 col-md-6 mb-4" data-aos="fade-up" data-aos-delay="400">
+                            <div class="stat-card info">
+                                <div class="stat-icon">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                                <div class="stat-value">{{ completed_count|default:"0" }}</div>
+                                <div class="stat-label">Completed Events</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- Upcoming Bookings -->
-                <div class="col-md-6 mb-4">
-                    <div class="card h-100">
+                <div class="col-md-6 mb-4" data-aos="fade-up" data-aos-delay="100">
+                    <div class="card enhanced-card h-100">
                         <div class="card-header bg-primary text-white">
-                            <h5 class="mb-0">Upcoming Bookings</h5>
+                            <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i> Upcoming Bookings</h5>
                         </div>
                         <div class="card-body">
                             {% if upcoming_bookings %}
                                 {% for booking in upcoming_bookings %}
-                                <div class="booking-item mb-3 pb-3 {% if not forloop.last %}border-bottom{% endif %}">
+                                <div class="booking-item mb-3 pb-3 {% if not forloop.last %}border-bottom{% endif %}" data-aos="fade-right" data-aos-delay="{{ forloop.counter|add:100 }}">
                                     <div class="d-flex justify-content-between">
                                         <h6 class="mb-1">{{ booking.subevent.name }}</h6>
-                                        <span class="badge bg-{{ booking.status }}">{{ booking.get_status_display }}</span>
+                                        <span class="badge badge-enhanced bg-{{ booking.status }} float">{{ booking.get_status_display }}</span>
                                     </div>
                                     <p class="text-muted mb-1">
                                         <i class="far fa-calendar-alt me-1"></i> {{ booking.booking_date|date:"M d, Y" }} at {{ booking.booking_time|time:"g:i A" }}
@@ -85,50 +133,96 @@
                                 </div>
                                 {% endfor %}
                                 <div class="text-end mt-3">
-                                    <a href="{% url 'user_bookings' %}" class="btn btn-sm btn-outline-primary">View All Bookings</a>
+                                    <a href="{% url 'user_bookings' %}" class="btn btn-enhanced btn-sm btn-outline-primary">View All Bookings</a>
                                 </div>
                             {% else %}
                                 <div class="text-center py-4">
-                                    <i class="far fa-calendar-check fa-3x text-muted mb-3"></i>
-                                    <p>No upcoming bookings.</p>
-                                    <a href="{% url 'event_list' %}" class="btn btn-sm btn-primary">Browse Events</a>
+                                    <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                                    <p>You don't have any upcoming bookings.</p>
+                                    <a href="{% url 'event_list' %}" class="btn btn-enhanced btn-gradient-primary">Browse Events</a>
                                 </div>
                             {% endif %}
                         </div>
                     </div>
                 </div>
                 
-                <!-- Messages -->
-                <div class="col-md-6 mb-4">
-                    <div class="card h-100">
-                        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">Recent Messages</h5>
-                            {% if unread_count %}
-                            <span class="badge bg-danger">{{ unread_count }} unread</span>
-                            {% endif %}
+                <!-- Recent Messages -->
+                <div class="col-md-6 mb-4" data-aos="fade-up" data-aos-delay="200">
+                    <div class="card enhanced-card h-100">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="fas fa-envelope me-2"></i> Recent Messages</h5>
                         </div>
                         <div class="card-body">
                             {% if user_messages %}
                                 {% for message in user_messages %}
-                                <div class="message-item mb-3 pb-3 {% if not forloop.last %}border-bottom{% endif %}">
+                                <div class="message-item mb-3 pb-3 {% if not forloop.last %}border-bottom{% endif %}" data-aos="fade-left" data-aos-delay="{{ forloop.counter|add:100 }}">
                                     <div class="d-flex justify-content-between">
-                                        <h6 class="mb-1">
-                                            {% if not message.is_read %}<span class="badge bg-danger me-1">New</span>{% endif %}
-                                            {{ message.subject }}
-                                        </h6>
-                                        <span class="badge bg-{{ message.message_type }}">{{ message.get_message_type_display }}</span>
+                                        <h6 class="mb-1">{{ message.subject }}</h6>
+                                        <div>
+                                            {% if message.user == request.user and message.created_by != request.user %}
+                                                <!-- Received message -->
+                                                {% if not message.is_read %}
+                                                    <span class="badge badge-enhanced bg-danger">New</span>
+                                                {% endif %}
+                                                <span class="badge badge-enhanced bg-primary ms-1">Received</span>
+                                            {% else %}
+                                                <!-- Sent message -->
+                                                <span class="badge badge-enhanced bg-success ms-1">Sent</span>
+                                            {% endif %}
+                                            <span class="badge-section badge-section-{{ message.section }}">{{ message.get_section_display }}</span>
+                                        </div>
                                     </div>
-                                    <p class="text-muted small mb-1">{{ message.created_at|date:"M d, Y" }}</p>
-                                    <p class="mb-0">{{ message.message|truncatechars:80 }}</p>
+                                    <p class="text-muted mb-1">
+                                        <i class="far fa-clock me-1"></i> {{ message.created_at|date:"M d, Y" }}
+                                        {% if message.user == request.user and message.created_by != request.user %}
+                                            <span class="text-muted ms-2"><i class="far fa-user me-1"></i>From: {{ message.created_by.get_full_name|default:message.created_by.username }}</span>
+                                        {% else %}
+                                            <span class="text-muted ms-2"><i class="far fa-user me-1"></i>To: {{ message.user.get_full_name|default:message.user.username }}</span>
+                                        {% endif %}
+                                    </p>
+                                    <p class="message-preview mb-0">{{ message.message|truncatechars:60 }}</p>
                                 </div>
                                 {% endfor %}
                                 <div class="text-end mt-3">
-                                    <a href="{% url 'user_messages' %}" class="btn btn-sm btn-outline-primary">View All Messages</a>
+                                    <a href="{% url 'user_messages' %}" class="btn btn-enhanced btn-sm btn-outline-primary">View All Messages</a>
                                 </div>
                             {% else %}
                                 <div class="text-center py-4">
-                                    <i class="far fa-envelope fa-3x text-muted mb-3"></i>
-                                    <p>No messages yet.</p>
+                                    <i class="fas fa-envelope-open fa-3x text-muted mb-3"></i>
+                                    <p>You don't have any messages yet.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Activity Timeline -->
+            <div class="row">
+                <div class="col-md-12 mb-4" data-aos="fade-up" data-aos-delay="300">
+                    <div class="card enhanced-card">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="fas fa-history me-2"></i> Recent Activity</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if activities %}
+                                <div class="timeline">
+                                    {% for activity in activities %}
+                                    <div class="timeline-item" data-aos="fade-up" data-aos-delay="{{ forloop.counter|add:100 }}">
+                                        <div class="d-flex">
+                                            <div class="flex-grow-1">
+                                                <h6 class="mb-1">{{ activity.title }}</h6>
+                                                <p class="text-muted mb-0">{{ activity.description }}</p>
+                                                <small class="text-muted">{{ activity.timestamp|date:"M d, Y" }} at {{ activity.timestamp|time:"g:i A" }}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="text-center py-4">
+                                    <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                                    <p>No recent activity to show.</p>
                                 </div>
                             {% endif %}
                         </div>
@@ -140,7 +234,7 @@
 </div>
 
 <!-- Review Modal -->
-<div class="modal fade" id="reviewModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade modal-enhanced" id="reviewModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
@@ -148,91 +242,77 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form method="post" action="{% url 'add_review' event_id=1 %}" enctype="multipart/form-data">
+                <form id="reviewForm" method="post" action="{% url 'add_review' event_id=0 %}" enctype="multipart/form-data">
                     {% csrf_token %}
-                    <div class="mb-3">
-                        <label for="event_select" class="form-label">Select Event</label>
-                        <select class="form-select" id="event_select" name="event">
-                            {% for event in events %}
-                                <option value="{{ event.id }}">{{ event.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
+                    <input type="hidden" id="bookingId" name="booking_id" value="">
+                    <input type="hidden" id="eventId" name="event_id" value="">
+                    <input type="hidden" id="subeventId" name="subevent_id" value="">
+                    
                     <div class="mb-3">
                         <label for="rating" class="form-label">Rating</label>
-                        <div class="rating-input">
-                            <input type="range" class="form-range" min="1" max="5" step="1" id="rating" name="rating" value="5">
-                            <div class="rating-stars">
-                                <i class="fas fa-star text-warning"></i>
-                                <i class="fas fa-star text-warning"></i>
-                                <i class="fas fa-star text-warning"></i>
-                                <i class="fas fa-star text-warning"></i>
-                                <i class="fas fa-star text-warning"></i>
-                            </div>
+                        <div class="rating-stars mb-2">
+                            <i class="far fa-star" data-rating="1"></i>
+                            <i class="far fa-star" data-rating="2"></i>
+                            <i class="far fa-star" data-rating="3"></i>
+                            <i class="far fa-star" data-rating="4"></i>
+                            <i class="far fa-star" data-rating="5"></i>
                         </div>
+                        <input type="hidden" id="rating" name="rating" value="0">
                     </div>
+                    
                     <div class="mb-3">
-                        <label for="comment" class="form-label">Your Review</label>
-                        <textarea class="form-control" id="comment" name="comment" rows="3" required></textarea>
+                        <label for="reviewContent" class="form-label">Your Review</label>
+                        <textarea class="form-control" id="reviewContent" name="comment" rows="4" required></textarea>
                     </div>
+                    
                     <div class="mb-3">
-                        <label for="image" class="form-label">Add Image (Optional)</label>
-                        <input type="file" class="form-control" id="image" name="image">
+                        <label for="reviewImage" class="form-label">Add Photo (Optional)</label>
+                        <input type="file" class="form-control" id="reviewImage" name="image">
                     </div>
-                    <button type="submit" class="btn btn-primary w-100">Submit Review</button>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-enhanced btn-gradient-primary">Submit Review</button>
+                    </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
 
-{% block extra_css %}
-<style>
-    .notification-icon {
-        width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    .welcome-banner {
-        background: linear-gradient(135deg, #4A90E2 0%, #6A50A7 100%);
-    }
-    
-    .welcome-banner .card-body {
-        color: white;
-    }
-    
-    .welcome-banner .text-muted {
-        color: rgba(255, 255, 255, 0.8) !important;
-    }
-    
-    .welcome-banner .btn-primary {
-        background: white;
-        color: #4A90E2;
-        border: none;
-    }
-    
-    .welcome-banner .btn-primary:hover {
-        background: rgba(255, 255, 255, 0.9);
-    }
-</style>
-{% endblock %}
-
-{% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialize the notification bell animation
-        animateNotificationBell();
+        // Rating stars interaction
+        const ratingInput = document.getElementById('rating');
+        const ratingStars = document.querySelectorAll('.rating-stars i');
         
-        // Update review form action when event selection changes
-        const eventSelect = document.getElementById('event_select');
-        if (eventSelect) {
-            eventSelect.addEventListener('change', function() {
-                const reviewForm = this.closest('form');
-                reviewForm.action = "{% url 'add_review' event_id=0 %}".replace('0', this.value);
+        ratingStars.forEach(star => {
+            star.addEventListener('click', function() {
+                const value = parseInt(this.getAttribute('data-rating'));
+                ratingInput.value = value;
+                updateStars(value);
+            });
+            
+            star.addEventListener('mouseover', function() {
+                const value = parseInt(this.getAttribute('data-rating'));
+                updateStars(value, true);
+            });
+            
+            star.addEventListener('mouseout', function() {
+                const value = parseInt(ratingInput.value);
+                updateStars(value);
+            });
+        });
+        
+        function updateStars(value, hover = false) {
+            ratingStars.forEach(star => {
+                const starValue = parseInt(star.getAttribute('data-rating'));
+                if (starValue <= value) {
+                    star.classList.remove('far');
+                    star.classList.add('fas');
+                } else {
+                    star.classList.remove('fas');
+                    star.classList.add('far');
+                }
             });
         }
     });

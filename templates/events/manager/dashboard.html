@@ -9,78 +9,102 @@
         <div class="row mb-4">
             <div class="col-12">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h1 class="mb-0">Manager Dashboard</h1>
-                    <div>
-                        <a href="{% url 'home' %}" class="btn btn-outline-secondary">
+                    <h1 class="mb-0 text-gradient-primary animate-on-scroll" data-aos="fade-right">Manager Dashboard</h1>
+                    <div data-aos="fade-left">
+                        <a href="{% url 'home' %}" class="btn btn-modern btn-outline-secondary">
                             <i class="fas fa-home"></i> Website Home
                         </a>
                     </div>
                 </div>
-                <hr>
+                <hr class="gradient-line">
             </div>
         </div>
         
         <!-- Stats Cards -->
         <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="card shadow-sm border-primary h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
+            <div class="col-md-3" data-aos="fade-up" data-aos-delay="100">
+                <div class="card modern-card stats-card tilt-card h-100">
+                    <div class="card-body position-relative overflow-hidden">
+                        <div class="card-bg-icon">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center position-relative">
                             <div>
                                 <h5 class="text-muted mb-1">Events</h5>
-                                <h2 class="mb-0">{{ event_count }}</h2>
+                                <h2 class="mb-0 counter-value">{{ event_count }}</h2>
                             </div>
-                            <div class="bg-light rounded-circle p-3">
-                                <i class="fas fa-calendar-alt fa-2x text-primary"></i>
+                            <div class="icon-circle primary-glow">
+                                <i class="fas fa-calendar-alt fa-2x text-white"></i>
                             </div>
+                        </div>
+                        <div class="progress mt-3 glass-progress">
+                            <div class="progress-bar bg-primary" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
                         </div>
                         <a href="{% url 'manager_events' %}" class="stretched-link"></a>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="card shadow-sm border-success h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
+            <div class="col-md-3" data-aos="fade-up" data-aos-delay="200">
+                <div class="card modern-card stats-card tilt-card h-100">
+                    <div class="card-body position-relative overflow-hidden">
+                        <div class="card-bg-icon">
+                            <i class="fas fa-list-alt"></i>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center position-relative">
                             <div>
                                 <h5 class="text-muted mb-1">Subevents</h5>
-                                <h2 class="mb-0">{{ subevent_count }}</h2>
+                                <h2 class="mb-0 counter-value">{{ subevent_count }}</h2>
                             </div>
-                            <div class="bg-light rounded-circle p-3">
-                                <i class="fas fa-list-alt fa-2x text-success"></i>
+                            <div class="icon-circle success-glow">
+                                <i class="fas fa-list-alt fa-2x text-white"></i>
                             </div>
+                        </div>
+                        <div class="progress mt-3 glass-progress">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
                         </div>
                         <a href="{% url 'manager_subevents' %}" class="stretched-link"></a>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="card shadow-sm border-info h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
+            <div class="col-md-3" data-aos="fade-up" data-aos-delay="300">
+                <div class="card modern-card stats-card tilt-card h-100">
+                    <div class="card-body position-relative overflow-hidden">
+                        <div class="card-bg-icon">
+                            <i class="fas fa-ticket-alt"></i>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center position-relative">
                             <div>
                                 <h5 class="text-muted mb-1">Bookings</h5>
-                                <h2 class="mb-0">{{ booking_count }}</h2>
+                                <h2 class="mb-0 counter-value">{{ booking_count }}</h2>
                             </div>
-                            <div class="bg-light rounded-circle p-3">
-                                <i class="fas fa-ticket-alt fa-2x text-info"></i>
+                            <div class="icon-circle info-glow">
+                                <i class="fas fa-ticket-alt fa-2x text-white"></i>
                             </div>
+                        </div>
+                        <div class="progress mt-3 glass-progress">
+                            <div class="progress-bar bg-info" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
                         </div>
                         <a href="{% url 'manager_bookings' %}" class="stretched-link"></a>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="card shadow-sm border-warning h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
+            <div class="col-md-3" data-aos="fade-up" data-aos-delay="400">
+                <div class="card modern-card stats-card tilt-card h-100">
+                    <div class="card-body position-relative overflow-hidden">
+                        <div class="card-bg-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center position-relative">
                             <div>
                                 <h5 class="text-muted mb-1">Users</h5>
-                                <h2 class="mb-0">{{ user_count }}</h2>
+                                <h2 class="mb-0 counter-value">{{ user_count }}</h2>
                             </div>
-                            <div class="bg-light rounded-circle p-3">
-                                <i class="fas fa-users fa-2x text-warning"></i>
+                            <div class="icon-circle warning-glow">
+                                <i class="fas fa-users fa-2x text-white"></i>
                             </div>
+                        </div>
+                        <div class="progress mt-3 glass-progress">
+                            <div class="progress-bar bg-warning" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
                         </div>
                         <a href="{% url 'manager_users' %}" class="stretched-link"></a>
                     </div>
@@ -90,51 +114,130 @@
         
         <!-- Quick Links -->
         <div class="row mb-4">
-            <div class="col-12">
-                <div class="card shadow-sm">
-                    <div class="card-header bg-white">
-                        <h5 class="mb-0">Management Links</h5>
+            <div class="col-12" data-aos="zoom-in">
+                <div class="card modern-card glass-card">
+                    <div class="card-header bg-gradient-light">
+                        <h5 class="mb-0"><i class="fas fa-link me-2"></i>Management Links</h5>
                     </div>
                     <div class="card-body">
-                        <div class="row g-2">
-                            <div class="col-md-4">
-                                <a href="{% url 'manager_events' %}" class="btn btn-outline-primary w-100 mb-2">
-                                    <i class="fas fa-calendar-alt"></i> Manage Events
+                        <div class="management-links-grid">
+                            <div class="management-link-item" data-aos="fade-up" data-aos-delay="100">
+                                <a href="{% url 'manager_events' %}" class="management-link-card">
+                                    <div class="link-icon-wrapper primary-glow">
+                                        <i class="fas fa-calendar-alt"></i>
+                                    </div>
+                                    <div class="link-content">
+                                        <h5>Events</h5>
+                                        <p>Manage all events</p>
+                                    </div>
+                                    <div class="link-arrow">
+                                        <i class="fas fa-arrow-right"></i>
+                                    </div>
                                 </a>
                             </div>
-                            <div class="col-md-4">
-                                <a href="{% url 'manager_subevents' %}" class="btn btn-outline-success w-100 mb-2">
-                                    <i class="fas fa-list-alt"></i> Manage Subevents
+                            
+                            <div class="management-link-item" data-aos="fade-up" data-aos-delay="150">
+                                <a href="{% url 'manager_subevents' %}" class="management-link-card">
+                                    <div class="link-icon-wrapper success-glow">
+                                        <i class="fas fa-list-alt"></i>
+                                    </div>
+                                    <div class="link-content">
+                                        <h5>Subevents</h5>
+                                        <p>Manage all subevents</p>
+                                    </div>
+                                    <div class="link-arrow">
+                                        <i class="fas fa-arrow-right"></i>
+                                    </div>
                                 </a>
                             </div>
-                            <div class="col-md-4">
-                                <a href="{% url 'manager_bookings' %}" class="btn btn-outline-info w-100 mb-2">
-                                    <i class="fas fa-ticket-alt"></i> Manage Bookings
+                            
+                            <div class="management-link-item" data-aos="fade-up" data-aos-delay="200">
+                                <a href="{% url 'manager_bookings' %}" class="management-link-card">
+                                    <div class="link-icon-wrapper info-glow">
+                                        <i class="fas fa-ticket-alt"></i>
+                                    </div>
+                                    <div class="link-content">
+                                        <h5>Bookings</h5>
+                                        <p>Manage all bookings</p>
+                                    </div>
+                                    <div class="link-arrow">
+                                        <i class="fas fa-arrow-right"></i>
+                                    </div>
                                 </a>
                             </div>
-                            <div class="col-md-4">
-                                <a href="{% url 'manager_gallery' %}" class="btn btn-outline-danger w-100 mb-2">
-                                    <i class="fas fa-images"></i> Manage Gallery
+                            
+                            <div class="management-link-item" data-aos="fade-up" data-aos-delay="250">
+                                <a href="{% url 'manager_gallery' %}" class="management-link-card">
+                                    <div class="link-icon-wrapper danger-glow">
+                                        <i class="fas fa-images"></i>
+                                    </div>
+                                    <div class="link-content">
+                                        <h5>Gallery</h5>
+                                        <p>Manage photo gallery</p>
+                                    </div>
+                                    <div class="link-arrow">
+                                        <i class="fas fa-arrow-right"></i>
+                                    </div>
                                 </a>
                             </div>
-                            <div class="col-md-4">
-                                <a href="{% url 'manager_categories' %}" class="btn btn-outline-dark w-100 mb-2">
-                                    <i class="fas fa-tags"></i> Manage Categories
+                            
+                            <div class="management-link-item" data-aos="fade-up" data-aos-delay="300">
+                                <a href="{% url 'manager_categories' %}" class="management-link-card">
+                                    <div class="link-icon-wrapper dark-glow">
+                                        <i class="fas fa-tags"></i>
+                                    </div>
+                                    <div class="link-content">
+                                        <h5>Categories</h5>
+                                        <p>Manage event categories</p>
+                                    </div>
+                                    <div class="link-arrow">
+                                        <i class="fas fa-arrow-right"></i>
+                                    </div>
                                 </a>
                             </div>
-                            <div class="col-md-4">
-                                <a href="{% url 'manager_users' %}" class="btn btn-outline-warning w-100 mb-2">
-                                    <i class="fas fa-users"></i> Manage Users
+                            
+                            <div class="management-link-item" data-aos="fade-up" data-aos-delay="350">
+                                <a href="{% url 'manager_users' %}" class="management-link-card">
+                                    <div class="link-icon-wrapper warning-glow">
+                                        <i class="fas fa-users"></i>
+                                    </div>
+                                    <div class="link-content">
+                                        <h5>Users</h5>
+                                        <p>Manage user accounts</p>
+                                    </div>
+                                    <div class="link-arrow">
+                                        <i class="fas fa-arrow-right"></i>
+                                    </div>
                                 </a>
                             </div>
-                            <div class="col-md-4">
-                                <a href="{% url 'manager_contacts' %}" class="btn btn-outline-secondary w-100 mb-2">
-                                    <i class="fas fa-envelope"></i> View Contact Messages
+                            
+                            <div class="management-link-item" data-aos="fade-up" data-aos-delay="400">
+                                <a href="{% url 'manager_contacts' %}" class="management-link-card">
+                                    <div class="link-icon-wrapper secondary-glow">
+                                        <i class="fas fa-envelope"></i>
+                                    </div>
+                                    <div class="link-content">
+                                        <h5>Messages</h5>
+                                        <p>View contact messages</p>
+                                    </div>
+                                    <div class="link-arrow">
+                                        <i class="fas fa-arrow-right"></i>
+                                    </div>
                                 </a>
                             </div>
-                            <div class="col-md-4">
-                                <a href="{% url 'manager_messages' %}" class="btn btn-outline-purple w-100 mb-2">
-                                    <i class="fas fa-comment-dots"></i> User Messages
+                            
+                            <div class="management-link-item" data-aos="fade-up" data-aos-delay="450">
+                                <a href="{% url 'manager_messages' %}" class="management-link-card">
+                                    <div class="link-icon-wrapper purple-glow">
+                                        <i class="fas fa-comment-dots"></i>
+                                    </div>
+                                    <div class="link-content">
+                                        <h5>User Messages</h5>
+                                        <p>View user conversations</p>
+                                    </div>
+                                    <div class="link-arrow">
+                                        <i class="fas fa-arrow-right"></i>
+                                    </div>
                                 </a>
                             </div>
                         </div>
@@ -143,26 +246,26 @@
             </div>
         </div>
         
-        <!-- Recent Bookings -->
+        <!-- Recent Bookings and Events -->
         <div class="row mb-4">
-            <div class="col-md-6">
-                <div class="card shadow-sm">
-                    <div class="card-header bg-white">
+            <div class="col-md-6" data-aos="fade-right" data-aos-delay="100">
+                <div class="card modern-card hover-shadow h-100">
+                    <div class="card-header bg-gradient-light">
                         <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">Recent Bookings</h5>
-                            <a href="{% url 'manager_bookings' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                            <h5 class="mb-0"><i class="fas fa-ticket-alt me-2"></i>Recent Bookings</h5>
+                            <a href="{% url 'manager_bookings' %}" class="btn btn-sm btn-modern btn-primary">View All</a>
                         </div>
                     </div>
                     <div class="card-body p-0">
                         <div class="list-group list-group-flush">
                             {% for booking in recent_bookings %}
-                            <div class="list-group-item">
+                            <div class="list-group-item list-hover-item">
                                 <div class="d-flex w-100 justify-content-between">
-                                    <h6 class="mb-1">{{ booking.user.username }} - {{ booking.subevent.name }}</h6>
+                                    <h6 class="mb-1 text-truncate">{{ booking.user.username }} - {{ booking.subevent.name }}</h6>
                                     <small class="text-muted">{{ booking.created_at|date:"M d, Y" }}</small>
                                 </div>
                                 <p class="mb-1 small">
-                                    <span class="badge bg-{{ booking.status|yesno:'success,warning,danger' }}">
+                                    <span class="badge bg-gradient-{{ booking.status|yesno:'success,warning,danger' }} animate-badge">
                                         {{ booking.status|title }}
                                     </span>
                                     {% if booking.total_amount %}
@@ -172,7 +275,10 @@
                             </div>
                             {% empty %}
                             <div class="list-group-item text-center py-4">
-                                <p class="text-muted mb-0">No bookings yet</p>
+                                <div class="empty-state">
+                                    <i class="fas fa-ticket-alt fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted mb-0">No bookings yet</p>
+                                </div>
                             </div>
                             {% endfor %}
                         </div>
@@ -181,27 +287,35 @@
             </div>
             
             <!-- Recent Events -->
-            <div class="col-md-6">
-                <div class="card shadow-sm">
-                    <div class="card-header bg-white">
+            <div class="col-md-6" data-aos="fade-left" data-aos-delay="100">
+                <div class="card modern-card hover-shadow h-100">
+                    <div class="card-header bg-gradient-light">
                         <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">Recent Events</h5>
-                            <a href="{% url 'manager_events' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                            <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Recent Events</h5>
+                            <a href="{% url 'manager_events' %}" class="btn btn-sm btn-modern btn-primary">View All</a>
                         </div>
                     </div>
                     <div class="card-body p-0">
                         <div class="list-group list-group-flush">
                             {% for event in recent_events %}
-                            <div class="list-group-item">
+                            <div class="list-group-item list-hover-item">
                                 <div class="d-flex w-100 justify-content-between">
-                                    <h6 class="mb-1">{{ event.name }}</h6>
+                                    <h6 class="mb-1 text-truncate">{{ event.name }}</h6>
                                     <small class="text-muted">{{ event.created_at|date:"M d, Y" }}</small>
                                 </div>
-                                <p class="mb-1 small text-muted">{{ event.description|truncatechars:50 }}</p>
+                                <p class="mb-1 small">
+                                    <span class="badge bg-gradient-{{ event.is_active|yesno:'success,danger' }} animate-badge">
+                                        {{ event.is_active|yesno:'Active,Inactive' }}
+                                    </span>
+                                    <span class="text-muted ms-2">{{ event.category.name }}</span>
+                                </p>
                             </div>
                             {% empty %}
                             <div class="list-group-item text-center py-4">
-                                <p class="text-muted mb-0">No events yet</p>
+                                <div class="empty-state">
+                                    <i class="fas fa-calendar-alt fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted mb-0">No events yet</p>
+                                </div>
                             </div>
                             {% endfor %}
                         </div>
@@ -210,48 +324,47 @@
             </div>
         </div>
         
-        <!-- Recent Users -->
+        <!-- Activity Timeline -->
         <div class="row">
-            <div class="col-12">
-                <div class="card shadow-sm">
-                    <div class="card-header bg-white">
+            <div class="col-12" data-aos="fade-up">
+                <div class="card modern-card glass-card">
+                    <div class="card-header bg-gradient-light">
                         <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">New Users</h5>
-                            <a href="{% url 'manager_users' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                            <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>System Activity</h5>
+                            <button class="btn btn-sm btn-modern btn-primary" id="refreshActivity">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
                         </div>
                     </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>User</th>
-                                        <th>Joined</th>
-                                        <th>Email</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for user in recent_users %}
-                                    <tr>
-                                        <td>{{ user.username }}</td>
-                                        <td>{{ user.date_joined|date:"M d, Y" }}</td>
-                                        <td>{{ user.email }}</td>
-                                        <td>
-                                            <a href="{% url 'manager_user_detail' user.id %}" class="btn btn-sm btn-outline-primary">
-                                                View
-                                            </a>
-                                        </td>
-                                    </tr>
-                                    {% empty %}
-                                    <tr>
-                                        <td colspan="4" class="text-center py-4">
-                                            <p class="text-muted mb-0">No users yet</p>
-                                        </td>
-                                    </tr>
+                    <div class="card-body">
+                        <div class="timeline-container">
+                            {% if recent_activities %}
+                                <div class="timeline">
+                                    {% for activity in recent_activities %}
+                                    <div class="timeline-item" data-aos="fade-up" data-aos-delay="{{ forloop.counter|add:100 }}">
+                                        <div class="timeline-dot bg-gradient-primary"></div>
+                                        <div class="timeline-content">
+                                            <div class="timeline-header">
+                                                <h6 class="mb-0">{{ activity.action_type }}</h6>
+                                                <small class="text-muted">{{ activity.timestamp|date:"M d, Y H:i" }}</small>
+                                            </div>
+                                            <div class="timeline-body">
+                                                <p>{{ activity.description }}</p>
+                                                {% if activity.user %}
+                                                <small class="text-muted">By: {{ activity.user.username }}</small>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
                                     {% endfor %}
-                                </tbody>
-                            </table>
+                                </div>
+                            {% else %}
+                                <div class="empty-state text-center py-5">
+                                    <i class="fas fa-chart-line fa-4x text-muted mb-3"></i>
+                                    <h5 class="text-muted">No recent activity</h5>
+                                    <p class="text-muted mb-0">System activity will appear here as users interact with the platform</p>
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -259,4 +372,52 @@
         </div>
     </div>
 </section>
+
+<!-- Manager Dashboard Scripts -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tilt effect on cards
+        VanillaTilt.init(document.querySelectorAll(".tilt-card"), {
+            max: 10,
+            speed: 400,
+            glare: true,
+            "max-glare": 0.3,
+        });
+        
+        // Counter animation for statistics
+        const counterElements = document.querySelectorAll('.counter-value');
+        counterElements.forEach(counter => {
+            const target = parseInt(counter.textContent);
+            let count = 0;
+            const duration = 2000; // 2 seconds
+            const frameDuration = 1000 / 60; // 60fps
+            const totalFrames = Math.round(duration / frameDuration);
+            const increment = target / totalFrames;
+            
+            const animate = () => {
+                count += increment;
+                if (count < target) {
+                    counter.textContent = Math.floor(count);
+                    requestAnimationFrame(animate);
+                } else {
+                    counter.textContent = target;
+                }
+            };
+            
+            animate();
+        });
+        
+        // Refresh button animation
+        const refreshBtn = document.getElementById('refreshActivity');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', function() {
+                this.classList.add('spin-animation');
+                setTimeout(() => {
+                    this.classList.remove('spin-animation');
+                }, 1000);
+                // Here you would typically fetch new data via AJAX
+            });
+        }
+    });
+</script>
 {% endblock %}

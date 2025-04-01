@@ -86,6 +86,8 @@ class Booking(models.Model):
     booking_date = models.DateField()
     booking_time = models.TimeField()
     guests = models.PositiveIntegerField(default=1)
+    address = models.CharField(max_length=255, null=True, blank=True)  # Temporarily allowing null
+    mobile_number = models.CharField(max_length=20, null=True, blank=True)  # Temporarily allowing null
     notes = models.TextField(blank=True, null=True)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
@@ -228,10 +230,20 @@ class UserMessage(models.Model):
         ('danger', 'Danger'),
     )
     
+    SECTION_CHOICES = (
+        ('general', 'General'),
+        ('bookings', 'Bookings'),
+        ('events', 'Events'),
+        ('gallery', 'Gallery'),
+        ('categories', 'Categories'),
+        ('support', 'Support'),
+    )
+    
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='messages')
     subject = models.CharField(max_length=200)
     message = models.TextField()
     message_type = models.CharField(max_length=20, choices=MESSAGE_TYPES, default='info')
+    section = models.CharField(max_length=20, choices=SECTION_CHOICES, default='general')
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='sent_messages')
@@ -240,4 +252,66 @@ class UserMessage(models.Model):
         ordering = ['-created_at']
         
     def __str__(self):
-        return f"Message to {self.user.username}: {self.subject}"
+        return f"{self.subject} - {self.user.username}"
+
+
+class ActivityLog(models.Model):
+    """Model for tracking system activities"""
+    ACTION_TYPES = (
+        ('booking_created', 'Booking Created'),
+        ('booking_updated', 'Booking Updated'),
+        ('booking_cancelled', 'Booking Cancelled'),
+        ('booking_completed', 'Booking Completed'),
+        ('user_registered', 'User Registered'),
+        ('user_updated', 'User Updated'),
+        ('event_created', 'Event Created'),
+        ('event_updated', 'Event Updated'),
+        ('event_deleted', 'Event Deleted'),
+        ('subevent_created', 'Subevent Created'),
+        ('subevent_updated', 'Subevent Updated'),
+        ('subevent_deleted', 'Subevent Deleted'),
+        ('gallery_updated', 'Gallery Updated'),
+        ('message_sent', 'Message Sent'),
+        ('review_posted', 'Review Posted'),
+        ('admin_action', 'Admin Action'),
+    )
+    
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='activities')
+    action_type = models.CharField(max_length=50, choices=ACTION_TYPES)
+    description = models.TextField()
+    target_model = models.CharField(max_length=50, blank=True, null=True)
+    target_id = models.PositiveIntegerField(blank=True, null=True)
+    additional_data = models.JSONField(blank=True, null=True)
+    ip_address = models.GenericIPAddressField(blank=True, null=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-timestamp']
+        verbose_name = 'Activity Log'
+        verbose_name_plural = 'Activity Logs'
+    
+    def __str__(self):
+        return f"{self.action_type} - {self.timestamp.strftime('%Y-%m-%d %H:%M')}"
+    
+    @classmethod
+    def log_activity(cls, user, action_type, description, target_model=None, target_id=None, additional_data=None, request=None):
+        """
+        Helper method to create activity log entries
+        """
+        ip_address = None
+        if request:
+            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+            if x_forwarded_for:
+                ip_address = x_forwarded_for.split(',')[0]
+            else:
+                ip_address = request.META.get('REMOTE_ADDR')
+                
+        return cls.objects.create(
+            user=user,
+            action_type=action_type,
+            description=description,
+            target_model=target_model,
+            target_id=target_id,
+            additional_data=additional_data,
+            ip_address=ip_address
+        )

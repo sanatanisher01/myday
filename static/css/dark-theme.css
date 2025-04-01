@@ -1,0 +1,484 @@
+/* 
+===============================
+MyDay - Dark Theme
+===============================
+*/
+
+:root {
+    /* Dark theme colors */
+    --dark-bg-primary: #121212;
+    --dark-bg-secondary: #1e1e1e;
+    --dark-bg-tertiary: #2d2d2d;
+    --dark-text-primary: #ffffff;
+    --dark-text-secondary: #b3b3b3;
+    --dark-text-muted: #8c8c8c;
+    --dark-border-color: #333333;
+    --dark-card-bg: #1e1e1e;
+    --dark-input-bg: #2d2d2d;
+    --dark-hover-bg: #333333;
+    --dark-accent: #4e73df;
+    --dark-success: #1cc88a;
+    --dark-info: #36b9cc;
+    --dark-warning: #f6c23e;
+    --dark-danger: #e74a3b;
+    
+    /* Override default theme variables */
+    --primary-color: #4e73df;
+    --secondary-color: #1e1e1e;
+    --background-color: #121212;
+    --text-color: #ffffff;
+    --accent-color: #e74a3b;
+    --white: #ffffff;
+    --dark: #121212;
+    --light-gray: #2d2d2d;
+    --medium-gray: #333333;
+    --box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+}
+
+/* Body and global elements */
+body {
+    background-color: var(--dark-bg-primary);
+    color: var(--dark-text-primary);
+}
+
+/* Navbar styling */
+.navbar {
+    background-color: var(--dark-bg-secondary) !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.navbar-light .navbar-nav .nav-link {
+    color: var(--dark-text-primary);
+}
+
+.navbar-light .navbar-nav .nav-link:hover,
+.navbar-light .navbar-nav .nav-link:focus,
+.navbar-light .navbar-nav .nav-link.active {
+    color: var(--primary-color);
+}
+
+.navbar-light .navbar-toggler {
+    border-color: var(--dark-border-color);
+    color: var(--dark-text-primary);
+}
+
+.navbar-light .navbar-toggler-icon {
+    filter: invert(1);
+}
+
+/* Cards */
+.card {
+    background-color: var(--dark-card-bg);
+    border-color: var(--dark-border-color);
+    color: var(--dark-text-primary);
+}
+
+.card-header {
+    background-color: var(--dark-bg-tertiary);
+    border-bottom-color: var(--dark-border-color);
+}
+
+.card-footer {
+    background-color: var(--dark-bg-tertiary);
+    border-top-color: var(--dark-border-color);
+}
+
+/* Modal styling */
+.modal-content {
+    background-color: var(--dark-bg-secondary);
+    border-color: var(--dark-border-color);
+}
+
+.modal-header, .modal-footer {
+    border-color: var(--dark-border-color);
+}
+
+.close {
+    color: var(--dark-text-primary);
+}
+
+/* Form elements */
+.form-control, .form-select {
+    background-color: var(--dark-input-bg);
+    border-color: var(--dark-border-color);
+    color: var(--dark-text-primary);
+}
+
+.form-control:focus, .form-select:focus {
+    background-color: var(--dark-input-bg);
+    border-color: var(--primary-color);
+    color: var(--dark-text-primary);
+}
+
+.form-control::placeholder {
+    color: var(--dark-text-muted);
+}
+
+/* Table styling */
+.table {
+    color: var(--dark-text-primary);
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.table-hover > tbody > tr:hover {
+    background-color: rgba(255, 255, 255, 0.075);
+}
+
+.table thead th {
+    border-bottom-color: var(--dark-border-color);
+}
+
+.table td, .table th {
+    border-top-color: var(--dark-border-color);
+}
+
+/* List groups */
+.list-group-item {
+    background-color: var(--dark-card-bg);
+    border-color: var(--dark-border-color);
+    color: var(--dark-text-primary);
+}
+
+.list-group-item-action:hover, .list-group-item-action:focus {
+    background-color: var(--dark-hover-bg);
+    color: var(--dark-text-primary);
+}
+
+/* Buttons */
+.btn-light {
+    background-color: var(--dark-bg-tertiary);
+    border-color: var(--dark-border-color);
+    color: var(--dark-text-primary);
+}
+
+.btn-light:hover, .btn-light:focus {
+    background-color: var(--dark-hover-bg);
+    border-color: var(--dark-border-color);
+    color: var(--dark-text-primary);
+}
+
+.btn-outline-light {
+    border-color: var(--dark-text-secondary);
+    color: var(--dark-text-secondary);
+}
+
+.btn-outline-light:hover, .btn-outline-light:focus {
+    background-color: var(--dark-text-secondary);
+    color: var(--dark-bg-primary);
+}
+
+/* Dropdown menus */
+.dropdown-menu {
+    background-color: var(--dark-bg-secondary);
+    border-color: var(--dark-border-color);
+}
+
+.dropdown-item {
+    color: var(--dark-text-primary);
+}
+
+.dropdown-item:hover, .dropdown-item:focus {
+    background-color: var(--dark-hover-bg);
+    color: var(--dark-text-primary);
+}
+
+.dropdown-divider {
+    border-top-color: var(--dark-border-color);
+}
+
+/* Sidebar styling */
+.sidebar {
+    background-color: var(--dark-bg-secondary);
+}
+
+.user-sidebar {
+    background-color: var(--dark-bg-secondary);
+}
+
+.sidebar-link {
+    color: var(--dark-text-primary);
+}
+
+.sidebar-link:hover {
+    background-color: var(--dark-hover-bg);
+    color: var(--primary-color);
+}
+
+.sidebar-link.active {
+    background-color: var(--primary-color);
+    color: var(--dark-text-primary);
+}
+
+/* Footer styling */
+footer {
+    background: linear-gradient(135deg, #121212 0%, #0a0a0a 100%) !important;
+}
+
+/* Pagination */
+.page-link {
+    background-color: var(--dark-card-bg);
+    border-color: var(--dark-border-color);
+    color: var(--dark-text-primary);
+}
+
+.page-link:hover {
+    background-color: var(--dark-hover-bg);
+    border-color: var(--dark-border-color);
+    color: var(--dark-text-primary);
+}
+
+.page-item.active .page-link {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.page-item.disabled .page-link {
+    background-color: var(--dark-card-bg);
+    border-color: var(--dark-border-color);
+    color: var(--dark-text-muted);
+}
+
+/* Badges */
+.badge.bg-light {
+    background-color: var(--dark-bg-tertiary) !important;
+    color: var(--dark-text-primary);
+}
+
+.badge.bg-dark {
+    background-color: var(--dark-bg-primary) !important;
+    color: var(--dark-text-primary);
+}
+
+/* Alerts */
+.alert {
+    background-color: var(--dark-card-bg);
+    border-color: var(--dark-border-color);
+    color: var(--dark-text-primary);
+}
+
+/* Progress bars */
+.progress {
+    background-color: var(--dark-bg-tertiary);
+}
+
+/* Tabs */
+.nav-tabs {
+    border-bottom-color: var(--dark-border-color);
+}
+
+.nav-tabs .nav-link {
+    color: var(--dark-text-primary);
+}
+
+.nav-tabs .nav-link:hover, .nav-tabs .nav-link:focus {
+    border-color: var(--dark-border-color) var(--dark-border-color) transparent;
+}
+
+.nav-tabs .nav-link.active {
+    background-color: var(--dark-card-bg);
+    border-color: var(--dark-border-color) var(--dark-border-color) transparent;
+    color: var(--primary-color);
+}
+
+/* Accordion */
+.accordion-button {
+    background-color: var(--dark-card-bg);
+    color: var(--dark-text-primary);
+}
+
+.accordion-button:not(.collapsed) {
+    background-color: var(--dark-bg-tertiary);
+    color: var(--primary-color);
+}
+
+.accordion-button::after {
+    filter: invert(1);
+}
+
+.accordion-collapse {
+    background-color: var(--dark-card-bg);
+}
+
+/* Breadcrumbs */
+.breadcrumb {
+    background-color: var(--dark-bg-tertiary);
+}
+
+.breadcrumb-item.active {
+    color: var(--dark-text-secondary);
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+    color: var(--dark-text-muted);
+}
+
+/* Toast */
+.toast {
+    background-color: var(--dark-bg-secondary);
+    border-color: var(--dark-border-color);
+}
+
+.toast-header {
+    background-color: var(--dark-bg-tertiary);
+    color: var(--dark-text-primary);
+}
+
+/* Tooltips and Popovers */
+.tooltip-inner {
+    background-color: var(--dark-bg-tertiary);
+}
+
+.popover {
+    background-color: var(--dark-bg-secondary);
+    border-color: var(--dark-border-color);
+}
+
+.popover-header {
+    background-color: var(--dark-bg-tertiary);
+    border-bottom-color: var(--dark-border-color);
+}
+
+.popover-body {
+    color: var(--dark-text-primary);
+}
+
+/* Custom dashboard cards */
+.dashboard-card {
+    background-color: var(--dark-card-bg);
+    border-color: var(--dark-border-color);
+}
+
+.icon-circle {
+    background-color: var(--primary-color);
+}
+
+.welcome-card {
+    background: linear-gradient(135deg, #4e73df 0%, #224abe 100%) !important;
+}
+
+/* Text colors */
+.text-muted {
+    color: var(--dark-text-muted) !important;
+}
+
+.text-dark {
+    color: var(--dark-text-primary) !important;
+}
+
+.text-light {
+    color: var(--dark-text-secondary) !important;
+}
+
+/* Border colors */
+.border {
+    border-color: var(--dark-border-color) !important;
+}
+
+.border-top {
+    border-top-color: var(--dark-border-color) !important;
+}
+
+.border-bottom {
+    border-bottom-color: var(--dark-border-color) !important;
+}
+
+.border-start {
+    border-left-color: var(--dark-border-color) !important;
+}
+
+.border-end {
+    border-right-color: var(--dark-border-color) !important;
+}
+
+/* Background utilities */
+.bg-light {
+    background-color: var(--dark-bg-tertiary) !important;
+}
+
+.bg-dark {
+    background-color: var(--dark-bg-primary) !important;
+}
+
+.bg-white {
+    background-color: var(--dark-card-bg) !important;
+}
+
+/* Glassmorphism in dark mode */
+.glass-effect {
+    background: rgba(30, 30, 30, 0.25) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Dark mode toggle button */
+.theme-toggle {
+    position: fixed;
+    bottom: 80px;
+    right: 30px;
+    width: 45px;
+    height: 45px;
+    background: var(--primary-color);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    z-index: 1000;
+    cursor: pointer;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.theme-toggle:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* Event cards in dark mode */
+.event-card {
+    background-color: var(--dark-card-bg);
+    border-color: var(--dark-border-color);
+}
+
+.event-card:hover {
+    border-color: var(--primary-color);
+}
+
+/* Improved readability for event details */
+.event-details {
+    background-color: var(--dark-bg-secondary);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+/* Improved contrast for buttons */
+.btn-primary {
+    background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #224abe 0%, #1a3891 100%);
+}
+
+/* Dark scrollbar */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--dark-bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--dark-bg-tertiary);
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--dark-hover-bg);
+}

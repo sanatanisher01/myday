@@ -5,39 +5,47 @@
 
 {% block content %}
 <!-- SubEvent Header -->
-<section class="subevent-header position-relative">
-    <div class="subevent-image-container">
-        <img src="{{ subevent.image.url }}" alt="{{ subevent.name }}" class="subevent-header-image">
-        <div class="overlay"></div>
-    </div>
-    <div class="container position-relative">
+<header class="subevent-header position-relative">
+    <div class="overlay"></div>
+    <div class="container position-relative z-index-1">
         <div class="row">
-            <div class="col-lg-8 col-md-10 mx-auto text-center text-white py-5">
-                <p class="mb-2"><a href="{% url 'event_detail' subevent.event.slug %}" class="text-white">{{ subevent.event.name }}</a> / {{ subevent.name }}</p>
-                <h1 class="display-4 fw-bold subevent-title">{{ subevent.name }}</h1>
-                <div class="rating my-3">
-                    {% if avg_rating %}
-                        {% with ''|center:avg_rating|floatformat:"0" as stars %}
-                        {% for _ in stars %}
-                            <i class="fas fa-star text-warning fa-lg"></i>
-                        {% endfor %}
-                        {% endwith %}
-                        <span class="ms-2 fs-5">{{ avg_rating|floatformat:1 }} ({{ reviews.count }} reviews)</span>
+            <div class="col-lg-10 col-md-10 mx-auto text-center text-white py-5">
+                <nav aria-label="breadcrumb" class="custom-breadcrumb mb-3">
+                    <ol class="breadcrumb justify-content-center">
+                        <li class="breadcrumb-item"><a href="/" class="text-white-50">Home</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'event_detail' slug=subevent.event.slug %}" class="text-white-50">{{ subevent.event.name }}</a></li>
+                        <li class="breadcrumb-item active text-white" aria-current="page">{{ subevent.name }}</li>
+                    </ol>
+                </nav>
+                <h1 class="display-4 fw-bold subevent-title mb-4">{{ subevent.name }}</h1>
+                <div class="rating my-4 d-flex align-items-center justify-content-center">
+                    {% if subevent.average_rating %}
+                        <div class="stars me-2">
+                            {% for i in '12345'|make_list %}
+                                {% if forloop.counter <= subevent.average_rating|floatformat:0|add:"0" %}
+                                    <i class="fas fa-star text-warning"></i>
+                                {% elif forloop.counter <= subevent.average_rating|floatformat:1|add:"0.5" %}
+                                    <i class="fas fa-star-half-alt text-warning"></i>
+                                {% else %}
+                                    <i class="far fa-star text-warning"></i>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        <span class="rating-text">{{ subevent.average_rating|floatformat:1 }} ({{ subevent.reviews.count }} reviews)</span>
                     {% else %}
-                        <span>No ratings yet</span>
+                        <span class="badge bg-secondary-subtle text-secondary">No ratings yet</span>
                     {% endif %}
                 </div>
-                <p class="lead">{{ subevent.short_description }}</p>
-                <div class="mt-4">
-                    <span class="price-badge bg-white text-primary p-2 px-3 rounded-pill fw-bold fs-5 me-3">
-                        ₹{{ subevent.price|floatformat:2 }}
-                    </span>
-                    <button class="btn btn-lg btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#bookingModal">Book Now</button>
+                {% if subevent.description %}
+                <p class="lead mb-4 subevent-description">{{ subevent.description|truncatewords:30 }}</p>
+                {% endif %}
+                <div class="mt-4 header-actions">
+                    <!-- Price badge and Book Now button removed -->
                 </div>
             </div>
         </div>
     </div>
-</section>
+</header>
 
 <!-- Service Details -->
 <section class="py-5">
@@ -193,46 +201,110 @@
             <!-- Sidebar -->
             <div class="col-lg-4">
                 <!-- Booking Widget -->
-                <div class="card mb-4 shadow booking-widget sticky-top" style="top: 100px;">
+                <div class="card mb-4 shadow booking-widget" style="position: sticky; top: 100px; z-index: 100;">
                     <div class="card-header bg-primary text-white">
                         <h4 class="mb-0 fs-5">Book This Service</h4>
                     </div>
                     <div class="card-body">
-                        <div class="price-section mb-3 d-flex justify-content-between align-items-center">
-                            <span class="fw-bold fs-4">₹{{ subevent.price|floatformat:2 }}</span>
-                            <span class="badge bg-success">Available</span>
-                        </div>
-                        
-                        <ul class="booking-features mb-4">
-                            <li><i class="fas fa-calendar-check me-2"></i> Instant confirmation</li>
-                            <li><i class="fas fa-clock me-2"></i> 24/7 customer support</li>
-                            <li><i class="fas fa-money-bill-wave me-2"></i> Free cancellation up to 30 days before</li>
-                        </ul>
-                        
-                        <button class="btn btn-primary w-100 mb-3" data-bs-toggle="modal" data-bs-target="#bookingModal">Book Now</button>
-                        
-                        <button class="btn btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#inquiryModal">
-                            <i class="fas fa-question-circle me-2"></i> Ask a Question
-                        </button>
-                        
-                        <!-- Categories/Add-ons Summary -->
-                        {% if subevent.categories.exists %}
-                        <div class="mt-4">
-                            <h5 class="mb-3">Available Add-ons</h5>
-                            <ul class="list-group">
-                                {% for category in subevent.categories.all %}
-                                {% if category.is_active %}
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    {{ category.name }}
-                                    <span class="badge bg-primary rounded-pill">₹{{ category.price }}</span>
-                                </li>
-                                {% endif %}
-                                {% endfor %}
-                            </ul>
-                            <div class="mt-3 text-center">
-                                <small class="text-muted">Add-ons can be selected during booking</small>
+                        {% if user.is_authenticated %}
+                            {% if profile_complete %}
+                                <form method="post" action="{% url 'add_booking' subevent_id=subevent.id %}" id="bookingForm">
+                                    {% csrf_token %}
+                                    <div class="mb-3">
+                                        <label for="booking_date" class="form-label">Date</label>
+                                        <input type="date" class="form-control" id="booking_date" name="booking_date" required min="{{ today|date:'Y-m-d' }}">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="booking_time" class="form-label">Time</label>
+                                        <input type="time" class="form-control" id="booking_time" name="booking_time" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="address" class="form-label">Address</label>
+                                        <input type="text" class="form-control" id="address" name="address" placeholder="Enter your full address" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="mobile_number" class="form-label">Mobile Number</label>
+                                        <input type="text" class="form-control" id="mobile_number" name="mobile_number" placeholder="Enter your mobile number" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="guests" class="form-label">Number of Guests</label>
+                                        <input type="number" class="form-control" id="guests" name="guests" min="1" max="{{ subevent.capacity }}" value="1" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="categories" class="form-label">Select Categories/Add-ons</label>
+                                        <div class="row g-3">
+                                            {% for category in subevent.categories.all %}
+                                            {% if category.is_active %}
+                                            <div class="col-md-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" value="{{ category.id }}" id="category-{{ category.id }}" name="categories">
+                                                    <label class="form-check-label" for="category-{{ category.id }}">{{ category.name }} (₹{{ category.price }})</label>
+                                                </div>
+                                            </div>
+                                            {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="notes" class="form-label">Special Requests (Optional)</label>
+                                        <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="card">
+                                            <div class="card-body" id="price_summary_card">
+                                                <h6>Price Summary:</h6>
+                                                <div class="d-flex justify-content-between">
+                                                    <span>Service Fee:</span>
+                                                    <span id="service_price">₹{{ subevent.price|floatformat:2 }}</span>
+                                                </div>
+                                                <div class="d-flex justify-content-between">
+                                                    <span>Categories/Add-ons:</span>
+                                                    <span id="categories_price">₹0.00</span>
+                                                </div>
+                                                <div class="d-flex justify-content-between">
+                                                    <span>Tax (10%):</span>
+                                                    <span id="tax_amount">₹0.00</span>
+                                                </div>
+                                                <hr>
+                                                <div class="d-flex justify-content-between fw-bold">
+                                                    <span>Total:</span>
+                                                    <span id="total_amount">₹{{ subevent.price|floatformat:2 }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary w-100" id="confirm_booking_btn">Confirm Booking</button>
+                                </form>
+                            {% else %}
+                                <div class="alert alert-warning" role="alert">
+                                    <h5 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>Profile Incomplete</h5>
+                                    <p>You need to complete your profile before booking this service.</p>
+                                    <hr>
+                                    <p class="mb-0">Please upload a profile picture and fill all required information in your profile.</p>
+                                    <div class="mt-3">
+                                        <a href="{% url 'user_profile' %}" class="btn btn-primary w-100">Complete Your Profile</a>
+                                    </div>
+                                </div>
+                                <div class="card mt-3 border-info">
+                                    <div class="card-header bg-info text-white">
+                                        <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Why is this required?</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="small mb-0">We require complete profile information to ensure a smooth booking experience and provide better service. Your profile picture helps our staff identify you during the event.</p>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="alert alert-info" role="alert">
+                                <h5 class="alert-heading">Please Login</h5>
+                                <p>You need to login to book this service.</p>
+                                <hr>
+                                <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-primary w-100">Login</a>
                             </div>
-                        </div>
+                            <div class="mt-3">
+                                <p class="text-center">Don't have an account?</p>
+                                <a href="{% url 'register' %}?next={{ request.path }}" class="btn btn-outline-primary w-100">Register</a>
+                            </div>
                         {% endif %}
                     </div>
                 </div>
@@ -387,7 +459,7 @@
 </section>
 
 <!-- Booking Modal -->
-<div class="modal fade" id="bookingModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade modal-enhanced" id="bookingModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
@@ -405,6 +477,14 @@
                     <div class="mb-3">
                         <label for="booking_time" class="form-label">Time</label>
                         <input type="time" class="form-control" id="booking_time" name="booking_time" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="address" class="form-label">Address</label>
+                        <input type="text" class="form-control" id="address" name="address" placeholder="Enter your full address" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="mobile_number" class="form-label">Mobile Number</label>
+                        <input type="text" class="form-control" id="mobile_number" name="mobile_number" placeholder="Enter your mobile number" required>
                     </div>
                     <div class="mb-3">
                         <label for="guests" class="form-label">Number of Guests</label>
@@ -443,12 +523,12 @@
                                 </div>
                                 <div class="d-flex justify-content-between">
                                     <span>Tax (10%):</span>
-                                    <span id="tax_amount"></span>
+                                    <span id="tax_amount">₹0.00</span>
                                 </div>
                                 <hr>
                                 <div class="d-flex justify-content-between fw-bold">
                                     <span>Total:</span>
-                                    <span id="total_amount"></span>
+                                    <span id="total_amount">₹{{ subevent.price|floatformat:2 }}</span>
                                 </div>
                             </div>
                         </div>
@@ -469,7 +549,7 @@
 </div>
 
 <!-- Inquiry Modal -->
-<div class="modal fade" id="inquiryModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade modal-enhanced" id="inquiryModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
@@ -577,7 +657,7 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.7));
+        background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.5));
     }
     
     /* Feature Icons */
@@ -724,84 +804,131 @@
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialize animations
-        gsap.registerPlugin(ScrollTrigger);
+        // Set the background image dynamically if available
+        const subeventHeader = document.querySelector('.subevent-header');
+        {% if subevent.image %}
+        subeventHeader.style.backgroundImage = 'linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.7)), url("{{ subevent.image.url }}")';
+        {% endif %}
         
-        // Animate elements on scroll
-        gsap.from('.card', {
-            scrollTrigger: {
-                trigger: '.card',
-                start: 'top 80%',
-            },
-            y: 50,
-            opacity: 0,
-            duration: 0.8,
-            stagger: 0.2
+        // Parallax effect on scroll
+        window.addEventListener('scroll', function() {
+            const scrollPosition = window.scrollY;
+            if (scrollPosition < 600) {
+                const translateY = scrollPosition * 0.3;
+                subeventHeader.style.backgroundPositionY = `calc(50% + ${translateY}px)`;
+            }
         });
         
-        // Booking form price calculation
-        const bookingForm = document.getElementById('bookingForm');
-        if (bookingForm) {
-            const guestsInput = document.getElementById('guests');
-            const categoryCheckboxes = document.querySelectorAll('input[name="categories"]');
-            const servicePrice = document.getElementById('service_price');
-            const categoriesPrice = document.getElementById('categories_price');
-            const taxAmount = document.getElementById('tax_amount');
-            const totalAmount = document.getElementById('total_amount');
-            
-            // Base price from the subevent
-            const basePrice = {{ subevent.price }};
-            
-            // Category prices
-            const categoryPrices = {
-                {% for category in subevent.categories.all %}
-                {% if category.is_active %}
-                {{ category.id }}: {{ category.price }},
-                {% endif %}
-                {% endfor %}
-            };
-            
-            function updatePricing() {
-                const guests = parseInt(guestsInput.value) || 1;
-                const baseTotalPrice = basePrice * guests;
-                
-                // Calculate categories total
-                let categoriesTotal = 0;
-                categoryCheckboxes.forEach(checkbox => {
-                    if (checkbox.checked) {
-                        const categoryId = checkbox.value;
-                        categoriesTotal += categoryPrices[categoryId];
-                    }
-                });
-                
-                // Calculate subtotal and tax
-                const subtotal = baseTotalPrice + categoriesTotal;
-                const tax = subtotal * 0.1; // 10% tax
-                const total = subtotal + tax;
-                
-                // Update the display
-                servicePrice.textContent = `₹${baseTotalPrice.toFixed(2)}`;
-                categoriesPrice.textContent = `₹${categoriesTotal.toFixed(2)}`;
-                taxAmount.textContent = `₹${tax.toFixed(2)}`;
-                totalAmount.textContent = `₹${total.toFixed(2)}`;
+        // Initialize animations with proper completion settings
+        const titleAnim = gsap.from('.subevent-title', {
+            opacity: 0,
+            y: 30,
+            duration: 0.8,
+            ease: 'power3.out',
+            onComplete: function() {
+                gsap.set('.subevent-title', {clearProps: 'all'});
             }
-            
-            // Initialize pricing on page load
-            updatePricing();
-            
-            // Update pricing when inputs change
-            guestsInput.addEventListener('input', updatePricing);
-            categoryCheckboxes.forEach(checkbox => {
+        });
+        
+        const breadcrumbAnim = gsap.from('.custom-breadcrumb', {
+            opacity: 0,
+            y: -20,
+            duration: 0.6,
+            ease: 'power3.out',
+            onComplete: function() {
+                gsap.set('.custom-breadcrumb', {clearProps: 'all'});
+            }
+        });
+        
+        const descAnim = gsap.from('.subevent-description', {
+            opacity: 0,
+            y: 20,
+            duration: 0.8,
+            delay: 0.2,
+            ease: 'power3.out',
+            onComplete: function() {
+                gsap.set('.subevent-description', {clearProps: 'all'});
+            }
+        });
+        
+        const ratingAnim = gsap.from('.rating', {
+            opacity: 0,
+            scale: 0.9,
+            duration: 0.8,
+            delay: 0.3,
+            ease: 'power3.out',
+            onComplete: function() {
+                gsap.set('.rating', {clearProps: 'all'});
+            }
+        });
+        
+        // Initialize price calculator
+        initPriceCalculator();
+    });
+    
+    function initPriceCalculator() {
+        // Update pricing initially
+        updatePricing();
+        
+        // Update pricing when inputs change
+        const checkboxes = document.querySelectorAll('#bookingForm input[type="checkbox"]');
+        const guestsInput = document.getElementById('guests');
+        
+        if (checkboxes) {
+            checkboxes.forEach(function(checkbox) {
                 checkbox.addEventListener('change', updatePricing);
             });
         }
         
-        // Initialize lightbox for gallery
-        lightbox.option({
-            'resizeDuration': 200,
-            'wrapAround': true,
-            'albumLabel': "Image %1 of %2"
+        if (guestsInput) {
+            guestsInput.addEventListener('change', updatePricing);
+            guestsInput.addEventListener('input', updatePricing);
+        }
+    }
+    
+    function updatePricing() {
+        const serviceElement = document.getElementById('service_price');
+        const categoriesElement = document.getElementById('categories_price');
+        const taxElement = document.getElementById('tax_amount');
+        const totalElement = document.getElementById('total_amount');
+        const guestsInput = document.getElementById('guests');
+        
+        if (!serviceElement || !categoriesElement || !taxElement || !totalElement || !guestsInput) {
+            return;
+        }
+        
+        const basePrice = {{ subevent.price }};
+        const guests = parseInt(guestsInput.value) || 1;
+        
+        // Calculate base service price (price * guests)
+        const servicePrice = basePrice * guests;
+        serviceElement.textContent = '₹' + servicePrice.toFixed(2);
+        
+        // Calculate categories price
+        let categoriesTotal = 0;
+        const checkedCategories = document.querySelectorAll('input[name="categories"]:checked');
+        
+        checkedCategories.forEach(function(checkbox) {
+            const label = checkbox.closest('.form-check').querySelector('.form-check-label');
+            if (label) {
+                const priceText = label.textContent;
+                const priceMatch = priceText.match(/₹([\d.]+)/);
+                if (priceMatch && priceMatch[1]) {
+                    const categoryPrice = parseFloat(priceMatch[1]);
+                    categoriesTotal += categoryPrice;
+                }
+            }
         });
-    });
+        
+        categoriesElement.textContent = '₹' + categoriesTotal.toFixed(2);
+        
+        // Calculate tax and total
+        const subtotal = servicePrice + categoriesTotal;
+        const tax = subtotal * 0.1; // 10% tax
+        const total = subtotal + tax;
+        
+        taxElement.textContent = '₹' + tax.toFixed(2);
+        totalElement.textContent = '₹' + total.toFixed(2);
+    }
 </script>
 {% endblock %}
