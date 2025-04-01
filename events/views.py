@@ -14,6 +14,7 @@ from rest_framework import viewsets, permissions
 from .models import Event, SubEvent, Review, Booking, UserProfile, ContactMessage, User, GalleryItem, SubEventCategory, CartItem, UserMessage, ActivityLog
 from .serializers import EventSerializer, SubEventSerializer, ReviewSerializer
 from .forms import ReviewForm, BookingForm, EventForm, SubEventForm, GalleryItemForm, SubEventCategoryForm, UserMessageForm
+from django.db import transaction
 
 def is_admin(user):
     """Check if user is an admin"""
@@ -702,48 +703,55 @@ def manager_login(request):
         
         # Check for hardcoded manager credentials
         if mobile == '8630500821' and password == 'Aryan@010':
-            # First try to find a user with this phone in UserProfile
-            try:
-                user_profile = UserProfile.objects.get(phone=mobile)
-                user = user_profile.user
-            except UserProfile.DoesNotExist:
-                # Look for an existing manager user
+            # Transaction to ensure database consistency
+            with transaction.atomic():
+                # Try to find a user with username 'manager'
+                manager_user = None
                 try:
-                    user = User.objects.get(username='manager')
-                    # Check if the user already has a profile
-                    try:
-                        user_profile = UserProfile.objects.get(user=user)
-                        # Update the profile with the phone number
-                        user_profile.phone = mobile
-                        user_profile.save()
-                    except UserProfile.DoesNotExist:
-                        # Create a profile for the existing manager
-                        user_profile = UserProfile.objects.create(
-                            user=user,
-                            phone=mobile
-                        )
+                    manager_user = User.objects.get(username='manager')
                 except User.DoesNotExist:
-                    # Create a new manager user if it doesn't exist
-                    user = User.objects.create_user(
+                    # Create manager user if it doesn't exist
+                    manager_user = User.objects.create_user(
                         username='manager',
                         email='manager@example.com',
                         password=password
                     )
-                    user.is_staff = True
-                    user.save()
-                    
-                    # Create profile for the manager
-                    user_profile = UserProfile.objects.create(
-                        user=user,
-                        phone=mobile
-                    )
+                    manager_user.is_staff = True
+                    manager_user.save()
+                
+                # Now handle the profile
+                try:
+                    # Try to find a profile by phone number first
+                    profile = UserProfile.objects.get(phone=mobile)
+                    # If profile exists but belongs to another user, update it
+                    if profile.user != manager_user:
+                        # Delete the old profile to avoid conflicts
+                        old_profile = UserProfile.objects.filter(user=manager_user).first()
+                        if old_profile:
+                            old_profile.delete()
+                        # Update the found profile to point to manager_user
+                        profile.user = manager_user
+                        profile.save()
+                except UserProfile.DoesNotExist:
+                    # No profile with this phone exists, check if manager has a profile
+                    profile = UserProfile.objects.filter(user=manager_user).first()
+                    if profile:
+                        # Update existing profile with the phone number
+                        profile.phone = mobile
+                        profile.save()
+                    else:
+                        # Create a new profile for the manager
+                        profile = UserProfile.objects.create(
+                            user=manager_user,
+                            phone=mobile
+                        )
             
             # Log the user in
-            login(request, user)
-            messages.success(request, "Welcome, Manager!")
+            login(request, manager_user)
+            messages.success(request, 'Welcome, Manager! You have successfully logged in.')
             return redirect('manager_dashboard')
         else:
-            messages.error(request, "Invalid manager credentials")
+            messages.error(request, 'Invalid credentials. Please try again.')
     
     return render(request, 'events/manager/login.html')
 
@@ -915,59 +923,6 @@ def admin_add_user(request):
     return redirect('admin_users')
 
 # Manager views
-def manager_login(request):
-    """Manager login view with specific credentials"""
-    if request.method == 'POST':
-        mobile = request.POST.get('mobile')
-        password = request.POST.get('password')
-        
-        # Check for hardcoded manager credentials
-        if mobile == '8630500821' and password == 'Aryan@010':
-            # First try to find a user with this phone in UserProfile
-            try:
-                user_profile = UserProfile.objects.get(phone=mobile)
-                user = user_profile.user
-            except UserProfile.DoesNotExist:
-                # Look for an existing manager user
-                try:
-                    user = User.objects.get(username='manager')
-                    # Check if the user already has a profile
-                    try:
-                        user_profile = UserProfile.objects.get(user=user)
-                        # Update the profile with the phone number
-                        user_profile.phone = mobile
-                        user_profile.save()
-                    except UserProfile.DoesNotExist:
-                        # Create a profile for the existing manager
-                        user_profile = UserProfile.objects.create(
-                            user=user,
-                            phone=mobile
-                        )
-                except User.DoesNotExist:
-                    # Create a new manager user if it doesn't exist
-                    user = User.objects.create_user(
-                        username='manager',
-                        email='manager@example.com',
-                        password=password
-                    )
-                    user.is_staff = True
-                    user.save()
-                    
-                    # Create profile for the manager
-                    user_profile = UserProfile.objects.create(
-                        user=user,
-                        phone=mobile
-                    )
-            
-            # Log the user in
-            login(request, user)
-            messages.success(request, "Welcome, Manager!")
-            return redirect('manager_dashboard')
-        else:
-            messages.error(request, "Invalid manager credentials")
-    
-    return render(request, 'events/manager/login.html')
-
 @login_required
 @user_passes_test(lambda u: u.is_staff or u.is_superuser)
 def manager_dashboard(request):
