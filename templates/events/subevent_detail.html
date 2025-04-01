@@ -187,9 +187,9 @@
                             {% empty %}
                                 {% for i in '123456'|make_list %}
                                     <div class="col-md-4 col-6 gallery-item">
-                                        <a href="{% static 'images/placeholder-' %}{{ forloop.counter }}.jpg" data-lightbox="gallery">
-                                            <img src="{% static 'images/placeholder-' %}{{ forloop.counter }}.jpg" alt="Gallery image" class="img-fluid gallery-thumbnail" style="width: 100%; height: 200px; object-fit: cover;">
-                                        </a>
+                                        <div class="placeholder-gallery-item" style="background-color: {% cycle '#4e73df' '#1cc88a' '#36b9cc' '#f6c23e' '#e74a3b' '#858796' %}; height: 200px;">
+                                            <i class="fas fa-image"></i>
+                                        </div>
                                     </div>
                                 {% endfor %}
                             {% endfor %}
@@ -797,6 +797,16 @@
     
     .rating-stars {
         margin-top: 10px;
+    }
+    
+    .placeholder-gallery-item {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: white;
     }
 </style>
 {% endblock %}

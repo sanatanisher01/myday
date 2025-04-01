@@ -13,7 +13,13 @@
                 <p class="lead mb-0">Have questions or feedback? We're here to help you create unforgettable memories.</p>
             </div>
             <div class="col-md-6 d-none d-md-block">
-                <img src="{% static 'images/contact-header.svg' %}" alt="Contact Us" class="img-fluid">
+                <div class="contact-header-graphic rounded shadow-sm">
+                    <div class="contact-icon-container">
+                        <i class="fas fa-envelope"></i>
+                        <i class="fas fa-phone"></i>
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -407,6 +413,30 @@
         transform: translateY(-5px);
         box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
     }
+    
+    /* Contact Header Graphic */
+    .contact-header-graphic {
+        background-image: linear-gradient(to bottom, #f8f9fa, #ffffff);
+        padding: 5rem 0;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .contact-icon-container {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        padding: 0 2rem;
+    }
+    
+    .contact-icon-container i {
+        font-size: 3rem;
+        color: var(--primary-color);
+    }
 </style>
 {% endblock %}
 
@@ -432,12 +462,13 @@
             ease: 'power3.out'
         });
         
-        gsap.from('.page-header img', {
+        gsap.from('.contact-icon-container i', {
             x: 100,
             opacity: 0,
             duration: 1,
             delay: 0.5,
-            ease: 'power3.out'
+            ease: 'power3.out',
+            stagger: 0.2
         });
         
         // Animate cards on scroll
