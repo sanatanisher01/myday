@@ -18,6 +18,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from events import views as event_views
 from django.views.generic import TemplateView
 from django.views.defaults import page_not_found, server_error
 from django.http import HttpResponse
@@ -60,7 +61,10 @@ urlpatterns = [
 ]
 
 # Add custom error handlers
-handler500 = custom_500
+handler400 = 'events.views.custom_bad_request'
+handler403 = 'events.views.custom_permission_denied'
+handler404 = 'events.views.custom_page_not_found'
+handler500 = 'events.views.custom_server_error'
 
 # Serve static and media files in development
 if settings.DEBUG:

@@ -1535,3 +1535,52 @@ def add_booking(request, subevent_id):
         'categories': SubEventCategory.objects.filter(subevent=subevent, is_active=True),
     }
     return render(request, 'events/add_booking.html', context)
+
+# Custom error handlers
+def custom_bad_request(request, exception):
+    """Custom 400 error handler with user and developer messages"""
+    context = {
+        'error_code': '400',
+        'error_title': 'Bad Request',
+        'user_message': 'Sorry, we couldn\'t process your request. Please try again.',
+        'dev_message': f'Error details: {str(exception)}' if exception else 'Invalid request parameters or malformed syntax.',
+    }
+    response = render(request, 'errors/error_page.html', context)
+    response.status_code = 400
+    return response
+
+def custom_permission_denied(request, exception):
+    """Custom 403 error handler with user and developer messages"""
+    context = {
+        'error_code': '403',
+        'error_title': 'Access Denied',
+        'user_message': 'Sorry, you don\'t have permission to access this page.',
+        'dev_message': f'Error details: {str(exception)}' if exception else 'User lacks necessary permissions to access this resource.',
+    }
+    response = render(request, 'errors/error_page.html', context)
+    response.status_code = 403
+    return response
+
+def custom_page_not_found(request, exception):
+    """Custom 404 error handler with user and developer messages"""
+    context = {
+        'error_code': '404',
+        'error_title': 'Page Not Found',
+        'user_message': 'Sorry, the page you\'re looking for doesn\'t exist.',
+        'dev_message': f'Error details: {str(exception)}' if exception else 'The requested URL was not found on this server.',
+    }
+    response = render(request, 'errors/error_page.html', context)
+    response.status_code = 404
+    return response
+
+def custom_server_error(request):
+    """Custom 500 error handler with user and developer messages"""
+    context = {
+        'error_code': '500',
+        'error_title': 'Server Error',
+        'user_message': 'Sorry, something went wrong on our end. Please try again later.',
+        'dev_message': 'An unexpected error occurred. Check server logs for details.',
+    }
+    response = render(request, 'errors/error_page.html', context)
+    response.status_code = 500
+    return response
