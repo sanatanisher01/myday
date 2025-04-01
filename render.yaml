@@ -15,9 +15,14 @@ services:
           name: myday_db
           property: connectionString
       - key: PYTHON_VERSION
-        value: 3.12.9
+        value: 3.11.11
+      - key: ALLOWED_HOSTS
+        value: ".onrender.com"
+      - key: DJANGO_SETTINGS_MODULE
+        value: "myday.settings"
 
 databases:
   - name: myday_db
     databaseName: myday
     user: myday
+    plan: free
