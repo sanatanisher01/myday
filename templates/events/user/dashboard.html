@@ -31,6 +31,12 @@
                     <a href="{% url 'user_bookings' %}" class="sidebar-link mb-2 {% if '/dashboard/bookings/' in request.path %}active{% endif %}">
                         <i class="fas fa-calendar-alt"></i> My Bookings
                     </a>
+                    <a href="{% url 'user_messages' %}" class="sidebar-link mb-2 {% if '/dashboard/messages/' in request.path %}active{% endif %}">
+                        <i class="fas fa-envelope"></i> Messages
+                        {% if unread_count %}
+                        <span class="badge bg-danger rounded-pill ms-1">{{ unread_count }}</span>
+                        {% endif %}
+                    </a>
                     <a href="{% url 'user_profile' %}" class="sidebar-link mb-2 {% if '/dashboard/profile/' in request.path %}active{% endif %}">
                         <i class="fas fa-user"></i> Profile
                     </a>
@@ -46,111 +52,87 @@
         
         <!-- Main Content -->
         <div class="col-lg-9 col-md-8 py-4">
-            <!-- Welcome Banner -->
-            <div class="card mb-4 glass-card welcome-banner">
-                <div class="card-body p-4">
-                    <div class="row align-items-center">
-                        <div class="col-md-8">
-                            <h2 class="mb-3">Welcome back, {{ user.first_name|default:user.username }}!</h2>
-                            <p class="text-muted mb-0">Manage your bookings, update your profile, or explore new events.</p>
-                        </div>
-                        <div class="col-md-4 text-md-end mt-3 mt-md-0">
-                            <a href="{% url 'event_list' %}" class="btn btn-primary">Explore Events</a>
-                        </div>
+            <div class="row">
+                <div class="col-md-12 mb-4">
+                    <div class="welcome-card bg-primary text-white rounded p-4">
+                        <h2>Welcome back, {{ user.first_name|default:user.username }}!</h2>
+                        <p>Here's what's happening with your MyDay events.</p>
                     </div>
                 </div>
             </div>
             
-            <!-- Recent Bookings -->
-            <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Recent Bookings</h5>
-                </div>
-                <div class="card-body">
-                    {% if user_bookings %}
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Event</th>
-                                        <th>Date</th>
-                                        <th>Time</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for booking in user_bookings %}
-                                    <tr>
-                                        <td>{{ booking.subevent.name }}</td>
-                                        <td>{{ booking.booking_date }}</td>
-                                        <td>{{ booking.booking_time }}</td>
-                                        <td>
-                                            {% if booking.status == 'pending' %}
-                                                <span class="badge bg-warning">Pending</span>
-                                            {% elif booking.status == 'confirmed' %}
-                                                <span class="badge bg-success">Confirmed</span>
-                                            {% elif booking.status == 'cancelled' %}
-                                                <span class="badge bg-danger">Cancelled</span>
-                                            {% else %}
-                                                <span class="badge bg-primary">Completed</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            <a href="#" class="btn btn-sm btn-outline-primary">View</a>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+            <div class="row">
+                <!-- Upcoming Bookings -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">Upcoming Bookings</h5>
                         </div>
-                    {% else %}
-                        <div class="text-center py-4">
-                            <i class="fas fa-calendar-day fa-3x text-muted mb-3"></i>
-                            <h5>No bookings yet</h5>
-                            <p>You haven't made any bookings yet. Browse events to book your first experience!</p>
-                            <a href="{% url 'event_list' %}" class="btn btn-primary mt-2">Browse Events</a>
-                        </div>
-                    {% endif %}
-                </div>
-                <div class="card-footer text-center">
-                    <a href="{% url 'user_bookings' %}" class="text-decoration-none">View All Bookings</a>
-                </div>
-            </div>
-            
-            <!-- Your Reviews -->
-            <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Your Reviews</h5>
-                </div>
-                <div class="card-body">
-                    {% if user_reviews %}
-                        {% for review in user_reviews %}
-                            <div class="review-item mb-3 {% if not forloop.last %}border-bottom pb-3{% endif %}">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <h6 class="mb-1">{{ review.event.name }}</h6>
-                                    <div class="rating">
-                                        {% with ''|center:review.rating as stars %}
-                                        {% for _ in stars %}
-                                            <i class="fas fa-star text-warning"></i>
-                                        {% endfor %}
-                                        {% endwith %}
+                        <div class="card-body">
+                            {% if upcoming_bookings %}
+                                {% for booking in upcoming_bookings %}
+                                <div class="booking-item mb-3 pb-3 {% if not forloop.last %}border-bottom{% endif %}">
+                                    <div class="d-flex justify-content-between">
+                                        <h6 class="mb-1">{{ booking.subevent.name }}</h6>
+                                        <span class="badge bg-{{ booking.status }}">{{ booking.get_status_display }}</span>
                                     </div>
+                                    <p class="text-muted mb-1">
+                                        <i class="far fa-calendar-alt me-1"></i> {{ booking.booking_date|date:"M d, Y" }} at {{ booking.booking_time|time:"g:i A" }}
+                                    </p>
+                                    <p class="text-muted mb-0">
+                                        <i class="fas fa-users me-1"></i> {{ booking.guests }} guest{{ booking.guests|pluralize }}
+                                    </p>
                                 </div>
-                                <p class="mb-1">{{ review.comment }}</p>
-                                <small class="text-muted">{{ review.created_at|date:"M d, Y" }}</small>
-                            </div>
-                        {% endfor %}
-                    {% else %}
-                        <div class="text-center py-4">
-                            <i class="fas fa-star fa-3x text-muted mb-3"></i>
-                            <h5>No reviews yet</h5>
-                            <p>You haven't reviewed any events yet. Share your experience with others!</p>
+                                {% endfor %}
+                                <div class="text-end mt-3">
+                                    <a href="{% url 'user_bookings' %}" class="btn btn-sm btn-outline-primary">View All Bookings</a>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-4">
+                                    <i class="far fa-calendar-check fa-3x text-muted mb-3"></i>
+                                    <p>No upcoming bookings.</p>
+                                    <a href="{% url 'event_list' %}" class="btn btn-sm btn-primary">Browse Events</a>
+                                </div>
+                            {% endif %}
                         </div>
-                    {% endif %}
+                    </div>
                 </div>
-                <div class="card-footer text-center">
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#reviewModal">Write a Review</button>
+                
+                <!-- Messages -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Recent Messages</h5>
+                            {% if unread_count %}
+                            <span class="badge bg-danger">{{ unread_count }} unread</span>
+                            {% endif %}
+                        </div>
+                        <div class="card-body">
+                            {% if user_messages %}
+                                {% for message in user_messages %}
+                                <div class="message-item mb-3 pb-3 {% if not forloop.last %}border-bottom{% endif %}">
+                                    <div class="d-flex justify-content-between">
+                                        <h6 class="mb-1">
+                                            {% if not message.is_read %}<span class="badge bg-danger me-1">New</span>{% endif %}
+                                            {{ message.subject }}
+                                        </h6>
+                                        <span class="badge bg-{{ message.message_type }}">{{ message.get_message_type_display }}</span>
+                                    </div>
+                                    <p class="text-muted small mb-1">{{ message.created_at|date:"M d, Y" }}</p>
+                                    <p class="mb-0">{{ message.message|truncatechars:80 }}</p>
+                                </div>
+                                {% endfor %}
+                                <div class="text-end mt-3">
+                                    <a href="{% url 'user_messages' %}" class="btn btn-sm btn-outline-primary">View All Messages</a>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-4">
+                                    <i class="far fa-envelope fa-3x text-muted mb-3"></i>
+                                    <p>No messages yet.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

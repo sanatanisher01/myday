@@ -1,0 +1,240 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Messages - MyDay{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<section class="py-4">
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="mb-0">My Messages</h1>
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb mb-0">
+                                <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+                                <li class="breadcrumb-item"><a href="{% url 'user_dashboard' %}">Dashboard</a></li>
+                                <li class="breadcrumb-item active" aria-current="page">Messages</li>
+                            </ol>
+                        </nav>
+                    </div>
+                    <form method="post" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" name="mark_all_read" class="btn btn-primary">
+                            <i class="fas fa-check-double me-1"></i> Mark All as Read
+                        </button>
+                    </form>
+                </div>
+                <hr>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Messages Section -->
+<section class="py-2">
+    <div class="container">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-lg-3 mb-4" data-aos="fade-right">
+                {% include 'events/user/sidebar.html' with active='messages' %}
+            </div>
+            
+            <!-- Main Content -->
+            <div class="col-lg-9" data-aos="fade-left">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                        <h5 class="mb-0">My Messages</h5>
+                        <div class="message-filters">
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-sm btn-outline-primary active filter-btn" data-filter="all">All</button>
+                                <button type="button" class="btn btn-sm btn-outline-primary filter-btn" data-filter="unread">Unread</button>
+                                <button type="button" class="btn btn-sm btn-outline-primary filter-btn" data-filter="read">Read</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush" id="messagesList">
+                            {% for message in user_messages %}
+                            <div class="list-group-item message-item {% if not message.is_read %}unread-message{% else %}read-message{% endif %}" data-aos="fade-up" data-aos-delay="{{ forloop.counter|add:100 }}">
+                                <div class="d-flex w-100 justify-content-between align-items-center">
+                                    <h5 class="mb-1">
+                                        {% if not message.is_read %}
+                                        <span class="badge bg-danger rounded-pill me-2">New</span>
+                                        {% endif %}
+                                        <span class="badge bg-{{ message.message_type }} me-2">{{ message.get_message_type_display }}</span>
+                                        {{ message.subject }}
+                                    </h5>
+                                    <small class="text-muted"><i class="far fa-clock me-1"></i>{{ message.created_at|date:"M d, Y" }}</small>
+                                </div>
+                                <p class="mb-1 message-preview">{{ message.message|truncatechars:150 }}</p>
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <small class="text-muted"><i class="far fa-user me-1"></i>From: {{ message.created_by.get_full_name|default:message.created_by.username }}</small>
+                                    <div>
+                                        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#messageModal{{ message.id }}">
+                                            <i class="far fa-eye me-1"></i> Read Full Message
+                                        </button>
+                                        {% if not message.is_read %}
+                                        <a href="{% url 'mark_message_read' message.id %}" class="btn btn-sm btn-outline-success ms-1">
+                                            <i class="far fa-check-circle me-1"></i> Mark as Read
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Message Modal -->
+                            <div class="modal fade" id="messageModal{{ message.id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content border-0 shadow">
+                                        <div class="modal-header bg-{{ message.message_type }} text-white">
+                                            <h5 class="modal-title"><i class="fas fa-envelope me-2"></i>{{ message.subject }}</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="mb-3 p-2 bg-light rounded">
+                                                <div class="d-flex justify-content-between">
+                                                    <small class="text-muted">
+                                                        <i class="far fa-user me-1"></i> From: {{ message.created_by.get_full_name|default:message.created_by.username }}
+                                                    </small>
+                                                    <small class="text-muted">
+                                                        <i class="far fa-calendar-alt me-1"></i> {{ message.created_at|date:"F d, Y H:i" }}
+                                                    </small>
+                                                </div>
+                                            </div>
+                                            <div class="message-content p-2">
+                                                {{ message.message|linebreaks }}
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            {% if not message.is_read %}
+                                            <a href="{% url 'mark_message_read' message.id %}" class="btn btn-success">
+                                                <i class="far fa-check-circle me-1"></i> Mark as Read
+                                            </a>
+                                            {% endif %}
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <div class="list-group-item text-center py-5" data-aos="fade-up">
+                                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                <h5>No messages yet</h5>
+                                <p class="text-muted">You don't have any messages at the moment.</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .message-item {
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
+    }
+    
+    .message-item:hover {
+        background-color: rgba(0, 0, 0, 0.03);
+    }
+    
+    .unread-message {
+        border-left: 4px solid var(--primary-color);
+    }
+    
+    .message-preview {
+        color: var(--text-color);
+    }
+    
+    .filter-btn.active {
+        background-color: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize AOS animations
+        if (typeof AOS !== 'undefined') {
+            AOS.init({
+                duration: 800,
+                easing: 'ease',
+                once: true
+            });
+        }
+        
+        // Fix for stuck modal backdrop
+        if (document.querySelector('.modal-backdrop')) {
+            document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+                backdrop.remove();
+            });
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+        }
+        
+        // Message filtering
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        const messageItems = document.querySelectorAll('.message-item');
+        
+        filterButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                // Remove active class from all buttons
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                
+                // Add active class to clicked button
+                this.classList.add('active');
+                
+                const filter = this.getAttribute('data-filter');
+                
+                // Show/hide messages based on filter
+                messageItems.forEach(item => {
+                    if (filter === 'all') {
+                        item.style.display = 'block';
+                    } else if (filter === 'unread' && item.classList.contains('unread-message')) {
+                        item.style.display = 'block';
+                    } else if (filter === 'read' && !item.classList.contains('unread-message')) {
+                        item.style.display = 'block';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+        });
+        
+        // Auto-mark as read when opening modal
+        const messageModals = document.querySelectorAll('.modal');
+        messageModals.forEach(modal => {
+            modal.addEventListener('shown.bs.modal', function() {
+                const messageId = this.id.replace('messageModal', '');
+                const readButton = this.querySelector('a[href*="mark_message_read"]');
+                
+                if (readButton) {
+                    // After 2 seconds, mark as read automatically
+                    setTimeout(() => {
+                        readButton.click();
+                    }, 2000);
+                }
+            });
+            
+            // Ensure proper cleanup when modal is hidden
+            modal.addEventListener('hidden.bs.modal', function() {
+                // Remove any lingering backdrops
+                document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+                    backdrop.remove();
+                });
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+                document.body.style.paddingRight = '';
+            });
+        });
+    });
+</script>
+{% endblock %}

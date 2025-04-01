@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.models import User
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Submit, Row, Column
-from .models import Event, SubEvent, Review, Booking
+from .models import Event, SubEvent, Review, Booking, GalleryItem, SubEventCategory, CartItem, UserMessage
 
 class EventForm(forms.ModelForm):
     """Form for creating and updating events"""
@@ -103,4 +103,99 @@ class UserProfileForm(forms.ModelForm):
             ),
             'email',
             Submit('submit', 'Update Profile', css_class='btn-primary mt-3')
+        )
+
+
+class GalleryItemForm(forms.ModelForm):
+    """Form for creating and updating gallery items"""
+    class Meta:
+        model = GalleryItem
+        fields = ['subevent', 'image', 'caption', 'order']
+        widgets = {
+            'caption': forms.TextInput(attrs={'placeholder': 'Brief description of the image'}),
+            'order': forms.NumberInput(attrs={'min': 0, 'placeholder': 'Display order (lower numbers appear first)'}),
+        }
+        
+    def __init__(self, *args, **kwargs):
+        subevent_id = kwargs.pop('subevent_id', None)
+        super().__init__(*args, **kwargs)
+        
+        if subevent_id:
+            self.fields['subevent'].initial = subevent_id
+            self.fields['subevent'].widget = forms.HiddenInput()
+        
+        self.helper = FormHelper()
+        self.helper.form_method = 'post'
+        self.helper.layout = Layout(
+            'subevent',
+            'image',
+            'caption',
+            'order',
+            Submit('submit', 'Save Gallery Item', css_class='btn-primary mt-3')
+        )
+
+
+class SubEventCategoryForm(forms.ModelForm):
+    """Form for creating and updating subevent categories"""
+    class Meta:
+        model = SubEventCategory
+        fields = ['name', 'description', 'image', 'price', 'is_active', 'order']
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 3}),
+        }
+
+
+class UserMessageForm(forms.ModelForm):
+    """Form for sending messages to users"""
+    class Meta:
+        model = UserMessage
+        fields = ['user', 'subject', 'message', 'message_type']
+        widgets = {
+            'message': forms.Textarea(attrs={'rows': 5}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Only show regular users (not staff or superusers)
+        self.fields['user'].queryset = User.objects.filter(is_staff=False, is_superuser=False)
+        self.fields['user'].label_from_instance = lambda obj: f"{obj.username} ({obj.email})"
+
+
+class AddToCartForm(forms.ModelForm):
+    """Form for adding items to cart"""
+    class Meta:
+        model = CartItem
+        fields = ['category', 'quantity', 'booking_date', 'booking_time', 'guests', 'notes']
+        widgets = {
+            'booking_date': forms.DateInput(attrs={'type': 'date'}),
+            'booking_time': forms.TimeInput(attrs={'type': 'time'}),
+            'quantity': forms.NumberInput(attrs={'min': 1, 'value': 1}),
+            'guests': forms.NumberInput(attrs={'min': 1, 'value': 1}),
+            'notes': forms.Textarea(attrs={'rows': 2, 'placeholder': 'Any special requests or notes'}),
+        }
+        
+    def __init__(self, *args, **kwargs):
+        subevent_id = kwargs.pop('subevent_id', None)
+        categories = kwargs.pop('categories', None)
+        super().__init__(*args, **kwargs)
+        
+        if categories:
+            self.fields['category'].queryset = categories
+            
+        self.helper = FormHelper()
+        self.helper.form_method = 'post'
+        self.helper.layout = Layout(
+            'category',
+            Row(
+                Column('quantity', css_class='form-group col-md-6'),
+                Column('guests', css_class='form-group col-md-6'),
+                css_class='form-row'
+            ),
+            Row(
+                Column('booking_date', css_class='form-group col-md-6'),
+                Column('booking_time', css_class='form-group col-md-6'),
+                css_class='form-row'
+            ),
+            'notes',
+            Submit('submit', 'Add to Cart', css_class='btn-primary mt-3')
         )

@@ -1,17 +1,19 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.http import HttpResponse, JsonResponse
 from django.contrib.auth.decorators import login_required, user_passes_test
-from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth import login, logout, update_session_auth_hash, authenticate
+from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
+from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib import messages
-from django.db.models import Avg, Q, Sum, Count, Min
-from rest_framework import viewsets, permissions
+from django.db.models import Avg, Count, Sum, Q, Min
 from django.utils import timezone
-import os
-from datetime import datetime
+from django.core.paginator import Paginator
+from django.views.decorators.csrf import csrf_exempt
+from decimal import Decimal
+from rest_framework import viewsets, permissions
 
-from .models import Event, SubEvent, Review, Booking, UserProfile, ContactMessage, User
+from .models import Event, SubEvent, Review, Booking, UserProfile, ContactMessage, User, GalleryItem, SubEventCategory, CartItem, UserMessage
 from .serializers import EventSerializer, SubEventSerializer, ReviewSerializer
-from .forms import ReviewForm, BookingForm, EventForm, SubEventForm
+from .forms import ReviewForm, BookingForm, EventForm, SubEventForm, GalleryItemForm, SubEventCategoryForm, UserMessageForm
 
 def is_admin(user):
     """Check if user is an admin"""
@@ -120,13 +122,24 @@ def subevent_detail(request, event_slug, subevent_slug):
 # User dashboard views
 @login_required
 def user_dashboard(request):
-    """User dashboard main page"""
+    """User dashboard view"""
     user_bookings = Booking.objects.filter(user=request.user).order_by('-created_at')[:5]
-    user_reviews = Review.objects.filter(user=request.user).order_by('-created_at')[:5]
+    upcoming_bookings = Booking.objects.filter(
+        user=request.user,
+        booking_date__gte=timezone.now().date(),
+        status__in=['pending', 'confirmed']
+    ).order_by('booking_date', 'booking_time')[:3]
+    
+    # Get user messages
+    all_user_messages = UserMessage.objects.filter(user=request.user)
+    user_messages = all_user_messages.order_by('-created_at')[:5]
+    unread_count = all_user_messages.filter(is_read=False).count()
     
     context = {
         'user_bookings': user_bookings,
-        'user_reviews': user_reviews,
+        'upcoming_bookings': upcoming_bookings,
+        'user_messages': user_messages,
+        'unread_count': unread_count,
     }
     return render(request, 'events/user/dashboard.html', context)
 
@@ -165,7 +178,7 @@ def user_bookings(request):
             booking.status_color = 'cancelled'
         
         # Check if the booking has a review
-        booking.has_review = Review.objects.filter(user=request.user, subevent=booking.subevent).exists()
+        booking.has_review = Review.objects.filter(user=request.user, event=booking.subevent.event).exists()
     
     context = {
         'all_bookings': all_bookings,
@@ -435,6 +448,30 @@ def delete_account(request):
         return redirect('home')
     
     return redirect('user_settings')
+
+@login_required
+def user_messages(request):
+    """User messages view"""
+    user_messages = UserMessage.objects.filter(user=request.user).order_by('-created_at')
+    
+    # Mark all messages as read if requested
+    if request.method == 'POST' and 'mark_all_read' in request.POST:
+        user_messages.filter(is_read=False).update(is_read=True)
+        messages.success(request, "All messages marked as read.")
+        return redirect('user_messages')
+    
+    context = {
+        'user_messages': user_messages,
+    }
+    return render(request, 'events/user/messages.html', context)
+
+@login_required
+def mark_message_read(request, message_id):
+    """Mark a message as read"""
+    message = get_object_or_404(UserMessage, id=message_id, user=request.user)
+    message.is_read = True
+    message.save()
+    return redirect('user_messages')
 
 def contact(request):
     """Contact page with form for user inquiries."""
@@ -841,6 +878,8 @@ def manager_subevents(request, event_id=None):
             if form.is_valid():
                 form.save()
                 messages.success(request, "Sub-event created successfully!")
+                if event_id:
+                    return redirect('manager_subevents', event_id=event_id)
                 return redirect('manager_subevents')
         
         # Handle updating subevent
@@ -851,6 +890,8 @@ def manager_subevents(request, event_id=None):
             if form.is_valid():
                 form.save()
                 messages.success(request, "Sub-event updated successfully!")
+                if event_id:
+                    return redirect('manager_subevents', event_id=event_id)
                 return redirect('manager_subevents')
         
         # Handle deleting subevent
@@ -970,22 +1011,198 @@ def manager_user_detail(request, user_id):
 @login_required
 @user_passes_test(lambda u: u.is_staff or u.is_superuser)
 def manager_contacts(request):
-    """Manager contact messages page"""
-    contacts = ContactMessage.objects.all().order_by('-created_at')
-    
-    # Mark message as read if requested
-    if request.method == 'POST' and 'mark_read' in request.POST:
-        message_id = request.POST.get('message_id')
-        message = get_object_or_404(ContactMessage, id=message_id)
-        message.is_read = True
-        message.save()
-        messages.success(request, "Message marked as read")
+    """Manager view for contact messages"""
+    contact_messages = ContactMessage.objects.all().order_by('-created_at')
     
     context = {
-        'contacts': contacts,
+        'contact_messages': contact_messages,
     }
     
     return render(request, 'events/manager/contacts.html', context)
+
+@login_required
+@user_passes_test(lambda u: u.is_staff or u.is_superuser)
+def manager_messages(request):
+    """Manager view for sending and viewing messages to users"""
+    messages_sent = UserMessage.objects.all().order_by('-created_at')
+    
+    if request.method == 'POST':
+        form = UserMessageForm(request.POST)
+        if form.is_valid():
+            message = form.save(commit=False)
+            message.created_by = request.user
+            message.save()
+            messages.success(request, "Message sent successfully!")
+            return redirect('manager_messages')
+    else:
+        form = UserMessageForm()
+    
+    context = {
+        'form': form,
+        'messages_sent': messages_sent,
+    }
+    
+    return render(request, 'events/manager/messages.html', context)
+
+@login_required
+@user_passes_test(lambda u: u.is_staff or u.is_superuser)
+def delete_message(request, message_id):
+    """Delete a message"""
+    message = get_object_or_404(UserMessage, id=message_id)
+    message.delete()
+    messages.success(request, "Message deleted successfully!")
+    return redirect('manager_messages')
+
+@login_required
+@user_passes_test(lambda u: u.is_staff or u.is_superuser)
+def manager_gallery(request, subevent_id=None):
+    """Manager gallery management page"""
+    subevent = None
+    if subevent_id:
+        subevent = get_object_or_404(SubEvent, id=subevent_id)
+        gallery_items = GalleryItem.objects.filter(subevent=subevent).order_by('order', 'created_at')
+    else:
+        gallery_items = GalleryItem.objects.all().order_by('subevent', 'order', 'created_at')
+    
+    if request.method == 'POST':
+        # Handle creating new gallery item
+        if 'create_gallery_item' in request.POST:
+            form = GalleryItemForm(request.POST, request.FILES, subevent_id=subevent_id)
+            if form.is_valid():
+                form.save()
+                messages.success(request, "Gallery item added successfully!")
+                if subevent_id:
+                    return redirect('manager_gallery', subevent_id=subevent_id)
+                return redirect('manager_gallery')
+        
+        # Handle updating gallery item
+        elif 'update_gallery_item' in request.POST:
+            item_id = request.POST.get('item_id')
+            gallery_item = get_object_or_404(GalleryItem, id=item_id)
+            form = GalleryItemForm(request.POST, request.FILES, instance=gallery_item)
+            if form.is_valid():
+                form.save()
+                messages.success(request, "Gallery item updated successfully!")
+                if subevent_id:
+                    return redirect('manager_gallery', subevent_id=subevent_id)
+                return redirect('manager_gallery')
+        
+        # Handle deleting gallery item
+        elif 'delete_gallery_item' in request.POST:
+            item_id = request.POST.get('item_id')
+            gallery_item = get_object_or_404(GalleryItem, id=item_id)
+            gallery_item.delete()
+            messages.success(request, "Gallery item deleted successfully!")
+            if subevent_id:
+                return redirect('manager_gallery', subevent_id=subevent_id)
+            return redirect('manager_gallery')
+    else:
+        form = GalleryItemForm(subevent_id=subevent_id)
+    
+    # Get all subevents for filtering
+    subevents = SubEvent.objects.all().order_by('event__name', 'name')
+    
+    context = {
+        'gallery_items': gallery_items,
+        'form': form,
+        'subevent': subevent,
+        'subevents': subevents,
+    }
+    
+    return render(request, 'events/manager/gallery.html', context)
+
+@login_required
+@user_passes_test(lambda u: u.is_staff or u.is_superuser)
+def manager_categories(request, subevent_id=None):
+    """Manager categories management page"""
+    subevent = None
+    if subevent_id:
+        subevent = get_object_or_404(SubEvent, id=subevent_id)
+        categories = SubEventCategory.objects.filter(subevent=subevent).order_by('order', 'name')
+    else:
+        categories = SubEventCategory.objects.all().order_by('subevent', 'order', 'name')
+    
+    if request.method == 'POST':
+        # Handle creating new category
+        if 'create_category' in request.POST:
+            form = SubEventCategoryForm(request.POST, request.FILES, subevent_id=subevent_id)
+            if form.is_valid():
+                form.save()
+                messages.success(request, "Category added successfully!")
+                if subevent_id:
+                    return redirect('manager_categories', subevent_id=subevent_id)
+                return redirect('manager_categories')
+        
+        # Handle updating category
+        elif 'update_category' in request.POST:
+            category_id = request.POST.get('category_id')
+            category = get_object_or_404(SubEventCategory, id=category_id)
+            form = SubEventCategoryForm(request.POST, request.FILES, instance=category)
+            if form.is_valid():
+                form.save()
+                messages.success(request, "Category updated successfully!")
+                if subevent_id:
+                    return redirect('manager_categories', subevent_id=subevent_id)
+                return redirect('manager_categories')
+        
+        # Handle toggling category active status
+        elif 'toggle_category' in request.POST:
+            category_id = request.POST.get('category_id')
+            category = get_object_or_404(SubEventCategory, id=category_id)
+            category.is_active = not category.is_active
+            category.save()
+            status = "activated" if category.is_active else "deactivated"
+            messages.success(request, f"Category {status} successfully!")
+            if subevent_id:
+                return redirect('manager_categories', subevent_id=subevent_id)
+            return redirect('manager_categories')
+        
+        # Handle deleting category
+        elif 'delete_category' in request.POST:
+            category_id = request.POST.get('category_id')
+            category = get_object_or_404(SubEventCategory, id=category_id)
+            category_name = category.name
+            category.delete()
+            messages.success(request, f"Category '{category_name}' deleted successfully!")
+            if subevent_id:
+                return redirect('manager_categories', subevent_id=subevent_id)
+            return redirect('manager_categories')
+    else:
+        form = SubEventCategoryForm(subevent_id=subevent_id)
+    
+    # Get all subevents for filtering
+    subevents = SubEvent.objects.all().order_by('event__name', 'name')
+    
+    context = {
+        'categories': categories,
+        'form': form,
+        'subevent': subevent,
+        'subevents': subevents,
+    }
+    
+    return render(request, 'events/manager/categories.html', context)
+
+# API ViewSets
+class EventViewSet(viewsets.ModelViewSet):
+    """API endpoint for events"""
+    queryset = Event.objects.all()
+    serializer_class = EventSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+class SubEventViewSet(viewsets.ModelViewSet):
+    """API endpoint for sub-events"""
+    queryset = SubEvent.objects.all()
+    serializer_class = SubEventSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+class ReviewViewSet(viewsets.ModelViewSet):
+    """API endpoint for reviews"""
+    queryset = Review.objects.all()
+    serializer_class = ReviewSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
 # Authentication views
 def signup(request):
@@ -1029,7 +1246,7 @@ def add_review(request, event_id):
 
 @login_required
 def add_booking(request, subevent_id):
-    """Add a booking for a sub-event"""
+    """Add a booking for a subevent"""
     subevent = get_object_or_404(SubEvent, id=subevent_id)
     
     if request.method == 'POST':
@@ -1038,10 +1255,32 @@ def add_booking(request, subevent_id):
             booking = form.save(commit=False)
             booking.user = request.user
             booking.subevent = subevent
-            # Set the total amount based on the subevent price
-            booking.total_amount = subevent.price
+            
+            # Calculate base price (subevent price * guests)
+            base_price = subevent.price * booking.guests
+            
+            # Get selected categories
+            selected_categories = request.POST.getlist('categories')
+            categories_total = 0
+            
+            # Calculate total price including categories
+            if selected_categories:
+                categories = SubEventCategory.objects.filter(id__in=selected_categories)
+                categories_total = sum(category.price for category in categories)
+            
+            # Calculate total amount with tax
+            subtotal = base_price + categories_total
+            tax = subtotal * Decimal('0.1')  # 10% tax
+            booking.total_amount = subtotal + tax
+            
             booking.save()
-            messages.success(request, "Booking created successfully!")
+            
+            # Save the selected categories to the booking
+            if selected_categories:
+                for category_id in selected_categories:
+                    booking.categories.add(category_id)
+            
+            messages.success(request, "Your booking has been confirmed! You can view your bookings in your dashboard.")
             return redirect('user_bookings')
     else:
         form = BookingForm()
@@ -1049,27 +1288,6 @@ def add_booking(request, subevent_id):
     context = {
         'form': form,
         'subevent': subevent,
+        'categories': SubEventCategory.objects.filter(subevent=subevent, is_active=True),
     }
     return render(request, 'events/add_booking.html', context)
-
-# API ViewSets
-class EventViewSet(viewsets.ModelViewSet):
-    """API endpoint for events"""
-    queryset = Event.objects.all()
-    serializer_class = EventSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-
-class SubEventViewSet(viewsets.ModelViewSet):
-    """API endpoint for sub-events"""
-    queryset = SubEvent.objects.all()
-    serializer_class = SubEventSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-
-class ReviewViewSet(viewsets.ModelViewSet):
-    """API endpoint for reviews"""
-    queryset = Review.objects.all()
-    serializer_class = ReviewSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-    
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)

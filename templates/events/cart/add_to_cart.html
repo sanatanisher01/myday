@@ -1,0 +1,173 @@
+{% extends 'events/base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Add to Cart - {{ subevent.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Add to Cart</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <img src="{{ subevent.image.url }}" alt="{{ subevent.name }}" class="img-fluid rounded">
+                        </div>
+                        <div class="col-md-8">
+                            <h3>{{ subevent.name }}</h3>
+                            <p class="text-muted">{{ subevent.event.name }}</p>
+                            <p>{{ subevent.description|truncatewords:30 }}</p>
+                            <p class="h5 text-primary">Base Price: ₹{{ subevent.price }}</p>
+                        </div>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {% if categories %}
+                        <div class="mb-4">
+                            <h5>Available Categories/Add-ons</h5>
+                            <div class="row">
+                                {% for category in categories %}
+                                <div class="col-md-6 mb-3">
+                                    <div class="card h-100">
+                                        <div class="card-body">
+                                            <div class="form-check">
+                                                <input class="form-check-input category-select" type="radio" 
+                                                       name="category" id="category{{ category.id }}" 
+                                                       value="{{ category.id }}" 
+                                                       data-price="{{ category.price }}">
+                                                <label class="form-check-label" for="category{{ category.id }}">
+                                                    <h6>{{ category.name }} - ₹{{ category.price }}</h6>
+                                                </label>
+                                            </div>
+                                            <p class="small text-muted mt-2">{{ category.description }}</p>
+                                            {% if category.image %}
+                                            <img src="{{ category.image.url }}" alt="{{ category.name }}" class="img-thumbnail mt-2" style="max-height: 100px;">
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                {{ form.booking_date|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.booking_time|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                {{ form.guests|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.quantity|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        {{ form.notes|as_crispy_field }}
+
+                        <div class="card bg-light mb-4">
+                            <div class="card-body">
+                                <h5>Price Summary</h5>
+                                <div class="d-flex justify-content-between">
+                                    <span>Base Price (₹{{ subevent.price }} x <span id="guests-count">1</span> guests):</span>
+                                    <span>₹<span id="base-price">{{ subevent.price }}</span></span>
+                                </div>
+                                <div class="d-flex justify-content-between" id="category-price-row" style="display: none !important;">
+                                    <span>Category: <span id="selected-category-name">None</span> (₹<span id="category-unit-price">0</span> x <span id="quantity-count">1</span>)</span>
+                                    <span>₹<span id="category-price">0</span></span>
+                                </div>
+                                <hr>
+                                <div class="d-flex justify-content-between fw-bold">
+                                    <span>Total:</span>
+                                    <span>₹<span id="total-price">{{ subevent.price }}</span></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">Add to Cart</button>
+                            <a href="{% url 'subevent_detail' event_slug=subevent.event.slug subevent_slug=subevent.slug %}" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const basePrice = parseFloat('{{ subevent.price }}');
+        const guestsInput = document.getElementById('id_guests');
+        const quantityInput = document.getElementById('id_quantity');
+        const categoryInputs = document.querySelectorAll('.category-select');
+        
+        const guestsCount = document.getElementById('guests-count');
+        const basePriceElement = document.getElementById('base-price');
+        const categoryPriceRow = document.getElementById('category-price-row');
+        const selectedCategoryName = document.getElementById('selected-category-name');
+        const categoryUnitPrice = document.getElementById('category-unit-price');
+        const quantityCount = document.getElementById('quantity-count');
+        const categoryPrice = document.getElementById('category-price');
+        const totalPrice = document.getElementById('total-price');
+        
+        function updatePrices() {
+            const guests = parseInt(guestsInput.value) || 1;
+            const quantity = parseInt(quantityInput.value) || 1;
+            let selectedCategory = null;
+            let categoryPriceValue = 0;
+            
+            // Find selected category
+            categoryInputs.forEach(input => {
+                if (input.checked) {
+                    selectedCategory = input;
+                    categoryPriceValue = parseFloat(input.dataset.price) * quantity;
+                }
+            });
+            
+            // Update display
+            guestsCount.textContent = guests;
+            basePriceElement.textContent = (basePrice * guests).toFixed(2);
+            
+            if (selectedCategory) {
+                const categoryName = selectedCategory.nextElementSibling.textContent.trim();
+                categoryPriceRow.style.display = 'flex';
+                selectedCategoryName.textContent = categoryName;
+                categoryUnitPrice.textContent = selectedCategory.dataset.price;
+                quantityCount.textContent = quantity;
+                categoryPrice.textContent = categoryPriceValue.toFixed(2);
+            } else {
+                categoryPriceRow.style.display = 'none';
+            }
+            
+            // Calculate total
+            const total = (basePrice * guests) + categoryPriceValue;
+            totalPrice.textContent = total.toFixed(2);
+        }
+        
+        // Add event listeners
+        guestsInput.addEventListener('input', updatePrices);
+        quantityInput.addEventListener('input', updatePrices);
+        categoryInputs.forEach(input => {
+            input.addEventListener('change', updatePrices);
+        });
+        
+        // Initial update
+        updatePrices();
+    });
+</script>
+{% endblock %}

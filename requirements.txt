@@ -6,5 +6,5 @@ django-crispy-forms==2.0
 crispy-bootstrap5==0.7
 whitenoise==6.5.0
 gunicorn==21.2.0
-# For production
-# psycopg2-binary==2.9.7
+dj-database-url==2.1.0
+psycopg2-binary==2.9.9

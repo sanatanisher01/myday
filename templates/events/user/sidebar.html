@@ -1,0 +1,25 @@
+<div class="user-sidebar">
+    <div class="nav flex-column">
+        <a href="{% url 'user_dashboard' %}" class="sidebar-link mb-2 {% if active == 'dashboard' %}active{% endif %}">
+            <i class="fas fa-home"></i> Dashboard
+        </a>
+        <a href="{% url 'user_bookings' %}" class="sidebar-link mb-2 {% if active == 'bookings' %}active{% endif %}">
+            <i class="fas fa-calendar-alt"></i> My Bookings
+        </a>
+        <a href="{% url 'user_messages' %}" class="sidebar-link mb-2 {% if active == 'messages' %}active{% endif %}">
+            <i class="fas fa-envelope"></i> Messages
+            {% if unread_count %}
+            <span class="badge bg-danger rounded-pill ms-1">{{ unread_count }}</span>
+            {% endif %}
+        </a>
+        <a href="{% url 'user_profile' %}" class="sidebar-link mb-2 {% if active == 'profile' %}active{% endif %}">
+            <i class="fas fa-user"></i> Profile
+        </a>
+        <a href="{% url 'user_settings' %}" class="sidebar-link mb-2 {% if active == 'settings' %}active{% endif %}">
+            <i class="fas fa-cog"></i> Settings
+        </a>
+        <a href="{% url 'logout' %}" class="sidebar-link mb-2 text-danger">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+    </div>
+</div>

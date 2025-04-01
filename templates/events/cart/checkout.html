@@ -1,0 +1,150 @@
+{% extends 'events/base.html' %}
+{% load static %}
+
+{% block title %}Checkout{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-8 offset-lg-2">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Checkout</h4>
+                </div>
+                <div class="card-body">
+                    <h5 class="mb-4">Order Summary</h5>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Details</th>
+                                    <th>Price (₹)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in cart_items %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{{ item.subevent.image.url }}" alt="{{ item.subevent.name }}" class="img-thumbnail me-3" style="max-width: 80px;">
+                                            <div>
+                                                <h6 class="mb-0">{{ item.subevent.name }}</h6>
+                                                <small class="text-muted">{{ item.subevent.event.name }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <p class="small mb-1">Date: {{ item.booking_date|date:"d M Y" }}</p>
+                                        <p class="small mb-1">Time: {{ item.booking_time|time:"g:i A" }}</p>
+                                        <p class="small mb-1">Guests: {{ item.guests }}</p>
+                                        {% if item.category %}
+                                        <p class="small mb-1">
+                                            <span class="badge bg-info">{{ item.category.name }}</span>
+                                            <span class="text-muted">(Qty: {{ item.quantity }})</span>
+                                        </p>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <p class="fw-bold">₹{{ item.get_total_price }}</p>
+                                        <div class="small text-muted">
+                                            <p class="mb-0">Base: ₹{{ item.subevent.price }} x {{ item.guests }}</p>
+                                            {% if item.category %}
+                                            <p class="mb-0">{{ item.category.name }}: ₹{{ item.category.price }} x {{ item.quantity }}</p>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="2" class="text-end fw-bold">Total:</td>
+                                    <td class="fw-bold">₹{{ total }}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    
+                    <div class="mt-5">
+                        <h5 class="mb-4">Payment Method</h5>
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="radio" name="paymentMethod" id="paymentCash" checked>
+                                    <label class="form-check-label" for="paymentCash">
+                                        <i class="fas fa-money-bill-wave me-2"></i> Pay at Venue
+                                    </label>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="radio" name="paymentMethod" id="paymentOnline">
+                                    <label class="form-check-label" for="paymentOnline">
+                                        <i class="fas fa-credit-card me-2"></i> Online Payment
+                                        <span class="badge bg-secondary ms-2">Coming Soon</span>
+                                    </label>
+                                </div>
+                                <div class="alert alert-info mt-3">
+                                    <i class="fas fa-info-circle me-2"></i> Payment will be collected at the venue. Your booking will be confirmed immediately.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="form-check mb-4">
+                                <input class="form-check-input" type="checkbox" id="termsCheck" required>
+                                <label class="form-check-label" for="termsCheck">
+                                    I agree to the <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">terms and conditions</a>
+                                </label>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'view_cart' %}" class="btn btn-outline-secondary">Back to Cart</a>
+                                <button type="submit" class="btn btn-success">Confirm Booking</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Terms and Conditions Modal -->
+<div class="modal fade" id="termsModal" tabindex="-1" aria-labelledby="termsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="termsModalLabel">Terms and Conditions</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h6>Booking Terms</h6>
+                <p>By confirming your booking, you agree to the following terms:</p>
+                <ul>
+                    <li>Cancellations must be made at least 48 hours before the scheduled event time.</li>
+                    <li>Late cancellations may incur a cancellation fee of up to 50% of the booking amount.</li>
+                    <li>No-shows will be charged the full booking amount.</li>
+                    <li>The venue reserves the right to modify or cancel the event in case of unforeseen circumstances.</li>
+                    <li>All prices are in Indian Rupees (₹) and include applicable taxes.</li>
+                </ul>
+                
+                <h6>Payment Terms</h6>
+                <p>For "Pay at Venue" option:</p>
+                <ul>
+                    <li>Full payment is due at the venue before the start of the event.</li>
+                    <li>Accepted payment methods include cash, credit/debit cards, and UPI.</li>
+                    <li>A receipt will be provided upon payment.</li>
+                </ul>
+                
+                <h6>Privacy Policy</h6>
+                <p>Your personal information will be used solely for the purpose of processing your booking and providing you with relevant information about your event. We do not share your information with third parties without your consent.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

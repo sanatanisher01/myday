@@ -1,0 +1,82 @@
+/* Custom styles for MyDay */
+
+/* Custom button styles */
+.btn-outline-purple {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-outline-purple:hover {
+    color: #fff;
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.bg-purple {
+    background-color: var(--primary-color) !important;
+    color: #fff;
+}
+
+/* Message badges */
+.badge.bg-info {
+    background-color: #0dcaf0 !important;
+}
+
+.badge.bg-success {
+    background-color: #198754 !important;
+}
+
+.badge.bg-warning {
+    background-color: #ffc107 !important;
+    color: #212529;
+}
+
+.badge.bg-danger {
+    background-color: var(--accent-color) !important;
+}
+
+/* Sidebar styles */
+.user-sidebar {
+    background-color: var(--secondary-color);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    height: 100%;
+}
+
+.sidebar-link {
+    display: block;
+    padding: 0.75rem 1rem;
+    color: var(--text-color);
+    text-decoration: none;
+    border-radius: 0.25rem;
+    transition: all 0.2s ease;
+}
+
+.sidebar-link:hover {
+    background-color: #e9ecef;
+    color: var(--dark-color);
+}
+
+.sidebar-link.active {
+    background-color: var(--primary-color);
+    color: #fff;
+}
+
+/* Message items */
+.message-item {
+    transition: all 0.2s ease;
+}
+
+.message-item:hover {
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+/* Unread message indicator */
+.unread-indicator {
+    width: 10px;
+    height: 10px;
+    background-color: var(--accent-color);
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 5px;
+}

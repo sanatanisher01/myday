@@ -51,6 +51,51 @@ class SubEvent(models.Model):
         ordering = ['event', 'name']
 
 
+class SubEventCategory(models.Model):
+    """Model for subevent categories (add-ons or options)"""
+    subevent = models.ForeignKey(SubEvent, on_delete=models.CASCADE, related_name='categories')
+    name = models.CharField(max_length=100)
+    description = models.TextField()
+    image = models.ImageField(upload_to='categories/')
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    is_active = models.BooleanField(default=True)
+    order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['order', 'name']
+        verbose_name_plural = 'Sub-event categories'
+    
+    def __str__(self):
+        return f"{self.subevent.name} - {self.name}"
+
+
+class Booking(models.Model):
+    """Model for event bookings"""
+    STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('confirmed', 'Confirmed'),
+        ('cancelled', 'Cancelled'),
+        ('completed', 'Completed'),
+    )
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bookings')
+    subevent = models.ForeignKey(SubEvent, on_delete=models.CASCADE, related_name='bookings')
+    categories = models.ManyToManyField(SubEventCategory, blank=True, related_name='bookings')
+    booking_date = models.DateField()
+    booking_time = models.TimeField()
+    guests = models.PositiveIntegerField(default=1)
+    notes = models.TextField(blank=True, null=True)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.subevent.name} - {self.booking_date}"
+
+
 class Review(models.Model):
     """
     User reviews for events
@@ -70,30 +115,6 @@ class Review(models.Model):
     class Meta:
         ordering = ['-created_at']
         unique_together = ['user', 'event']
-
-
-class Booking(models.Model):
-    """
-    Model for event bookings
-    """
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    subevent = models.ForeignKey(SubEvent, on_delete=models.CASCADE)
-    booking_date = models.DateField()
-    booking_time = models.TimeField()
-    guests = models.PositiveIntegerField(default=1)
-    notes = models.TextField(blank=True, null=True)
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
-    status = models.CharField(max_length=20, choices=[
-        ('pending', 'Pending'),
-        ('confirmed', 'Confirmed'),
-        ('cancelled', 'Cancelled')
-    ], default='pending')
-    cancellation_reason = models.CharField(max_length=100, blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    def __str__(self):
-        return f"{self.user.username} - {self.subevent.name} on {self.booking_date}"
 
 
 class UserProfile(models.Model):
@@ -156,3 +177,67 @@ class ContactMessage(models.Model):
     
     def __str__(self):
         return f"{self.name} - {self.subject[:30]}"
+
+
+class GalleryItem(models.Model):
+    """Model for subevent gallery images"""
+    subevent = models.ForeignKey(SubEvent, on_delete=models.CASCADE, related_name='gallery_items')
+    image = models.ImageField(upload_to='gallery/')
+    caption = models.CharField(max_length=200, blank=True, null=True)
+    order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['order', 'created_at']
+    
+    def __str__(self):
+        return f"Gallery item for {self.subevent.name}"
+
+
+class CartItem(models.Model):
+    """Model for storing items in a user's cart"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='cart_items')
+    subevent = models.ForeignKey(SubEvent, on_delete=models.CASCADE)
+    category = models.ForeignKey(SubEventCategory, on_delete=models.CASCADE, null=True, blank=True)
+    quantity = models.PositiveIntegerField(default=1)
+    booking_date = models.DateField(null=True, blank=True)
+    booking_time = models.TimeField(null=True, blank=True)
+    guests = models.PositiveIntegerField(default=1)
+    notes = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        if self.category:
+            return f"{self.user.username} - {self.subevent.name} - {self.category.name}"
+        return f"{self.user.username} - {self.subevent.name}"
+    
+    def get_total_price(self):
+        """Calculate the total price for this cart item"""
+        base_price = self.subevent.price * self.guests
+        category_price = self.category.price * self.quantity if self.category else 0
+        return base_price + category_price
+
+
+class UserMessage(models.Model):
+    """Model for messages from managers to users"""
+    MESSAGE_TYPES = (
+        ('info', 'Information'),
+        ('success', 'Success'),
+        ('warning', 'Warning'),
+        ('danger', 'Danger'),
+    )
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='messages')
+    subject = models.CharField(max_length=200)
+    message = models.TextField()
+    message_type = models.CharField(max_length=20, choices=MESSAGE_TYPES, default='info')
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='sent_messages')
+    
+    class Meta:
+        ordering = ['-created_at']
+        
+    def __str__(self):
+        return f"Message to {self.user.username}: {self.subject}"

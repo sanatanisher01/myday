@@ -1,0 +1,94 @@
+{% extends 'events/base.html' %}
+{% load static %}
+
+{% block title %}Your Cart{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-8 offset-lg-2">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Your Cart</h4>
+                </div>
+                <div class="card-body">
+                    {% if cart_items %}
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Item</th>
+                                        <th>Details</th>
+                                        <th>Price</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in cart_items %}
+                                    <tr>
+                                        <td>
+                                            <img src="{{ item.subevent.image.url }}" alt="{{ item.subevent.name }}" class="img-thumbnail" style="max-width: 100px;">
+                                        </td>
+                                        <td>
+                                            <h5>{{ item.subevent.name }}</h5>
+                                            <p class="text-muted small">{{ item.subevent.event.name }}</p>
+                                            {% if item.category %}
+                                            <div class="mt-2">
+                                                <span class="badge bg-info">{{ item.category.name }}</span>
+                                                <span class="small text-muted d-block mt-1">Quantity: {{ item.quantity }}</span>
+                                            </div>
+                                            {% endif %}
+                                            <div class="mt-2">
+                                                <p class="small mb-0">Date: {{ item.booking_date|date:"d M Y" }}</p>
+                                                <p class="small mb-0">Time: {{ item.booking_time|time:"g:i A" }}</p>
+                                                <p class="small mb-0">Guests: {{ item.guests }}</p>
+                                                {% if item.notes %}
+                                                <p class="small mb-0">Notes: {{ item.notes }}</p>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <p class="fw-bold">₹{{ item.get_total_price }}</p>
+                                            <div class="small text-muted">
+                                                <p class="mb-0">Base: ₹{{ item.subevent.price }} x {{ item.guests }} guests</p>
+                                                {% if item.category %}
+                                                <p class="mb-0">{{ item.category.name }}: ₹{{ item.category.price }} x {{ item.quantity }}</p>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <form method="post" action="{% url 'remove_from_cart' cart_item_id=item.id %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-sm btn-danger">Remove</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="2" class="text-end fw-bold">Total:</td>
+                                        <td colspan="2" class="fw-bold">₹{{ total }}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'event_list' %}" class="btn btn-outline-secondary">Continue Shopping</a>
+                            <a href="{% url 'checkout' %}" class="btn btn-success">Proceed to Checkout</a>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-shopping-cart fa-4x text-muted mb-3"></i>
+                            <h5>Your cart is empty</h5>
+                            <p class="text-muted">Looks like you haven't added any items to your cart yet.</p>
+                            <a href="{% url 'event_list' %}" class="btn btn-primary mt-3">Browse Events</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
