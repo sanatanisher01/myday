@@ -6,7 +6,7 @@ from django.contrib.auth.forms import PasswordChangeForm, UserCreationForm
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.db import transaction
-from django.db.models import Avg, Count, Sum, Q
+from django.db.models import Avg, Count, Sum, Q, Min
 from django.utils import timezone
 from django.utils.text import slugify
 from django.core.paginator import Paginator
@@ -75,47 +75,85 @@ def home(request):
 
 def event_list(request):
     """List all event categories"""
-    # Get the search parameter from the request
-    search_query = request.GET.get('search', '')
-    sort_param = request.GET.get('sort', '-created_at')  # Default sort by newest
-    
-    # Start with all events
-    events_queryset = Event.objects.all().prefetch_related('subevents')
-    
-    # Apply search filter if provided
-    if search_query:
-        events_queryset = events_queryset.filter(
-            Q(name__icontains=search_query) | 
-            Q(description__icontains=search_query)
-        )
-    
-    # Apply sorting
-    if sort_param:
-        if sort_param == '-reviews':
-            # Handle special case for sorting by reviews
-            events_queryset = events_queryset.annotate(
+    try:
+        # Get the search parameter from the request
+        search_query = request.GET.get('search', '')
+        sort_param = request.GET.get('sort', '-created_at')  # Default sort by newest
+        
+        # Start with all events
+        events_queryset = Event.objects.all().prefetch_related('subevents')
+        
+        # Apply search filter if provided
+        if search_query:
+            events_queryset = events_queryset.filter(
+                Q(name__icontains=search_query) | 
+                Q(description__icontains=search_query)
+            )
+        
+        # Apply sorting
+        if sort_param:
+            try:
+                if sort_param == '-reviews':
+                    # Handle special case for sorting by reviews
+                    events_queryset = events_queryset.annotate(
+                        avg_rating=Avg('reviews__rating'),
+                        review_count=Count('reviews')
+                    ).order_by('-avg_rating')
+                else:
+                    events_queryset = events_queryset.order_by(sort_param)
+            except Exception as e:
+                # Fallback to default sorting if there's an error
+                events_queryset = events_queryset.order_by('-created_at')
+                print(f"Error during sorting: {str(e)}")
+        
+        # Annotate with ratings and price information
+        try:
+            events = events_queryset.annotate(
                 avg_rating=Avg('reviews__rating'),
                 review_count=Count('reviews')
-            ).order_by('-avg_rating')
-        else:
-            events_queryset = events_queryset.order_by(sort_param)
-    
-    # Annotate with ratings and price information
-    events = events_queryset.annotate(
-        avg_rating=Avg('reviews__rating'),
-        review_count=Count('reviews'),
-        min_price=Min('subevents__price')
-    )
-    
-    # Get categories for filter dropdown
-    categories = Event.objects.all()
-    
-    context = {
-        'events': events,
-        'categories': categories
-    }
-    
-    return render(request, 'events/event_list.html', context)
+            )
+            
+            # Only annotate with min_price if there are subevents
+            events_with_price = []
+            for event in events:
+                if event.subevents.exists():
+                    # Get the minimum price manually to avoid database errors
+                    min_price = min([subevent.price for subevent in event.subevents.all()], default=0)
+                    event.min_price = min_price
+                else:
+                    event.min_price = 0
+                events_with_price.append(event)
+            
+            events = events_with_price
+        except Exception as e:
+            # Fallback to just the events without annotations
+            events = events_queryset
+            print(f"Error during annotation: {str(e)}")
+        
+        # Get categories for filter dropdown
+        categories = Event.objects.all()
+        
+        context = {
+            'events': events,
+            'categories': categories,
+            'search_query': search_query,
+            'sort_param': sort_param
+        }
+        
+        return render(request, 'events/event_list.html', context)
+    except Exception as e:
+        # Log the error
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Error in event_list view: {str(e)}\n{error_details}")
+        
+        # Provide a fallback context with empty data
+        context = {
+            'events': [],
+            'categories': [],
+            'error_message': "We're experiencing technical difficulties. Please try again later."
+        }
+        return render(request, 'events/event_list.html', context)
 
 def event_detail(request, slug):
     """Show details of a specific event category and its sub-events"""

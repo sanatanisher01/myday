@@ -4,6 +4,16 @@
 {% block title %}Browse Events - MyDay{% endblock %}
 
 {% block content %}
+{% if error_message %}
+<!-- Error Message Display -->
+<div class="alert alert-warning alert-dismissible fade show mb-0" role="alert">
+    <div class="container">
+        <strong><i class="fas fa-exclamation-triangle me-2"></i>Notice:</strong> {{ error_message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+</div>
+{% endif %}
+
 <!-- Page Header -->
 <section class="page-header">
     <div class="container">
@@ -82,65 +92,72 @@
             </div>
         </div>
         
-        <!-- Event Cards -->
+        <!-- Event Listings -->
         <div class="row g-4 staggered-fade">
-            {% for event in events %}
-            <div class="col-lg-4 col-md-6 event-card-wrapper fade-up">
-                <div class="card h-100 event-card">
-                    <div class="card-img-container">
-                        {% if event.image %}
-                        <img src="{{ event.image.url }}" class="card-img-top" alt="{{ event.name }}">
-                        {% else %}
-                        <img src="https://images.unsplash.com/photo-1511795409834-ef04bbd61622?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" class="card-img-top" alt="{{ event.name }}">
-                        {% endif %}
-                        {% if event.min_price %}
-                        <div class="price-range">Starting at ₹{{ event.min_price }}</div>
-                        {% endif %}
-                    </div>
-                    <div class="card-body">
-                        <h3 class="card-title">{{ event.name }}</h3>
-                        <div class="ratings-container">
-                            {% if event.avg_rating %}
-                                <div class="d-flex align-items-center">
-                                    <div class="me-2">
-                                        {% with ''|center:event.avg_rating|floatformat:"0" as stars %}
-                                        {% for _ in stars %}
-                                            <i class="fas fa-star text-warning"></i>
-                                        {% endfor %}
-                                        {% endwith %}
-                                        {% with remaining=5|add:"-"|add:event.avg_rating|floatformat:"0" %}
-                                        {% if remaining|floatformat:"0" > "0" %}
-                                            {% with ''|center:remaining as empty_stars %}
-                                            {% for _ in empty_stars %}
-                                                <i class="far fa-star text-warning"></i>
-                                            {% endfor %}
-                                            {% endwith %}
-                                        {% endif %}
-                                        {% endwith %}
-                                    </div>
-                                    <span class="text-muted">({{ event.review_count }})</span>
-                                </div>
+            {% if events %}
+                {% for event in events %}
+                <div class="col-lg-4 col-md-6 event-card-wrapper fade-up">
+                    <div class="card h-100 event-card">
+                        <div class="card-img-container">
+                            {% if event.image %}
+                                <img src="{{ event.image.url }}" class="card-img-top" alt="{{ event.name }}">
                             {% else %}
-                                <div class="text-muted small">No ratings yet</div>
+                                <div class="placeholder-image bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                    <i class="fas fa-image fa-3x text-secondary"></i>
+                                </div>
+                            {% endif %}
+                            {% if event.min_price %}
+                                <div class="price-badge">
+                                    <span>From ₹{{ event.min_price }}</span>
+                                </div>
                             {% endif %}
                         </div>
-                        <p class="card-text">{{ event.description|truncatechars:100 }}</p>
-                        <div class="event-meta">
-                            <span><i class="far fa-calendar-alt"></i> {{ event.created_at|date:"M d, Y" }}</span>
-                            <span><i class="far fa-bookmark"></i> {{ event.category.name }}</span>
+                        <div class="card-body">
+                            <h3 class="card-title">{{ event.name }}</h3>
+                            <div class="rating mb-2">
+                                {% if event.avg_rating %}
+                                    {% with ''|center:event.avg_rating as stars %}
+                                        {% for _ in stars %}
+                                            <i class="fas fa-star"></i>
+                                        {% endfor %}
+                                    {% endwith %}
+                                    {% with ''|center:5|slice:event.avg_rating as empty_stars %}
+                                        {% for _ in empty_stars %}
+                                            <i class="far fa-star"></i>
+                                        {% endfor %}
+                                    {% endwith %}
+                                    <span class="text-muted ms-1">({{ event.review_count }})</span>
+                                {% else %}
+                                    <i class="far fa-star"></i>
+                                    <i class="far fa-star"></i>
+                                    <i class="far fa-star"></i>
+                                    <i class="far fa-star"></i>
+                                    <i class="far fa-star"></i>
+                                    <span class="text-muted ms-1">(0)</span>
+                                {% endif %}
+                            </div>
+                            <p class="card-text">{{ event.description|truncatechars:100 }}</p>
                         </div>
-                        <a href="{% url 'event_detail' event.slug %}" class="btn btn-primary w-100">View Details</a>
+                        <div class="card-footer bg-transparent border-0">
+                            <a href="{% url 'event_detail' event.slug %}" class="btn btn-primary w-100">View Details</a>
+                        </div>
                     </div>
                 </div>
-            </div>
-            {% empty %}
-            <div class="col-12 empty-state">
-                <img src="https://cdn.iconscout.com/icon/free/png-256/free-search-1767836-1502110.png" alt="No results" class="img-fluid">
-                <h3>No events found</h3>
-                <p>We couldn't find any events matching your criteria. Try adjusting your filters or search query.</p>
-                <a href="{% url 'event_list' %}" class="btn btn-primary">View All Events</a>
-            </div>
-            {% endfor %}
+                {% endfor %}
+            {% else %}
+                <div class="col-12 text-center py-5">
+                    <div class="empty-state">
+                        <i class="fas fa-calendar-alt fa-4x mb-3 text-muted"></i>
+                        <h3>No events found</h3>
+                        {% if search_query %}
+                            <p>No events match your search criteria "{{ search_query }}". Try a different search term or browse all events.</p>
+                            <a href="{% url 'event_list' %}" class="btn btn-primary mt-3">View All Events</a>
+                        {% else %}
+                            <p>There are currently no events available. Please check back later!</p>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
         </div>
         
         <!-- Pagination if needed -->
@@ -311,7 +328,7 @@
         transform: scale(1.1);
     }
     
-    .price-range {
+    .price-badge {
         position: absolute;
         top: 15px;
         right: 15px;
@@ -422,8 +439,8 @@
         padding: 3rem 0;
     }
     
-    .empty-state img {
-        max-width: 250px;
+    .empty-state i {
+        font-size: 4rem;
         margin-bottom: 2rem;
     }
     
