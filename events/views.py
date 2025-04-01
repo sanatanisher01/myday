@@ -3,18 +3,25 @@ from django.http import HttpResponse, JsonResponse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm, UserCreationForm
+from django.contrib.auth.models import User
 from django.contrib import messages
-from django.db.models import Avg, Count, Sum, Q, Min
+from django.db import transaction
+from django.db.models import Avg, Count, Sum, Q
 from django.utils import timezone
+from django.utils.text import slugify
 from django.core.paginator import Paginator
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
 from django.views.decorators.csrf import csrf_exempt
 from decimal import Decimal
 from rest_framework import viewsets, permissions
 
-from .models import Event, SubEvent, Review, Booking, UserProfile, ContactMessage, User, GalleryItem, SubEventCategory, CartItem, UserMessage, ActivityLog
+from .models import Event, SubEvent, Review, Booking, UserProfile, ContactMessage, GalleryItem, SubEventCategory, CartItem, UserMessage, ActivityLog
 from .serializers import EventSerializer, SubEventSerializer, ReviewSerializer
 from .forms import ReviewForm, BookingForm, EventForm, SubEventForm, GalleryItemForm, SubEventCategoryForm, UserMessageForm
-from django.db import transaction
+import json
+import os
+import datetime
 
 def is_admin(user):
     """Check if user is an admin"""
@@ -23,16 +30,48 @@ def is_admin(user):
 # Public views
 def home(request):
     """Home page / landing page view"""
-    events = Event.objects.all()
-    top_rated_events = Event.objects.annotate(avg_rating=Avg('reviews__rating')).order_by('-avg_rating')[:4]
-    recent_reviews = Review.objects.all().order_by('-created_at')[:6]
-    
-    context = {
-        'events': events,
-        'top_rated_events': top_rated_events,
-        'recent_reviews': recent_reviews,
-    }
-    return render(request, 'events/home.html', context)
+    try:
+        # Get all events
+        events = Event.objects.all()
+        
+        # Get top rated events - handle case where there are no reviews
+        try:
+            if Review.objects.exists():
+                top_rated_events = Event.objects.annotate(avg_rating=Avg('reviews__rating')).order_by('-avg_rating')[:4]
+            else:
+                top_rated_events = Event.objects.all()[:4]
+        except Exception as e:
+            # Fallback if rating query fails
+            top_rated_events = Event.objects.all()[:4]
+            print(f"Error getting top rated events: {str(e)}")
+        
+        # Get recent reviews - handle case where there are no reviews
+        try:
+            recent_reviews = Review.objects.all().order_by('-created_at')[:6]
+        except Exception as e:
+            recent_reviews = Review.objects.none()
+            print(f"Error getting recent reviews: {str(e)}")
+        
+        context = {
+            'events': events,
+            'top_rated_events': top_rated_events,
+            'recent_reviews': recent_reviews,
+        }
+        return render(request, 'events/home.html', context)
+    except Exception as e:
+        # Log the error
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Error in home view: {str(e)}\n{error_details}")
+        
+        # Provide a fallback context with empty data
+        context = {
+            'events': [],
+            'top_rated_events': [],
+            'recent_reviews': [],
+            'error_message': "We're experiencing technical difficulties. Please try again later."
+        }
+        return render(request, 'events/home.html', context)
 
 def event_list(request):
     """List all event categories"""

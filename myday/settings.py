@@ -27,30 +27,22 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-n$h4boi94bo!osr@*0g6i
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1,myday-events.onrender.com').split(',')
-
-# Add Render external URL
-RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
-if RENDER_EXTERNAL_HOSTNAME:
-    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '.onrender.com',  # Allow all Render subdomains
+    'myday-event-website.onrender.com',
+    'www.myday-event-website.onrender.com',
+]
 
 # CSRF settings
 CSRF_TRUSTED_ORIGINS = [
-    'http://127.0.0.1:11696', 
-    'http://127.0.0.1:10590', 
-    'http://127.0.0.1:11222', 
-    'http://127.0.0.1:13615',
-    'http://192.168.137.1:8000',
-    'http://127.0.0.1:54263',
-    'http://127.0.0.1:9196',
-    'http://127.0.0.1:12321',
-    'http://localhost:12321',
-    'https://myday-events.onrender.com'
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+    'https://*.onrender.com',
+    'https://myday-event-website.onrender.com',
+    'https://www.myday-event-website.onrender.com',
 ]
-
-# Add Render URL to trusted origins
-if RENDER_EXTERNAL_HOSTNAME:
-    CSRF_TRUSTED_ORIGINS.append(f'https://{RENDER_EXTERNAL_HOSTNAME}')
 
 # For development, make CSRF cookie settings more permissive
 if DEBUG:
