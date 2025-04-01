@@ -710,9 +710,10 @@ def manager_login(request):
                 # Look for an existing manager user
                 try:
                     user = User.objects.get(username='manager')
-                    # Update the profile with the phone number
+                    # Check if the user already has a profile
                     try:
                         user_profile = UserProfile.objects.get(user=user)
+                        # Update the profile with the phone number
                         user_profile.phone = mobile
                         user_profile.save()
                     except UserProfile.DoesNotExist:
@@ -930,9 +931,10 @@ def manager_login(request):
                 # Look for an existing manager user
                 try:
                     user = User.objects.get(username='manager')
-                    # Update the profile with the phone number
+                    # Check if the user already has a profile
                     try:
                         user_profile = UserProfile.objects.get(user=user)
+                        # Update the profile with the phone number
                         user_profile.phone = mobile
                         user_profile.save()
                     except UserProfile.DoesNotExist:
