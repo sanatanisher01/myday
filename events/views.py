@@ -466,21 +466,48 @@ def user_profile(request):
         
         # Handle profile picture upload
         if 'profile_picture' in request.FILES:
-            # Delete old profile picture if it exists
-            if profile.profile_picture:
-                if os.path.isfile(profile.profile_picture.path):
-                    os.remove(profile.profile_picture.path)
-            
-            # Save new profile picture
-            profile.profile_picture = request.FILES['profile_picture']
+            try:
+                # Get the uploaded file
+                uploaded_file = request.FILES['profile_picture']
+                
+                # Check file size (max 5MB)
+                if uploaded_file.size > 5 * 1024 * 1024:
+                    messages.error(request, "File size exceeds 5MB. Please choose a smaller image.")
+                    return redirect('user_profile')
+                
+                # Check file type
+                valid_types = ['image/jpeg', 'image/png', 'image/gif', 'image/jpg']
+                if uploaded_file.content_type not in valid_types:
+                    messages.error(request, "Invalid file type. Please upload a JPG, PNG, or GIF image.")
+                    return redirect('user_profile')
+                
+                # Delete old profile picture if it exists
+                if profile.profile_picture:
+                    try:
+                        if os.path.isfile(profile.profile_picture.path):
+                            os.remove(profile.profile_picture.path)
+                    except Exception as e:
+                        # Log the error but continue with the upload
+                        print(f"Error removing old profile picture: {str(e)}")
+                
+                # Save new profile picture
+                profile.profile_picture = uploaded_file
+            except Exception as e:
+                messages.error(request, f"Error uploading profile picture: {str(e)}")
+                return redirect('user_profile')
         
         # Handle profile picture removal
         if request.POST.get('remove_profile_picture') == 'true':
-            # Delete the old image file if it exists
-            if profile.profile_picture:
-                if os.path.isfile(profile.profile_picture.path):
-                    os.remove(profile.profile_picture.path)
-            profile.profile_picture = None
+            try:
+                # Delete the old image file if it exists
+                if profile.profile_picture:
+                    if os.path.isfile(profile.profile_picture.path):
+                        os.remove(profile.profile_picture.path)
+                profile.profile_picture = None
+                messages.success(request, "Profile picture removed successfully.")
+            except Exception as e:
+                messages.error(request, f"Error removing profile picture: {str(e)}")
+                return redirect('user_profile')
         
         profile.save()
         

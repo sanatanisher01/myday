@@ -248,6 +248,9 @@
                                         <i class="fas fa-upload me-2"></i> Upload Photo
                                     </label>
                                     <input type="file" id="profilePictureInput" name="profile_picture" accept="image/*" class="d-none">
+                                    <div id="fileSelectedName" class="mt-2 small text-success d-none">
+                                        <i class="fas fa-check-circle"></i> <span></span>
+                                    </div>
                                     {% if user.profile.profile_picture %}
                                     <button type="button" class="btn btn-outline-danger ms-2" id="removeProfilePicture">
                                         <i class="fas fa-trash-alt me-2"></i> Remove Photo
@@ -461,11 +464,33 @@
         const profilePicturePlaceholder = document.getElementById('profilePicturePlaceholder');
         const removeProfilePicture = document.getElementById('removeProfilePicture');
         const removeProfilePictureInput = document.getElementById('removeProfilePictureInput');
+        const fileSelectedName = document.getElementById('fileSelectedName');
         
         if (profilePictureInput) {
             profilePictureInput.addEventListener('change', function(e) {
                 const file = this.files[0];
                 if (file) {
+                    // Check file size (max 5MB)
+                    if (file.size > 5 * 1024 * 1024) {
+                        alert('File size exceeds 5MB. Please choose a smaller image.');
+                        this.value = '';
+                        return;
+                    }
+                    
+                    // Check file type
+                    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/jpg'];
+                    if (!validTypes.includes(file.type)) {
+                        alert('Invalid file type. Please upload a JPG, PNG, or GIF image.');
+                        this.value = '';
+                        return;
+                    }
+                    
+                    // Show file name
+                    if (fileSelectedName) {
+                        fileSelectedName.querySelector('span').textContent = file.name;
+                        fileSelectedName.classList.remove('d-none');
+                    }
+                    
                     const reader = new FileReader();
                     reader.onload = function(e) {
                         if (profilePicturePlaceholder) {
@@ -493,6 +518,9 @@
                 }
                 if (removeProfilePictureInput) {
                     removeProfilePictureInput.value = 'true';
+                }
+                if (fileSelectedName) {
+                    fileSelectedName.classList.add('d-none');
                 }
             });
         }
