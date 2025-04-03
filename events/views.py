@@ -1111,51 +1111,58 @@ def manager_dashboard(request):
 @user_passes_test(lambda u: u.is_staff or u.is_superuser)
 def manager_events(request):
     """Manager events management page"""
-    events = Event.objects.all().order_by('-created_at')
-    
-    if request.method == 'POST':
-        # Handle creating new event
-        if 'create_event' in request.POST:
-            form = EventForm(request.POST, request.FILES)
-            if form.is_valid():
-                form.save()
-                messages.success(request, "Event created successfully!")
-                return redirect('manager_events')
+    try:
+        events = Event.objects.all().order_by('-created_at')
         
-        # Handle updating event
-        elif 'update_event' in request.POST:
-            event_id = request.POST.get('event_id')
-            event = get_object_or_404(Event, id=event_id)
-            form = EventForm(request.POST, request.FILES, instance=event)
-            if form.is_valid():
-                form.save()
-                messages.success(request, "Event updated successfully!")
+        if request.method == 'POST':
+            # Handle creating new event
+            if 'create_event' in request.POST:
+                form = EventForm(request.POST, request.FILES)
+                if form.is_valid():
+                    form.save()
+                    messages.success(request, "Event created successfully!")
+                    return redirect('manager_events')
+            
+            # Handle updating event
+            elif 'update_event' in request.POST:
+                event_id = request.POST.get('event_id')
+                event = get_object_or_404(Event, id=event_id)
+                form = EventForm(request.POST, request.FILES, instance=event)
+                if form.is_valid():
+                    form.save()
+                    messages.success(request, "Event updated successfully!")
+                    return redirect('manager_events')
+            
+            # Handle deleting event
+            elif 'delete_event' in request.POST:
+                event_id = request.POST.get('event_id')
+                event = get_object_or_404(Event, id=event_id)
+                event_name = event.name
+                try:
+                    event.delete()
+                    messages.success(request, f"Event '{event_name}' deleted successfully!")
+                except Exception as e:
+                    messages.error(request, f"Error deleting event: {str(e)}")
                 return redirect('manager_events')
+        else:
+            form = EventForm()
         
-        # Handle deleting event
-        elif 'delete_event' in request.POST:
-            event_id = request.POST.get('event_id')
-            event = get_object_or_404(Event, id=event_id)
-            event_name = event.name
-            try:
-                event.delete()
-                messages.success(request, f"Event '{event_name}' deleted successfully!")
-            except Exception as e:
-                messages.error(request, f"Error deleting event: {str(e)}")
-            return redirect('manager_events')
-    else:
-        form = EventForm()
-    
-    # Get subevent counts for each event
-    for event in events:
-        event.subevent_count = SubEvent.objects.filter(event=event).count()
-    
-    context = {
-        'events': events,
-        'form': form,
-    }
-    
-    return render(request, 'events/manager/events.html', context)
+        # Get subevent counts for each event
+        for event in events:
+            event.subevent_count = SubEvent.objects.filter(event=event).count()
+        
+        context = {
+            'events': events,
+            'form': form,
+        }
+        
+        return render(request, 'events/manager/events.html', context)
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Error in manager_events view: {str(e)}\n{error_details}")
+        messages.error(request, f"An error occurred: {str(e)}")
+        return redirect('manager_dashboard')
 
 @login_required
 @user_passes_test(lambda u: u.is_staff or u.is_superuser)

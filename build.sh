@@ -66,8 +66,10 @@ try:
     ]
     
     for event_data in default_events:
+        # Make sure slug is defined for each event
+        slug = event_data['slug']
         event, created = Event.objects.get_or_create(
-            slug=event_data['slug'],
+            slug=slug,
             defaults={
                 'name': event_data['name'],
                 'description': event_data['description']
@@ -79,7 +81,7 @@ try:
             image_path = event_data['image_path']
             if os.path.exists(image_path):
                 with open(image_path, 'rb') as f:
-                    event.image.save(f'default-{event_data["slug"]}.jpg', ContentFile(f.read()))
+                    event.image.save(f'default-{slug}.jpg', ContentFile(f.read()))
                 print(f'Added default image to {event.name} event')
             else:
                 print(f'Warning: Default image not found at {image_path}')
