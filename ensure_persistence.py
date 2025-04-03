@@ -30,7 +30,7 @@ def log_env_vars():
         'DEBUG': os.environ.get('DEBUG', 'Not set'),
         'DJANGO_SETTINGS_MODULE': os.environ.get('DJANGO_SETTINGS_MODULE', 'Not set'),
         'ALLOWED_HOSTS': os.environ.get('ALLOWED_HOSTS', 'Not set'),
-        'DATABASE_URL': 'Set' if os.environ.get('DATABASE_URL') else 'NOT SET - THIS IS A PROBLEM',
+        'DATABASE_URL': 'Set (PostgreSQL)' if os.environ.get('DATABASE_URL') and 'postgres' in os.environ.get('DATABASE_URL', '') else 'NOT SET or INVALID',
         'PYTHON_VERSION': os.environ.get('PYTHON_VERSION', 'Not set'),
     }
     
@@ -43,17 +43,19 @@ log_env_vars()
 
 # Check if DATABASE_URL is set, if not, this is a critical error
 if not os.environ.get('DATABASE_URL'):
-    logger.critical("❌ DATABASE_URL environment variable is not set!")
+    logger.critical("u274c DATABASE_URL environment variable is not set!")
     logger.critical("This will cause data loss as the application will use SQLite.")
     logger.critical("Please configure the DATABASE_URL in your Render dashboard.")
     # Don't exit here, continue with checks to provide more diagnostic info
+elif 'postgres' not in os.environ.get('DATABASE_URL', ''):
+    logger.warning("u26a0ufe0f DATABASE_URL does not appear to be a PostgreSQL connection string!")
 
 # Now set up Django
 try:
     django.setup()
-    logger.info("✅ Django setup successful")
+    logger.info("u2705 Django setup successful")
 except Exception as e:
-    logger.error(f"❌ Django setup failed: {e}")
+    logger.error(f"u274c Django setup failed: {e}")
     sys.exit(1)
 
 from django.db import connections
@@ -61,7 +63,7 @@ from django.db.utils import OperationalError
 from django.contrib.auth.models import User
 from django.conf import settings
 
-def check_database_connection(max_retries=3, retry_delay=5):
+def check_database_connection(max_retries=5, retry_delay=3):
     """Check if database connection is working properly with retries."""
     for attempt in range(max_retries):
         try:
@@ -71,10 +73,12 @@ def check_database_connection(max_retries=3, retry_delay=5):
             
             # Check database engine
             db_engine = settings.DATABASES['default']['ENGINE']
-            logger.info(f"✅ Using database engine: {db_engine}")
+            logger.info(f"u2705 Using database engine: {db_engine}")
             
             if 'sqlite' in db_engine and not settings.DEBUG:
-                logger.warning("⚠️ Using SQLite in production is not recommended!")
+                logger.warning("u26a0ufe0f Using SQLite in production is not recommended!")
+            elif 'postgresql' in db_engine or 'postgres' in db_engine:
+                logger.info("u2705 Using PostgreSQL database - good for production")
             
             # Check if there are any users in the database
             user_count = User.objects.count()
@@ -82,15 +86,15 @@ def check_database_connection(max_retries=3, retry_delay=5):
             
             return True
         except OperationalError as e:
-            logger.warning(f"⚠️ Database connection attempt {attempt+1}/{max_retries} failed: {e}")
+            logger.warning(f"u26a0ufe0f Database connection attempt {attempt+1}/{max_retries} failed: {e}")
             if attempt < max_retries - 1:
                 logger.info(f"Retrying in {retry_delay} seconds...")
                 time.sleep(retry_delay)
             else:
-                logger.error(f"❌ All database connection attempts failed: {e}")
+                logger.error(f"u274c All database connection attempts failed: {e}")
                 return False
         except Exception as e:
-            logger.error(f"❌ Unexpected database error: {e}")
+            logger.error(f"u274c Unexpected database error: {e}")
             return False
 
 def check_media_files():
@@ -99,12 +103,12 @@ def check_media_files():
     static_root = settings.STATIC_ROOT
     
     if os.path.exists(media_root):
-        logger.info(f"✅ Media directory exists at {media_root}")
+        logger.info(f"u2705 Media directory exists at {media_root}")
         # Count files in media directory
         media_files = sum([len(files) for _, _, files in os.walk(media_root)])
         logger.info(f"Found {media_files} files in media directory")
     else:
-        logger.warning(f"⚠️ Media directory does not exist at {media_root}")
+        logger.warning(f"u26a0ufe0f Media directory does not exist at {media_root}")
         try:
             os.makedirs(media_root, exist_ok=True)
             logger.info(f"Created media directory at {media_root}")
@@ -112,21 +116,29 @@ def check_media_files():
             logger.error(f"Failed to create media directory: {e}")
     
     if os.path.exists(static_root):
-        logger.info(f"✅ Static directory exists at {static_root}")
+        logger.info(f"u2705 Static directory exists at {static_root}")
         # Count files in static directory
         static_files = sum([len(files) for _, _, files in os.walk(static_root)])
         logger.info(f"Found {static_files} files in static directory")
     else:
-        logger.warning(f"⚠️ Static directory does not exist at {static_root}")
+        logger.warning(f"u26a0ufe0f Static directory does not exist at {static_root}")
 
 def log_database_info():
     """Log information about the database configuration."""
     try:
         db_config = settings.DATABASES['default']
         logger.info(f"Database engine: {db_config.get('ENGINE', 'Not set')}")
-        logger.info(f"Database name: {db_config.get('NAME', 'Not set')}")
-        logger.info(f"Database host: {db_config.get('HOST', 'Not set')}")
-        logger.info(f"Database port: {db_config.get('PORT', 'Not set')}")
+        
+        # Don't log the full connection details for security reasons
+        if 'NAME' in db_config:
+            logger.info(f"Database name: {db_config.get('NAME', 'Not set')}")
+        if 'HOST' in db_config:
+            host = db_config.get('HOST', '')
+            # Only show part of the host for security
+            if host:
+                masked_host = host.split('.')[0] + '.***.***' if '.' in host else host
+                logger.info(f"Database host: {masked_host}")
+        
         logger.info(f"CONN_MAX_AGE: {db_config.get('CONN_MAX_AGE', 'Not set')}")
         logger.info(f"CONN_HEALTH_CHECKS: {db_config.get('CONN_HEALTH_CHECKS', 'Not set')}")
     except Exception as e:
@@ -149,8 +161,8 @@ if __name__ == "__main__":
     check_media_files()
     
     if db_ok:
-        logger.info("✅ Persistence check completed successfully")
+        logger.info("u2705 Persistence check completed successfully")
         sys.exit(0)
     else:
-        logger.error("❌ Persistence check failed")
+        logger.error("u274c Persistence check failed")
         sys.exit(1)
