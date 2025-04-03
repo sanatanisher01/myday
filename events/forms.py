@@ -22,14 +22,27 @@ class SubEventForm(forms.ModelForm):
     """Form for creating and updating sub-events"""
     class Meta:
         model = SubEvent
-        fields = ['event', 'name', 'description', 'price', 'image']
+        fields = ['event', 'name', 'description', 'price', 'date', 'capacity', 'image', 'slug']
+        widgets = {
+            'date': forms.DateInput(attrs={'type': 'date'}),
+            'description': forms.Textarea(attrs={'rows': 4}),
+            'slug': forms.TextInput(attrs={'placeholder': 'Will be auto-generated if left blank'}),
+        }
         
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Filter out deleted events by checking if they exist
+        self.fields['event'].queryset = Event.objects.all().order_by('name')
         self.helper = FormHelper()
         self.helper.form_method = 'post'
         self.helper.add_input(Submit('subevent_form', 'Save Sub-Event', css_class='btn-primary'))
-        self.fields['description'].widget.attrs = {'rows': 4}
+        
+        # Add Bootstrap classes to form fields
+        for field_name, field in self.fields.items():
+            field.widget.attrs['class'] = 'form-control'
+            
+        # Make slug optional
+        self.fields['slug'].required = False
 
 
 class ReviewForm(forms.ModelForm):

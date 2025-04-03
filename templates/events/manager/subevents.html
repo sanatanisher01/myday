@@ -75,13 +75,23 @@
                                     {% for subevent in subevents %}
                                     <tr>
                                         <td>
+                                            {% if subevent.image_missing %}
+                                            <div class="bg-light d-flex align-items-center justify-content-center rounded" style="width: 60px; height: 60px;">
+                                                <i class="fas fa-image text-muted"></i>
+                                            </div>
+                                            {% else %}
                                             <img src="{{ subevent.image.url }}" alt="{{ subevent.name }}" class="img-thumbnail" style="width: 60px; height: 60px; object-fit: cover;">
+                                            {% endif %}
                                         </td>
                                         <td>
                                             <strong>{{ subevent.name }}</strong>
                                         </td>
                                         <td>
+                                            {% if subevent.event %}
                                             <a href="{% url 'manager_subevents_by_event' subevent.event.id %}">{{ subevent.event.name }}</a>
+                                            {% else %}
+                                            <span class="text-danger">Event deleted</span>
+                                            {% endif %}
                                         </td>
                                         <td>
                                             <div class="small text-muted">{{ subevent.description|truncatechars:50 }}</div>
@@ -219,7 +229,7 @@
                             <label for="event" class="form-label">Parent Event</label>
                             <select class="form-select" name="event" required>
                                 {% for evt in all_events %}
-                                <option value="{{ evt.id }}" {% if evt.id == subevent.event.id %}selected{% endif %}>{{ evt.name }}</option>
+                                <option value="{{ evt.id }}" {% if subevent.event and evt.id == subevent.event.id %}selected{% endif %}>{{ evt.name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -246,11 +256,18 @@
                         <div class="col-md-12">
                             <label for="image" class="form-label">Subevent Image</label>
                             <div class="d-flex align-items-center mb-2">
+                                {% if subevent.image_missing %}
+                                <div class="bg-light d-flex align-items-center justify-content-center me-3" style="width: 80px; height: 80px;">
+                                    <i class="fas fa-image text-muted"></i>
+                                </div>
+                                <div class="small text-danger">Image missing or corrupted</div>
+                                {% else %}
                                 <img src="{{ subevent.image.url }}" alt="{{ subevent.name }}" class="img-thumbnail me-3" style="width: 80px; height: 80px; object-fit: cover;">
                                 <div class="small text-muted">Current Image</div>
+                                {% endif %}
                             </div>
-                            <input type="file" class="form-control" name="image">
-                            <div class="form-text">Leave blank to keep current image</div>
+                            <input type="file" class="form-control" name="image" {% if subevent.image_missing %}required{% endif %}>
+                            <div class="form-text">{% if subevent.image_missing %}Please upload a new image{% else %}Leave blank to keep current image{% endif %}</div>
                         </div>
                     </div>
                 </div>

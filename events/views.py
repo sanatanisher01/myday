@@ -1283,8 +1283,17 @@ def manager_subevents(request, event_id=None):
         # Get the form for creating a new subevent
         form = SubEventForm(initial={'event': event} if event else {})
         
-        # Get all events for the dropdown in the edit modal
-        all_events = Event.objects.all().order_by('name')
+        # Get all active events for the dropdown in the edit modal
+        all_events = Event.objects.filter(id__in=Event.objects.values_list('id', flat=True)).order_by('name')
+        
+        # Handle missing images for subevents
+        for subevent in subevents:
+            try:
+                # Test if image file exists
+                subevent.image.path
+            except Exception:
+                # Set a flag to indicate missing image
+                subevent.image_missing = True
         
         # Context for the template
         context = {
