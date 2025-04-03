@@ -39,10 +39,15 @@ def home(request):
             if Review.objects.exists():
                 top_rated_events = Event.objects.annotate(avg_rating=Avg('reviews__rating')).order_by('-avg_rating')[:4]
             else:
-                top_rated_events = Event.objects.all().order_by('?')[:4]
+                # When no reviews exist, manually add avg_rating=0 to each event
+                top_rated_events = list(Event.objects.all().order_by('?')[:4])
+                for event in top_rated_events:
+                    event.avg_rating = 0
         except Exception as e:
             # Fallback if rating query fails
-            top_rated_events = Event.objects.all().order_by('name')[:4]
+            top_rated_events = list(Event.objects.all().order_by('name')[:4])
+            for event in top_rated_events:
+                event.avg_rating = 0
             print(f"Error getting top rated events: {str(e)}")
         
         # Get recent reviews - handle case where there are no reviews

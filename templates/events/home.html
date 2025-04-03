@@ -147,11 +147,22 @@
                     <p>{{ top_rated_events.0.description }}</p>
                     <div class="rating mb-3">
                         {% with ''|center:top_rated_events.0.avg_rating|default:0|floatformat:"0" as stars %}
-                        {% for _ in stars %}
-                            <i class="fas fa-star text-warning"></i>
-                        {% endfor %}
+                        {% if stars %}
+                            {% for _ in stars %}
+                                <i class="fas fa-star text-warning"></i>
+                            {% endfor %}
+                        {% else %}
+                            <i class="far fa-star text-muted"></i>
+                            <i class="far fa-star text-muted"></i>
+                            <i class="far fa-star text-muted"></i>
+                            <i class="far fa-star text-muted"></i>
+                            <i class="far fa-star text-muted"></i>
+                            <span class="text-muted ms-2">(No reviews yet)</span>
+                        {% endif %}
                         {% endwith %}
-                        <span class="text-muted ms-2">({{ top_rated_events.0.reviews.count }} reviews)</span>
+                        {% if top_rated_events.0.reviews.count > 0 %}
+                        <span class="text-muted ms-2">({{ top_rated_events.0.reviews.count }} review{{ top_rated_events.0.reviews.count|pluralize }})</span>
+                        {% endif %}
                     </div>
                     <a href="{% url 'event_detail' top_rated_events.0.slug %}" class="btn btn-lg btn-primary mt-2">Book Now</a>
                 </div>
