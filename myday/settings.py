@@ -226,9 +226,6 @@ if not DEBUG:
         os.path.join(BASE_DIR, 'static'),
         os.path.join(BASE_DIR, 'media'),  # Include media directory for WhiteNoise
     ]
-    
-    # Configure WhiteNoise to use compression and caching
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Configure storage for static and media files - using the new STORAGES setting
 STORAGES = {
@@ -236,7 +233,7 @@ STORAGES = {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
     },
     "staticfiles": {
-        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage" if not DEBUG else "django.contrib.staticfiles.storage.StaticFilesStorage",
     },
 }
 
