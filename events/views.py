@@ -15,6 +15,7 @@ from django.core.files.base import ContentFile
 from django.views.decorators.csrf import csrf_exempt
 from decimal import Decimal
 from rest_framework import viewsets, permissions
+from django.conf import settings
 
 from .models import Event, SubEvent, Review, Booking, UserProfile, ContactMessage, GalleryItem, SubEventCategory, CartItem, UserMessage, ActivityLog
 from .serializers import EventSerializer, SubEventSerializer, ReviewSerializer
