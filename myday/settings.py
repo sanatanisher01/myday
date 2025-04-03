@@ -116,15 +116,20 @@ DATABASES = {
 # Use PostgreSQL on Render
 DATABASE_URL = os.environ.get('DATABASE_URL')
 if DATABASE_URL:
+    print(f"Using PostgreSQL database: {DATABASE_URL.split('@')[1] if '@' in DATABASE_URL else 'external database'}")
+    # Parse database URL
     DATABASES['default'] = dj_database_url.config(
         default=DATABASE_URL,
-        conn_max_age=600,
+        conn_max_age=60 * 60,  # 1 hour
         conn_health_checks=True,
         ssl_require=True
     )
-    print(f"Using PostgreSQL database: {DATABASE_URL.split('@')[1] if '@' in DATABASE_URL else 'external database'}")
 else:
     print("WARNING: No DATABASE_URL found. Using SQLite database which is not suitable for production.")
+    # If we're in production but no DATABASE_URL, this is a serious error
+    if not DEBUG:
+        print("ERROR: Production environment detected but no DATABASE_URL provided!")
+        print("This will likely cause data loss. Please configure a PostgreSQL database.")
 
 # Ensure database connections persist
 if not DEBUG:

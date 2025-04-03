@@ -7,6 +7,7 @@ import os
 import sys
 import django
 import logging
+import time
 from datetime import datetime
 
 # Set up logging
@@ -21,29 +22,76 @@ logger = logging.getLogger('persistence_check')
 
 # Set up Django environment
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'myday.settings')
-django.setup()
+
+# Log environment variables (without sensitive data)
+def log_env_vars():
+    """Log relevant environment variables."""
+    env_vars = {
+        'DEBUG': os.environ.get('DEBUG', 'Not set'),
+        'DJANGO_SETTINGS_MODULE': os.environ.get('DJANGO_SETTINGS_MODULE', 'Not set'),
+        'ALLOWED_HOSTS': os.environ.get('ALLOWED_HOSTS', 'Not set'),
+        'DATABASE_URL': 'Set' if os.environ.get('DATABASE_URL') else 'NOT SET - THIS IS A PROBLEM',
+        'PYTHON_VERSION': os.environ.get('PYTHON_VERSION', 'Not set'),
+    }
+    
+    logger.info("Environment variables:")
+    for key, value in env_vars.items():
+        logger.info(f"  {key}: {value}")
+
+# Log environment variables before Django setup
+log_env_vars()
+
+# Check if DATABASE_URL is set, if not, this is a critical error
+if not os.environ.get('DATABASE_URL'):
+    logger.critical("❌ DATABASE_URL environment variable is not set!")
+    logger.critical("This will cause data loss as the application will use SQLite.")
+    logger.critical("Please configure the DATABASE_URL in your Render dashboard.")
+    # Don't exit here, continue with checks to provide more diagnostic info
+
+# Now set up Django
+try:
+    django.setup()
+    logger.info("✅ Django setup successful")
+except Exception as e:
+    logger.error(f"❌ Django setup failed: {e}")
+    sys.exit(1)
 
 from django.db import connections
 from django.db.utils import OperationalError
 from django.contrib.auth.models import User
 from django.conf import settings
 
-def check_database_connection():
-    """Check if database connection is working properly."""
-    try:
-        # Try to connect to the database
-        connection = connections['default']
-        connection.ensure_connection()
-        logger.info("✅ Database connection successful")
-        
-        # Check if there are any users in the database
-        user_count = User.objects.count()
-        logger.info(f"Found {user_count} users in the database")
-        
-        return True
-    except OperationalError as e:
-        logger.error(f"❌ Database connection failed: {e}")
-        return False
+def check_database_connection(max_retries=3, retry_delay=5):
+    """Check if database connection is working properly with retries."""
+    for attempt in range(max_retries):
+        try:
+            # Try to connect to the database
+            connection = connections['default']
+            connection.ensure_connection()
+            
+            # Check database engine
+            db_engine = settings.DATABASES['default']['ENGINE']
+            logger.info(f"✅ Using database engine: {db_engine}")
+            
+            if 'sqlite' in db_engine and not settings.DEBUG:
+                logger.warning("⚠️ Using SQLite in production is not recommended!")
+            
+            # Check if there are any users in the database
+            user_count = User.objects.count()
+            logger.info(f"Found {user_count} users in the database")
+            
+            return True
+        except OperationalError as e:
+            logger.warning(f"⚠️ Database connection attempt {attempt+1}/{max_retries} failed: {e}")
+            if attempt < max_retries - 1:
+                logger.info(f"Retrying in {retry_delay} seconds...")
+                time.sleep(retry_delay)
+            else:
+                logger.error(f"❌ All database connection attempts failed: {e}")
+                return False
+        except Exception as e:
+            logger.error(f"❌ Unexpected database error: {e}")
+            return False
 
 def check_media_files():
     """Check if media directories exist and are accessible."""
@@ -65,20 +113,38 @@ def check_media_files():
     
     if os.path.exists(static_root):
         logger.info(f"✅ Static directory exists at {static_root}")
+        # Count files in static directory
+        static_files = sum([len(files) for _, _, files in os.walk(static_root)])
+        logger.info(f"Found {static_files} files in static directory")
     else:
         logger.warning(f"⚠️ Static directory does not exist at {static_root}")
 
-def log_environment_info():
-    """Log information about the environment."""
-    logger.info(f"DATABASE_URL is {'set' if os.environ.get('DATABASE_URL') else 'NOT set'}")
+def log_database_info():
+    """Log information about the database configuration."""
+    try:
+        db_config = settings.DATABASES['default']
+        logger.info(f"Database engine: {db_config.get('ENGINE', 'Not set')}")
+        logger.info(f"Database name: {db_config.get('NAME', 'Not set')}")
+        logger.info(f"Database host: {db_config.get('HOST', 'Not set')}")
+        logger.info(f"Database port: {db_config.get('PORT', 'Not set')}")
+        logger.info(f"CONN_MAX_AGE: {db_config.get('CONN_MAX_AGE', 'Not set')}")
+        logger.info(f"CONN_HEALTH_CHECKS: {db_config.get('CONN_HEALTH_CHECKS', 'Not set')}")
+    except Exception as e:
+        logger.error(f"Failed to log database info: {e}")
+
+def log_system_info():
+    """Log information about the system."""
     logger.info(f"DEBUG mode is {'ON' if settings.DEBUG else 'OFF'}")
-    logger.info(f"Using database engine: {settings.DATABASES['default']['ENGINE']}")
-    logger.info(f"CONN_MAX_AGE: {settings.DATABASES['default'].get('CONN_MAX_AGE', 'Not set')}")
     logger.info(f"Current time: {datetime.now().isoformat()}")
+    logger.info(f"Python version: {sys.version}")
+    logger.info(f"Django version: {django.get_version()}")
+    logger.info(f"Working directory: {os.getcwd()}")
 
 if __name__ == "__main__":
     logger.info("Starting persistence check...")
-    log_environment_info()
+    log_system_info()
+    log_database_info()
+    
     db_ok = check_database_connection()
     check_media_files()
     
