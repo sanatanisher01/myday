@@ -926,26 +926,40 @@ def admin_dashboard(request):
 def admin_events(request):
     """Admin events management page"""
     try:
-        events = Event.objects.all()
-        subevents = SubEvent.objects.all()
+        events = Event.objects.all().order_by('-created_at')
         
-        # Handle event form
         if request.method == 'POST':
-            if 'event_form' in request.POST:
-                event_form = EventForm(request.POST, request.FILES)
-                if event_form.is_valid():
-                    event_form.save()
-                    messages.success(request, "Event added successfully!")
+            # Handle creating new event
+            if 'create_event' in request.POST:
+                form = EventForm(request.POST, request.FILES)
+                if form.is_valid():
+                    form.save()
+                    messages.success(request, "Event created successfully!")
                     return redirect('admin_events')
-            elif 'subevent_form' in request.POST:
-                subevent_form = SubEventForm(request.POST, request.FILES)
-                if subevent_form.is_valid():
-                    subevent_form.save()
-                    messages.success(request, "Sub-event added successfully!")
+            
+            # Handle updating event
+            elif 'update_event' in request.POST:
+                event_id = request.POST.get('event_id')
+                event = get_object_or_404(Event, id=event_id)
+                form = EventForm(request.POST, request.FILES, instance=event)
+                if form.is_valid():
+                    form.save()
+                    messages.success(request, "Event updated successfully!")
                     return redirect('admin_events')
+            
+            # Handle deleting event
+            elif 'delete_event' in request.POST:
+                event_id = request.POST.get('event_id')
+                event = get_object_or_404(Event, id=event_id)
+                event_name = event.name
+                try:
+                    event.delete()
+                    messages.success(request, f"Event '{event_name}' deleted successfully!")
+                except Exception as e:
+                    messages.error(request, f"Error deleting event: {str(e)}")
+                return redirect('admin_events')
         else:
-            event_form = EventForm()
-            subevent_form = SubEventForm()
+            form = EventForm()
         
         # Get subevent counts for each event
         for event in events:
@@ -953,10 +967,9 @@ def admin_events(request):
         
         context = {
             'events': events,
-            'subevents': subevents,
-            'event_form': event_form,
-            'subevent_form': subevent_form,
+            'form': form,
         }
+        
         return render(request, 'events/manager/events.html', context)
     except Exception as e:
         import traceback
