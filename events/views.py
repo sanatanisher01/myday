@@ -925,34 +925,45 @@ def admin_dashboard(request):
 @user_passes_test(is_admin)
 def admin_events(request):
     """Admin events management page"""
-    events = Event.objects.all()
-    subevents = SubEvent.objects.all()
-    
-    # Handle event form
-    if request.method == 'POST':
-        if 'event_form' in request.POST:
-            event_form = EventForm(request.POST, request.FILES)
-            if event_form.is_valid():
-                event_form.save()
-                messages.success(request, "Event added successfully!")
-                return redirect('admin_events')
-        elif 'subevent_form' in request.POST:
-            subevent_form = SubEventForm(request.POST, request.FILES)
-            if subevent_form.is_valid():
-                subevent_form.save()
-                messages.success(request, "Sub-event added successfully!")
-                return redirect('admin_events')
-    else:
-        event_form = EventForm()
-        subevent_form = SubEventForm()
-    
-    context = {
-        'events': events,
-        'subevents': subevents,
-        'event_form': event_form,
-        'subevent_form': subevent_form,
-    }
-    return render(request, 'events/manager/events.html', context)
+    try:
+        events = Event.objects.all()
+        subevents = SubEvent.objects.all()
+        
+        # Handle event form
+        if request.method == 'POST':
+            if 'event_form' in request.POST:
+                event_form = EventForm(request.POST, request.FILES)
+                if event_form.is_valid():
+                    event_form.save()
+                    messages.success(request, "Event added successfully!")
+                    return redirect('admin_events')
+            elif 'subevent_form' in request.POST:
+                subevent_form = SubEventForm(request.POST, request.FILES)
+                if subevent_form.is_valid():
+                    subevent_form.save()
+                    messages.success(request, "Sub-event added successfully!")
+                    return redirect('admin_events')
+        else:
+            event_form = EventForm()
+            subevent_form = SubEventForm()
+        
+        # Get subevent counts for each event
+        for event in events:
+            event.subevent_count = SubEvent.objects.filter(event=event).count()
+        
+        context = {
+            'events': events,
+            'subevents': subevents,
+            'event_form': event_form,
+            'subevent_form': subevent_form,
+        }
+        return render(request, 'events/manager/events.html', context)
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Error in admin_events view: {str(e)}\n{error_details}")
+        messages.error(request, f"An error occurred: {str(e)}")
+        return redirect('admin_dashboard')
 
 @user_passes_test(is_admin)
 def admin_bookings(request):
@@ -1113,11 +1124,18 @@ def manager_events(request):
             event_id = request.POST.get('event_id')
             event = get_object_or_404(Event, id=event_id)
             event_name = event.name
-            event.delete()
-            messages.success(request, f"Event '{event_name}' deleted successfully!")
+            try:
+                event.delete()
+                messages.success(request, f"Event '{event_name}' deleted successfully!")
+            except Exception as e:
+                messages.error(request, f"Error deleting event: {str(e)}")
             return redirect('manager_events')
     else:
         form = EventForm()
+    
+    # Get subevent counts for each event
+    for event in events:
+        event.subevent_count = SubEvent.objects.filter(event=event).count()
     
     context = {
         'events': events,
