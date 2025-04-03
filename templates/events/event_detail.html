@@ -525,6 +525,15 @@
                             <img src="{{ review.image.url }}" alt="Review image" class="review-image">
                         </div>
                         {% endif %}
+                        <div class="d-flex align-items-center mt-3">
+                            <button class="btn btn-sm {% if user in review.likes.all %}btn-primary{% else %}btn-outline-primary{% endif %} like-button" 
+                                    data-review-id="{{ review.id }}" 
+                                    data-url="{% url 'like_review' review.id %}">
+                                <i class="{% if user in review.likes.all %}fas{% else %}far{% endif %} fa-thumbs-up me-1"></i>
+                                <span class="like-count">{{ review.likes_count }}</span>
+                            </button>
+                            <small class="text-muted ms-2">{% if review.likes_count == 1 %}1 person found this helpful{% elif review.likes_count > 1 %}{{ review.likes_count }} people found this helpful{% endif %}</small>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -857,6 +866,107 @@
                 }
             });
         }
+        
+        // Handle like button clicks
+        document.querySelectorAll('.like-button').forEach(function(button) {
+            button.addEventListener('click', function() {
+                {% if user.is_authenticated %}
+                const reviewId = this.dataset.reviewId;
+                const url = this.dataset.url;
+                const likeButton = this;
+                const likeCount = this.querySelector('.like-count');
+                
+                // Send AJAX request to like/unlike the review
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update like count
+                        likeCount.textContent = data.likes_count;
+                        
+                        // Update button appearance
+                        if (data.liked) {
+                            likeButton.classList.remove('btn-outline-primary');
+                            likeButton.classList.add('btn-primary');
+                            likeButton.querySelector('i').classList.remove('far');
+                            likeButton.querySelector('i').classList.add('fas');
+                        } else {
+                            likeButton.classList.remove('btn-primary');
+                            likeButton.classList.add('btn-outline-primary');
+                            likeButton.querySelector('i').classList.remove('fas');
+                            likeButton.querySelector('i').classList.add('far');
+                        }
+                        
+                        // Update helper text
+                        const helperText = likeButton.nextElementSibling;
+                        if (data.likes_count === 1) {
+                            helperText.textContent = '1 person found this helpful';
+                        } else if (data.likes_count > 1) {
+                            helperText.textContent = data.likes_count + ' people found this helpful';
+                        } else {
+                            helperText.textContent = '';
+                        }
+                        
+                        // Show toast notification
+                        const toastEl = document.createElement('div');
+                        toastEl.className = 'toast position-fixed bottom-0 end-0 m-3';
+                        toastEl.setAttribute('role', 'alert');
+                        toastEl.setAttribute('aria-live', 'assertive');
+                        toastEl.setAttribute('aria-atomic', 'true');
+                        toastEl.innerHTML = `
+                            <div class="toast-header">
+                                <strong class="me-auto">Notification</strong>
+                                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                            </div>
+                            <div class="toast-body">${data.message}</div>
+                        `;
+                        document.body.appendChild(toastEl);
+                        const toast = new bootstrap.Toast(toastEl);
+                        toast.show();
+                        
+                        // Remove toast after it's hidden
+                        toastEl.addEventListener('hidden.bs.toast', function() {
+                            toastEl.remove();
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    // Show error toast
+                    const toastEl = document.createElement('div');
+                    toastEl.className = 'toast position-fixed bottom-0 end-0 m-3 bg-danger text-white';
+                    toastEl.setAttribute('role', 'alert');
+                    toastEl.setAttribute('aria-live', 'assertive');
+                    toastEl.setAttribute('aria-atomic', 'true');
+                    toastEl.innerHTML = `
+                        <div class="toast-header bg-danger text-white">
+                            <strong class="me-auto">Error</strong>
+                            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                        <div class="toast-body">An error occurred. Please try again.</div>
+                    `;
+                    document.body.appendChild(toastEl);
+                    const toast = new bootstrap.Toast(toastEl);
+                    toast.show();
+                    
+                    // Remove toast after it's hidden
+                    toastEl.addEventListener('hidden.bs.toast', function() {
+                        toastEl.remove();
+                    });
+                });
+                {% else %}
+                // Show login modal for unauthenticated users
+                const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+                loginModal.show();
+                {% endif %}
+            });
+        });
     });
 </script>
 {% endblock %}

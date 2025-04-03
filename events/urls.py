@@ -61,6 +61,7 @@ urlpatterns = [
     # Authentication routes
     path('signup/', views.signup, name='signup'),
     path('review/<int:event_id>/add/', views.add_review, name='add_review'),
+    path('review/<int:review_id>/like/', views.like_review, name='like_review'),
     path('booking/<int:subevent_id>/add/', views.add_booking, name='add_booking'),
     
     # API routes
