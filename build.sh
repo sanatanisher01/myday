@@ -26,7 +26,7 @@ cp -r static/images/event-placeholder.jpg media/events/default-corporate.jpg 2>/
 
 # Collect static files
 echo "Collecting static files..."
-python -m django collectstatic --noinput
+DJANGO_SETTINGS_MODULE=myday.settings python manage.py collectstatic --noinput
 
 # Apply database migrations
 echo "Applying database migrations..."
