@@ -59,15 +59,15 @@ try:
     
     # Create default events if they don't exist
     default_events = [
-        {'name': 'Wedding', 'event_slug': 'wedding', 'description': 'Beautiful wedding events and photography services.', 'image_path': 'media/events/default-wedding.jpg'},
-        {'name': 'Birthday', 'event_slug': 'birthday', 'description': 'Memorable birthday celebration services.', 'image_path': 'media/events/default-birthday.jpg'},
-        {'name': 'Anniversary', 'event_slug': 'anniversary', 'description': 'Special anniversary celebration services.', 'image_path': 'media/events/default-anniversary.jpg'},
-        {'name': 'Corporate', 'event_slug': 'corporate', 'description': 'Professional corporate event services.', 'image_path': 'media/events/default-corporate.jpg'},
+        {'name': 'Wedding', 'slug': 'wedding', 'description': 'Beautiful wedding events and photography services.', 'image_path': 'media/events/default-wedding.jpg'},
+        {'name': 'Birthday', 'slug': 'birthday', 'description': 'Memorable birthday celebration services.', 'image_path': 'media/events/default-birthday.jpg'},
+        {'name': 'Anniversary', 'slug': 'anniversary', 'description': 'Special anniversary celebration services.', 'image_path': 'media/events/default-anniversary.jpg'},
+        {'name': 'Corporate', 'slug': 'corporate', 'description': 'Professional corporate event services.', 'image_path': 'media/events/default-corporate.jpg'},
     ]
     
     for event_data in default_events:
         event, created = Event.objects.get_or_create(
-            event_slug=event_data['event_slug'],
+            slug=event_data['slug'],
             defaults={
                 'name': event_data['name'],
                 'description': event_data['description']
@@ -79,7 +79,7 @@ try:
             image_path = event_data['image_path']
             if os.path.exists(image_path):
                 with open(image_path, 'rb') as f:
-                    event.image.save(f'default-{event_data["event_slug"]}.jpg', ContentFile(f.read()))
+                    event.image.save(f'default-{event_data["slug"]}.jpg', ContentFile(f.read()))
                 print(f'Added default image to {event.name} event')
             else:
                 print(f'Warning: Default image not found at {image_path}')
