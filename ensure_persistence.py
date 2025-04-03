@@ -43,19 +43,24 @@ log_env_vars()
 
 # Check if DATABASE_URL is set, if not, this is a critical error
 if not os.environ.get('DATABASE_URL'):
-    logger.critical("u274c DATABASE_URL environment variable is not set!")
+    logger.critical("DATABASE_URL environment variable is not set!")
     logger.critical("This will cause data loss as the application will use SQLite.")
-    logger.critical("Please configure the DATABASE_URL in your Render dashboard.")
+    logger.critical("Please configure the DATABASE_URL in your Render dashboard:")
+    logger.critical("1. Go to: Dashboard > Your Web Service > Environment > Environment Variables")
+    logger.critical("2. Add a new environment variable:")
+    logger.critical("   Key: DATABASE_URL")
+    logger.critical("   Value: postgresql://mydays_n59u_user:KX35eUaw9CqUeV03GQeyXa3nqS1qfbCh@dpg-cvlf2kd6ubrc73bin8i0-a.oregon-postgres.render.com/mydays_n59u")
+    logger.critical("3. Save changes and redeploy your service")
     # Don't exit here, continue with checks to provide more diagnostic info
 elif 'postgres' not in os.environ.get('DATABASE_URL', ''):
-    logger.warning("u26a0ufe0f DATABASE_URL does not appear to be a PostgreSQL connection string!")
+    logger.warning("DATABASE_URL does not appear to be a PostgreSQL connection string!")
 
 # Now set up Django
 try:
     django.setup()
-    logger.info("u2705 Django setup successful")
+    logger.info("Django setup successful")
 except Exception as e:
-    logger.error(f"u274c Django setup failed: {e}")
+    logger.error(f"Django setup failed: {e}")
     sys.exit(1)
 
 from django.db import connections
@@ -73,12 +78,12 @@ def check_database_connection(max_retries=5, retry_delay=3):
             
             # Check database engine
             db_engine = settings.DATABASES['default']['ENGINE']
-            logger.info(f"u2705 Using database engine: {db_engine}")
+            logger.info(f"Using database engine: {db_engine}")
             
             if 'sqlite' in db_engine and not settings.DEBUG:
-                logger.warning("u26a0ufe0f Using SQLite in production is not recommended!")
+                logger.warning("Using SQLite in production is not recommended!")
             elif 'postgresql' in db_engine or 'postgres' in db_engine:
-                logger.info("u2705 Using PostgreSQL database - good for production")
+                logger.info("Using PostgreSQL database - good for production")
             
             # Check if there are any users in the database
             user_count = User.objects.count()
@@ -86,15 +91,15 @@ def check_database_connection(max_retries=5, retry_delay=3):
             
             return True
         except OperationalError as e:
-            logger.warning(f"u26a0ufe0f Database connection attempt {attempt+1}/{max_retries} failed: {e}")
+            logger.warning(f"Database connection attempt {attempt+1}/{max_retries} failed: {e}")
             if attempt < max_retries - 1:
                 logger.info(f"Retrying in {retry_delay} seconds...")
                 time.sleep(retry_delay)
             else:
-                logger.error(f"u274c All database connection attempts failed: {e}")
+                logger.error(f"All database connection attempts failed: {e}")
                 return False
         except Exception as e:
-            logger.error(f"u274c Unexpected database error: {e}")
+            logger.error(f"Unexpected database error: {e}")
             return False
 
 def check_media_files():
@@ -103,12 +108,12 @@ def check_media_files():
     static_root = settings.STATIC_ROOT
     
     if os.path.exists(media_root):
-        logger.info(f"u2705 Media directory exists at {media_root}")
+        logger.info(f"Media directory exists at {media_root}")
         # Count files in media directory
         media_files = sum([len(files) for _, _, files in os.walk(media_root)])
         logger.info(f"Found {media_files} files in media directory")
     else:
-        logger.warning(f"u26a0ufe0f Media directory does not exist at {media_root}")
+        logger.warning(f"Media directory does not exist at {media_root}")
         try:
             os.makedirs(media_root, exist_ok=True)
             logger.info(f"Created media directory at {media_root}")
@@ -116,12 +121,12 @@ def check_media_files():
             logger.error(f"Failed to create media directory: {e}")
     
     if os.path.exists(static_root):
-        logger.info(f"u2705 Static directory exists at {static_root}")
+        logger.info(f"Static directory exists at {static_root}")
         # Count files in static directory
         static_files = sum([len(files) for _, _, files in os.walk(static_root)])
         logger.info(f"Found {static_files} files in static directory")
     else:
-        logger.warning(f"u26a0ufe0f Static directory does not exist at {static_root}")
+        logger.warning(f"Static directory does not exist at {static_root}")
 
 def log_database_info():
     """Log information about the database configuration."""
@@ -161,8 +166,8 @@ if __name__ == "__main__":
     check_media_files()
     
     if db_ok:
-        logger.info("u2705 Persistence check completed successfully")
+        logger.info("Persistence check completed successfully")
         sys.exit(0)
     else:
-        logger.error("u274c Persistence check failed")
+        logger.error("Persistence check failed")
         sys.exit(1)

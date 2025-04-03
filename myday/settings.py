@@ -106,6 +106,7 @@ WSGI_APPLICATION = 'myday.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+# Default database configuration (SQLite for development)
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -113,10 +114,21 @@ DATABASES = {
     }
 }
 
-# Use PostgreSQL on Render
+# Get DATABASE_URL from environment
 DATABASE_URL = os.environ.get('DATABASE_URL')
+
+# Print detailed information about DATABASE_URL for debugging
+print(f"DATABASE_URL environment variable: {'SET' if DATABASE_URL else 'NOT SET'}")
+if not DATABASE_URL and not DEBUG:
+    print("ERROR: Production environment detected but no DATABASE_URL provided!")
+    print("This will likely cause data loss. Please configure a PostgreSQL database.")
+    print("You need to set the DATABASE_URL environment variable in your Render dashboard.")
+    print("Go to: Dashboard > Your Web Service > Environment > Environment Variables")
+    print("Add: DATABASE_URL = postgresql://mydays_n59u_user:KX35eUaw9CqUeV03GQeyXa3nqS1qfbCh@dpg-cvlf2kd6ubrc73bin8i0-a.oregon-postgres.render.com/mydays_n59u")
+
+# Use PostgreSQL if DATABASE_URL is provided
 if DATABASE_URL:
-    print(f"Using PostgreSQL database: {DATABASE_URL.split('@')[1] if '@' in DATABASE_URL else 'external database'}")
+    print(f"Using PostgreSQL database from DATABASE_URL environment variable")
     # Parse database URL
     DATABASES['default'] = dj_database_url.config(
         default=DATABASE_URL,
@@ -126,17 +138,13 @@ if DATABASE_URL:
     )
 else:
     print("WARNING: No DATABASE_URL found. Using SQLite database which is not suitable for production.")
-    # If we're in production but no DATABASE_URL, this is a serious error
-    if not DEBUG:
-        print("ERROR: Production environment detected but no DATABASE_URL provided!")
-        print("This will likely cause data loss. Please configure a PostgreSQL database.")
 
 # Ensure database connections persist
 if not DEBUG:
     # Increase connection age for production to maintain persistent connections
     CONN_MAX_AGE = 60 * 60  # 1 hour
     
-    # Disable connection pooling release
+    # Enable connection health checks
     CONN_HEALTH_CHECKS = True
 
 # Cache settings to improve performance

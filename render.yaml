@@ -10,8 +10,6 @@ services:
         value: "False"
       - key: SECRET_KEY
         generateValue: true
-      - key: DATABASE_URL
-        value: "postgresql://mydays_n59u_user:KX35eUaw9CqUeV03GQeyXa3nqS1qfbCh@dpg-cvlf2kd6ubrc73bin8i0-a.oregon-postgres.render.com/mydays_n59u"
       - key: PYTHON_VERSION
         value: 3.11.11
       - key: ALLOWED_HOSTS
