@@ -3,8 +3,9 @@ services:
   - type: web
     name: myday
     env: python
+    plan: free
     buildCommand: "./build.sh"
-    startCommand: "python ensure_persistence.py && gunicorn myday.wsgi:application"
+    startCommand: "gunicorn myday.wsgi:application"
     envVars:
       - key: DEBUG
         value: "False"
@@ -16,7 +17,9 @@ services:
         value: ".onrender.com"
       - key: DJANGO_SETTINGS_MODULE
         value: "myday.settings"
+      - key: WEB_CONCURRENCY
+        value: 4
     disk:
-      name: myday_data
-      mountPath: /data
+      name: media
+      mountPath: /opt/render/project/src/media
       sizeGB: 1

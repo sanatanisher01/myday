@@ -204,9 +204,34 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
 
-# Media files
+# Media files (user uploaded files)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Ensure media files persist in production
+if not DEBUG:
+    # Configure WhiteNoise to serve media files in production
+    WHITENOISE_MIMETYPES = {
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.gif': 'image/gif',
+        '.webp': 'image/webp',
+        '.svg': 'image/svg+xml',
+        '.pdf': 'application/pdf',
+    }
+    
+    # Add media files to the static files dirs so WhiteNoise can serve them
+    STATICFILES_DIRS = [
+        os.path.join(BASE_DIR, 'static'),
+        os.path.join(BASE_DIR, 'media'),  # Include media directory for WhiteNoise
+    ]
+    
+    # Configure WhiteNoise to use compression and caching
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    
+    # Configure Django to use a file system storage backend that persists across deployments
+    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 
 # Configure storage for static and media files
 STORAGES = {
