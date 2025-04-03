@@ -151,14 +151,14 @@
                         
                         <!-- Rating Stars -->
                         <div class="rating mb-3">
-                            {% with ''|center:event.avg_rating|default:0|floatformat:"0" as stars %}
+                            {% with ''|center:event.avg_rating|default:'0'|floatformat:"0" as stars %}
                             {% if stars %}
                                 {% for _ in stars %}
                                     <i class="fas fa-star text-warning"></i>
                                 {% endfor %}
-                                {% with 5|add:'-'|add:stars|add:'.0'|floatformat:"0"|default:0 as empty_stars %}
+                                {% with 5|add:'-'|add:stars|add:'.0'|floatformat:"0"|default:'0' as empty_stars %}
                                     {% if empty_stars|add:"0" > 0 %}
-                                        {% for _ in ''|center:empty_stars %}
+                                        {% for _ in ''|center:empty_stars|default:'0' %}
                                             <i class="far fa-star text-muted"></i>
                                         {% endfor %}
                                     {% endif %}
