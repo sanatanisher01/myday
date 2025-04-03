@@ -4,6 +4,16 @@
 {% block title %}MyDay - Capture Your Special Moments{% endblock %}
 
 {% block content %}
+{% if error_message %}
+<!-- Error Message Display -->
+<div class="alert alert-warning alert-dismissible fade show mb-0" role="alert">
+    <div class="container">
+        <strong><i class="fas fa-exclamation-triangle me-2"></i>Notice:</strong> {{ error_message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+</div>
+{% endif %}
+
 <!-- Hero Section with Carousel -->
 <section class="hero-section">
     <div id="heroCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel">
@@ -76,46 +86,38 @@
         <div class="row mb-4">
             <div class="col-12 text-center">
                 <h2 class="display-5 fw-bold">Our Event Categories</h2>
-                <p class="fs-5">Explore our wide range of events and find the perfect fit for your special occasion</p>
+                <p class="fs-5">Discover our range of services for your special occasions</p>
             </div>
         </div>
-        
-        <!-- Filter Bar -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="filter-bar p-3 bg-light rounded-3 d-flex justify-content-center">
-                    <button class="btn btn-outline-primary me-2 active" data-filter="all">All</button>
-                    <button class="btn btn-outline-primary me-2" data-filter="wedding">Wedding</button>
-                    <button class="btn btn-outline-primary me-2" data-filter="birthday">Birthday</button>
-                    <button class="btn btn-outline-primary me-2" data-filter="anniversary">Anniversary</button>
-                    <button class="btn btn-outline-primary" data-filter="college">College</button>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Event Cards -->
-        <div class="row g-4 event-cards">
-            {% for event in events %}
-            <div class="col-md-6 col-lg-3 event-card-wrapper" data-category="{{ event.slug }}">
-                <div class="card h-100 event-card">
-                    <div class="card-img-container">
-                        <img src="{{ event.image.url }}" class="card-img-top" alt="{{ event.name }}">
+        <div class="row">
+            {% if events %}
+                {% for event in events %}
+                    <div class="col-md-6 col-lg-4 mb-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter|add:"100" }}">
+                        <div class="card event-card h-100">
+                            <div class="card-img-container">
+                                {% if event.image %}
+                                    <img src="{{ event.image.url }}" class="card-img-top" alt="{{ event.name }}">
+                                {% else %}
+                                    <div class="placeholder-image bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                        <i class="fas fa-image fa-3x text-secondary"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="card-body">
+                                <h5 class="card-title">{{ event.name }}</h5>
+                                <p class="card-text">{{ event.description|truncatewords:15 }}</p>
+                                <a href="{% url 'event_detail' event.slug %}" class="btn btn-primary">View Details</a>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <h3 class="card-title">{{ event.name }}</h3>
-                        <p class="card-text">{{ event.description|truncatechars:100 }}</p>
-                    </div>
-                    <div class="card-footer bg-transparent border-0">
-                        <a href="{% url 'event_detail' event.slug %}" class="btn btn-primary w-100">View Details</a>
+                {% endfor %}
+            {% else %}
+                <div class="col-12 text-center py-5">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i> No event categories available at the moment. Please check back soon!
                     </div>
                 </div>
-            </div>
-            {% empty %}
-            <div class="col-12 text-center py-5">
-                <h3>No events available right now.</h3>
-                <p>Please check back later!</p>
-            </div>
-            {% endfor %}
+            {% endif %}
         </div>
     </div>
 </section>
@@ -169,77 +171,52 @@
                 <p class="fs-5">See what our customers have to say about their experiences</p>
             </div>
         </div>
-        
         <div class="row">
             <div class="col-12">
+                {% if recent_reviews %}
                 <div id="reviews-carousel" class="carousel slide" data-bs-ride="carousel">
                     <div class="carousel-inner">
                         {% for review in recent_reviews %}
-                        <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                            <div class="review-card">
-                                <div class="row justify-content-center">
-                                    <div class="col-lg-8 col-md-10">
-                                        <div class="card border-0 shadow-sm">
-                                            <div class="card-body p-5">
-                                                <div class="d-flex align-items-center mb-4">
-                                                    <div class="review-avatar">
-                                                        {% if review.user.profile.profile_picture %}
-                                                            <img src="{{ review.user.profile.profile_picture.url }}" alt="{{ review.user.username }}" class="rounded-circle">
-                                                        {% else %}
-                                                            <div class="avatar-placeholder rounded-circle bg-primary text-white">{{ review.user.username|first|upper }}</div>
-                                                        {% endif %}
-                                                    </div>
-                                                    <div class="ms-3">
-                                                        <h5 class="mb-0">{{ review.user.get_full_name|default:review.user.username }}</h5>
-                                                        <div class="rating">
-                                                            {% with ''|center:review.rating as stars %}
-                                                            {% for _ in stars %}
-                                                                <i class="fas fa-star text-warning"></i>
-                                                            {% endfor %}
-                                                            {% endwith %}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <p class="review-text fs-5">"{{ review.comment }}"</p>
-                                                <p class="text-muted mt-3">Event: {{ review.event.name }}</p>
+                            <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                <div class="review-card">
+                                    <div class="review-content">
+                                        <div class="review-rating mb-2">
+                                            {% for i in "12345"|make_list %}
+                                                {% if forloop.counter <= review.rating %}
+                                                    <i class="fas fa-star"></i>
+                                                {% else %}
+                                                    <i class="far fa-star"></i>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                        <p class="review-text">"{{ review.comment|truncatewords:30 }}"</p>
+                                        <div class="review-author">
+                                            <div class="author-info">
+                                                <h5 class="author-name">{{ review.user.get_full_name|default:review.user.username }}</h5>
+                                                <p class="event-name">{{ review.event.name }}</p>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        {% empty %}
-                        <div class="carousel-item active">
-                            <div class="row justify-content-center">
-                                <div class="col-lg-8 col-md-10">
-                                    <div class="card border-0 shadow-sm">
-                                        <div class="card-body p-5 text-center">
-                                            <h4>No reviews yet.</h4>
-                                            <p>Be the first to leave a review!</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                         {% endfor %}
                     </div>
                     <button class="carousel-control-prev" type="button" data-bs-target="#reviews-carousel" data-bs-slide="prev">
-                        <span class="carousel-control-prev-icon bg-primary rounded-circle p-2" aria-hidden="true"></span>
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
                         <span class="visually-hidden">Previous</span>
                     </button>
                     <button class="carousel-control-next" type="button" data-bs-target="#reviews-carousel" data-bs-slide="next">
-                        <span class="carousel-control-next-icon bg-primary rounded-circle p-2" aria-hidden="true"></span>
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
                         <span class="visually-hidden">Next</span>
                     </button>
                 </div>
-                
-                <div class="text-center mt-4">
-                    {% if user.is_authenticated %}
-                        <button class="btn btn-lg btn-primary write-review-btn" data-bs-toggle="modal" data-bs-target="#reviewModal">Write a Review</button>
-                    {% else %}
-                        <button class="btn btn-lg btn-primary" data-bs-toggle="modal" data-bs-target="#loginModal">Sign In to Write a Review</button>
-                    {% endif %}
+                {% else %}
+                <div class="text-center py-4">
+                    <div class="alert alert-info">
+                        <i class="fas fa-comment-dots me-2"></i> No reviews available yet. Be the first to share your experience!
+                    </div>
                 </div>
+                {% endif %}
             </div>
         </div>
     </div>
