@@ -64,6 +64,12 @@ def home(request):
                     # Just check if the image path exists, don't actually open it
                     if not os.path.exists(event.image.path):
                         print(f"Warning: Image file not found for event {event.name}: {event.image.path}")
+                        # Try to find a default image for this event type
+                        default_image_path = os.path.join(settings.MEDIA_ROOT, 'events', f'default-{event.slug}.jpg')
+                        if os.path.exists(default_image_path):
+                            print(f"Using default image for {event.name}: {default_image_path}")
+                        else:
+                            print(f"No default image found for {event.name} at {default_image_path}")
                 except Exception as e:
                     print(f"Error checking image for event {event.name}: {str(e)}")
         
@@ -1656,10 +1662,11 @@ def signup(request):
 # Media file serving
 def serve_media_file(request, path):
     """Serve media files in production environment"""
-    from django.http import FileResponse, Http404
+    from django.http import FileResponse, Http404, HttpResponse
     import os
     from django.conf import settings
     import mimetypes
+    import re
     
     # Construct the full path to the media file
     full_path = os.path.join(settings.MEDIA_ROOT, path)
@@ -1668,12 +1675,34 @@ def serve_media_file(request, path):
     if not os.path.exists(full_path):
         # Log the missing file
         print(f"Media file not found: {full_path}")
-        # Try alternative path in case of deployment directory structure differences
-        alt_path = os.path.join(settings.BASE_DIR, 'media', path)
-        if os.path.exists(alt_path):
-            full_path = alt_path
-        else:
-            raise Http404(f"Media file {path} not found")
+        
+        # Check if this is an event image and try to find a default
+        if path.startswith('events/') and re.match(r'events/[\w-]+\.\w+$', path):
+            event_slug = os.path.basename(path).split('.')[0]
+            default_path = os.path.join(settings.MEDIA_ROOT, 'events', f'default-{event_slug}.jpg')
+            
+            if os.path.exists(default_path):
+                print(f"Using default image instead: {default_path}")
+                full_path = default_path
+            else:
+                # Try a generic default image
+                generic_default = os.path.join(settings.STATIC_ROOT, 'images', 'event-placeholder.jpg')
+                if os.path.exists(generic_default):
+                    print(f"Using generic placeholder: {generic_default}")
+                    full_path = generic_default
+                else:
+                    # Try alternative path in case of deployment directory structure differences
+                    alt_path = os.path.join(settings.BASE_DIR, 'media', path)
+                    if os.path.exists(alt_path):
+                        full_path = alt_path
+                    else:
+                        alt_static_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'event-placeholder.jpg')
+                        if os.path.exists(alt_static_path):
+                            full_path = alt_static_path
+                        else:
+                            # If all else fails, return a simple placeholder image
+                            print(f"No placeholder found, returning empty image response")
+                            return HttpResponse("No image available", content_type="text/plain")
     
     # Determine the content type
     content_type, encoding = mimetypes.guess_type(full_path)
