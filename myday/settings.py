@@ -122,6 +122,17 @@ if DATABASE_URL:
         conn_health_checks=True,
         ssl_require=True
     )
+    print(f"Using PostgreSQL database: {DATABASE_URL.split('@')[1] if '@' in DATABASE_URL else 'external database'}")
+else:
+    print("WARNING: No DATABASE_URL found. Using SQLite database which is not suitable for production.")
+
+# Ensure database connections persist
+if not DEBUG:
+    # Increase connection age for production to maintain persistent connections
+    CONN_MAX_AGE = 60 * 60  # 1 hour
+    
+    # Disable connection pooling release
+    CONN_HEALTH_CHECKS = True
 
 # Cache settings to improve performance
 CACHES = {
@@ -208,7 +219,6 @@ if not DEBUG:
 
 # Database persistence settings
 DATABASE_ROUTERS = []
-CONN_MAX_AGE = 600  # Keep connections alive for 10 minutes
 
 # File upload settings
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB

@@ -4,10 +4,10 @@ services:
     name: myday
     env: python
     buildCommand: "./build.sh"
-    startCommand: "gunicorn myday.wsgi:application"
+    startCommand: "python ensure_persistence.py && gunicorn myday.wsgi:application"
     envVars:
       - key: DEBUG
-        value: "True"
+        value: "False"
       - key: SECRET_KEY
         generateValue: true
       - key: DATABASE_URL
@@ -20,9 +20,14 @@ services:
         value: ".onrender.com"
       - key: DJANGO_SETTINGS_MODULE
         value: "myday.settings"
+    disk:
+      name: myday_data
+      mountPath: /data
+      sizeGB: 1
 
 databases:
   - name: myday_db
     databaseName: myday
     user: myday
-    plan: free
+    plan: starter
+    ipAllowList: []  # Allow all connections
