@@ -66,7 +66,7 @@
                                         <th>Event</th>
                                         <th>Description</th>
                                         <th>Price</th>
-                                        <th>Date</th>
+                                        <!-- Date column removed as it doesn't exist in the model -->
                                         <th>Status</th>
                                         <th style="width: 150px;">Actions</th>
                                     </tr>
@@ -97,7 +97,7 @@
                                             <div class="small text-muted">{{ subevent.description|truncatechars:50 }}</div>
                                         </td>
                                         <td>₹{{ subevent.price }}</td>
-                                        <td>{{ subevent.date|date:"M d, Y" }}</td>
+                                        <!-- Date field removed as it doesn't exist in the model -->
                                         <td>
                                             <span class="badge bg-success">Active</span>
                                         </td>
@@ -179,14 +179,7 @@
                             <label for="price" class="form-label">Price (₹)</label>
                             {{ form.price }}
                         </div>
-                        <div class="col-md-6">
-                            <label for="date" class="form-label">Date</label>
-                            {{ form.date }}
-                        </div>
-                        <div class="col-md-6">
-                            <label for="capacity" class="form-label">Capacity</label>
-                            {{ form.capacity }}
-                        </div>
+                        <!-- Date and capacity fields removed as they don't exist in the model -->
                         <div class="col-12">
                             <label for="description" class="form-label">Description</label>
                             {{ form.description }}
@@ -241,14 +234,7 @@
                             <label for="price" class="form-label">Price (₹)</label>
                             <input type="number" class="form-control" name="price" value="{{ subevent.price }}" step="0.01" min="0" required>
                         </div>
-                        <div class="col-md-6">
-                            <label for="date" class="form-label">Date</label>
-                            <input type="date" class="form-control" name="date" value="{{ subevent.date|date:'Y-m-d' }}" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="capacity" class="form-label">Capacity</label>
-                            <input type="number" class="form-control" name="capacity" value="{{ subevent.capacity }}" min="1" required>
-                        </div>
+                        <!-- Date and capacity fields removed as they don't exist in the model -->
                         <div class="col-12">
                             <label for="description" class="form-label">Description</label>
                             <textarea class="form-control" name="description" rows="4" required>{{ subevent.description }}</textarea>

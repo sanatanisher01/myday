@@ -22,9 +22,8 @@ class SubEventForm(forms.ModelForm):
     """Form for creating and updating sub-events"""
     class Meta:
         model = SubEvent
-        fields = ['event', 'name', 'description', 'price', 'date', 'capacity', 'image', 'slug']
+        fields = ['event', 'name', 'description', 'price', 'image', 'slug']
         widgets = {
-            'date': forms.DateInput(attrs={'type': 'date'}),
             'description': forms.Textarea(attrs={'rows': 4}),
             'slug': forms.TextInput(attrs={'placeholder': 'Will be auto-generated if left blank'}),
         }
