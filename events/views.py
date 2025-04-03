@@ -39,6 +39,12 @@ def home(request):
         try:
             if Review.objects.exists():
                 top_rated_events = Event.objects.annotate(avg_rating=Avg('reviews__rating')).order_by('-avg_rating')[:4]
+                # Ensure avg_rating is never None
+                for event in top_rated_events:
+                    if event.avg_rating is None:
+                        event.avg_rating = 0
+                    # Convert to int to avoid template issues
+                    event.avg_rating = int(event.avg_rating or 0)
             else:
                 # When no reviews exist, manually add avg_rating=0 to each event
                 top_rated_events = list(Event.objects.all().order_by('?')[:4])

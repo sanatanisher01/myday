@@ -151,26 +151,24 @@
                         
                         <!-- Rating Stars -->
                         <div class="rating mb-3">
-                            {% with ''|center:event.avg_rating|default:'0'|floatformat:"0" as stars %}
-                            {% if stars %}
-                                {% for _ in stars %}
-                                    <i class="fas fa-star text-warning"></i>
-                                {% endfor %}
-                                {% with 5|add:'-'|add:stars|add:'.0'|floatformat:"0"|default:'0' as empty_stars %}
-                                    {% if empty_stars|add:"0" > 0 %}
-                                        {% for _ in ''|center:empty_stars|default:'0' %}
+                            {% with event.avg_rating|default:0 as rating %}
+                                {% if rating > 0 %}
+                                    {% for i in '12345' %}
+                                        {% if forloop.counter <= rating %}
+                                            <i class="fas fa-star text-warning"></i>
+                                        {% else %}
                                             <i class="far fa-star text-muted"></i>
-                                        {% endfor %}
-                                    {% endif %}
-                                {% endwith %}
-                            {% else %}
-                                <i class="far fa-star text-muted"></i>
-                                <i class="far fa-star text-muted"></i>
-                                <i class="far fa-star text-muted"></i>
-                                <i class="far fa-star text-muted"></i>
-                                <i class="far fa-star text-muted"></i>
-                                <span class="text-muted ms-2">(No reviews yet)</span>
-                            {% endif %}
+                                        {% endif %}
+                                    {% endfor %}
+                                    <span class="text-muted ms-2">({{ rating }} star{% if rating != 1 %}s{% endif %})</span>
+                                {% else %}
+                                    <i class="far fa-star text-muted"></i>
+                                    <i class="far fa-star text-muted"></i>
+                                    <i class="far fa-star text-muted"></i>
+                                    <i class="far fa-star text-muted"></i>
+                                    <i class="far fa-star text-muted"></i>
+                                    <span class="text-muted ms-2">(No reviews yet)</span>
+                                {% endif %}
                             {% endwith %}
                         </div>
                         
