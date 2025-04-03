@@ -952,7 +952,7 @@ def admin_events(request):
         'event_form': event_form,
         'subevent_form': subevent_form,
     }
-    return render(request, 'events/admin/events.html', context)
+    return render(request, 'events/manager/events.html', context)
 
 @user_passes_test(is_admin)
 def admin_bookings(request):
