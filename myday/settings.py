@@ -229,17 +229,14 @@ if not DEBUG:
     
     # Configure WhiteNoise to use compression and caching
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-    
-    # Configure Django to use a file system storage backend that persists across deployments
-    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 
-# Configure storage for static and media files
+# Configure storage for static and media files - using the new STORAGES setting
 STORAGES = {
     "default": {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
     },
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage" if not DEBUG else "django.contrib.staticfiles.storage.StaticFilesStorage",
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
     },
 }
 
