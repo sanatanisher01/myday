@@ -203,7 +203,8 @@ if not DEBUG:
     WHITENOISE_USE_FINDERS = True
     WHITENOISE_AUTOREFRESH = False
     WHITENOISE_MANIFEST_STRICT = False
-    WHITENOISE_ROOT = os.path.join(BASE_DIR, 'media')
+    WHITENOISE_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+    WHITENOISE_ADD_MEDIA_TO_STATICFILES = True
 
 # Database persistence settings
 DATABASE_ROUTERS = []

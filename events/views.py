@@ -32,17 +32,17 @@ def home(request):
     """Home page / landing page view"""
     try:
         # Get all events
-        events = Event.objects.all()
+        events = Event.objects.all().order_by('name')
         
         # Get top rated events - handle case where there are no reviews
         try:
             if Review.objects.exists():
                 top_rated_events = Event.objects.annotate(avg_rating=Avg('reviews__rating')).order_by('-avg_rating')[:4]
             else:
-                top_rated_events = Event.objects.all()[:4]
+                top_rated_events = Event.objects.all().order_by('?')[:4]
         except Exception as e:
             # Fallback if rating query fails
-            top_rated_events = Event.objects.all()[:4]
+            top_rated_events = Event.objects.all().order_by('name')[:4]
             print(f"Error getting top rated events: {str(e)}")
         
         # Get recent reviews - handle case where there are no reviews
@@ -51,6 +51,16 @@ def home(request):
         except Exception as e:
             recent_reviews = Review.objects.none()
             print(f"Error getting recent reviews: {str(e)}")
+        
+        # Check if images exist and are accessible
+        for event in events:
+            if event.image:
+                try:
+                    # Just check if the image path exists, don't actually open it
+                    if not os.path.exists(event.image.path):
+                        print(f"Warning: Image file not found for event {event.name}: {event.image.path}")
+                except Exception as e:
+                    print(f"Error checking image for event {event.name}: {str(e)}")
         
         context = {
             'events': events,
@@ -1644,16 +1654,30 @@ def serve_media_file(request, path):
     from django.http import FileResponse, Http404
     import os
     from django.conf import settings
+    import mimetypes
     
     # Construct the full path to the media file
     full_path = os.path.join(settings.MEDIA_ROOT, path)
     
     # Check if the file exists
     if not os.path.exists(full_path):
-        raise Http404(f"Media file {path} not found")
+        # Log the missing file
+        print(f"Media file not found: {full_path}")
+        # Try alternative path in case of deployment directory structure differences
+        alt_path = os.path.join(settings.BASE_DIR, 'media', path)
+        if os.path.exists(alt_path):
+            full_path = alt_path
+        else:
+            raise Http404(f"Media file {path} not found")
     
-    # Return the file as a response
-    return FileResponse(open(full_path, 'rb'))
+    # Determine the content type
+    content_type, encoding = mimetypes.guess_type(full_path)
+    
+    # Return the file as a response with proper content type
+    response = FileResponse(open(full_path, 'rb'))
+    if content_type:
+        response['Content-Type'] = content_type
+    return response
 
 # Review and Booking actions
 @login_required

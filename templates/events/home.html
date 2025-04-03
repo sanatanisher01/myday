@@ -96,7 +96,7 @@
                         <div class="card event-card h-100">
                             <div class="card-img-container">
                                 {% if event.image %}
-                                    <img src="{{ event.image.url }}" class="card-img-top" alt="{{ event.name }}">
+                                    <img src="{{ event.image.url }}" class="card-img-top" alt="{{ event.name }}" onerror="this.onerror=null; this.src='/static/images/placeholder.jpg'; this.alt='Image not available';">
                                 {% else %}
                                     <div class="placeholder-image bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
                                         <i class="fas fa-image fa-3x text-secondary"></i>
@@ -133,7 +133,13 @@
         {% if top_rated_events.0 %}
         <div class="row align-items-center">
             <div class="col-lg-6">
-                <img src="{{ top_rated_events.0.image.url }}" alt="{{ top_rated_events.0.name }}" class="img-fluid rounded-3 shadow featured-image">
+                {% if top_rated_events.0.image %}
+                    <img src="{{ top_rated_events.0.image.url }}" alt="{{ top_rated_events.0.name }}" class="img-fluid rounded-3 shadow featured-image" onerror="this.onerror=null; this.src='/static/images/placeholder.jpg'; this.alt='Image not available';">
+                {% else %}
+                    <div class="placeholder-image bg-light d-flex align-items-center justify-content-center" style="height: 300px;">
+                        <i class="fas fa-image fa-4x text-secondary"></i>
+                    </div>
+                {% endif %}
             </div>
             <div class="col-lg-6 featured-content">
                 <div class="p-4">
