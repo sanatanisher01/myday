@@ -117,26 +117,6 @@ class Review(models.Model):
     class Meta:
         ordering = ['-created_at']
         unique_together = ['user', 'event']
-    
-    @property
-    def likes_count(self):
-        """Return the number of likes for this review"""
-        return self.likes.count()
-
-
-class ReviewLike(models.Model):
-    """Model for storing user likes on reviews"""
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='review_likes')
-    review = models.ForeignKey(Review, on_delete=models.CASCADE, related_name='likes')
-    created_at = models.DateTimeField(auto_now_add=True)
-    
-    class Meta:
-        unique_together = ['user', 'review']
-        verbose_name = 'Review Like'
-        verbose_name_plural = 'Review Likes'
-    
-    def __str__(self):
-        return f"{self.user.username} liked {self.review.user.username}'s review"
 
 
 class UserProfile(models.Model):

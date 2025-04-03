@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Event, SubEvent, Review, Booking, UserProfile, ContactMessage, ReviewLike
+from .models import Event, SubEvent, Review, Booking, UserProfile, ContactMessage
 
 # Register your models here.
 
@@ -54,10 +54,3 @@ class ContactMessageAdmin(admin.ModelAdmin):
         queryset.update(is_read=False)
         self.message_user(request, f"{queryset.count()} message(s) marked as unread.")
     mark_as_unread.short_description = "Mark selected messages as unread"
-
-@admin.register(ReviewLike)
-class ReviewLikeAdmin(admin.ModelAdmin):
-    list_display = ('user', 'review', 'created_at')
-    search_fields = ('user__username', 'review__comment')
-    list_filter = ('created_at',)
-    date_hierarchy = 'created_at'
