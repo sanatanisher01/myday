@@ -202,7 +202,7 @@
 <div class="modal fade" id="editSubeventModal{{ subevent.id }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <form method="post" enctype="multipart/form-data" action="{% url 'manager_subevents' %}">
+            <form method="post" enctype="multipart/form-data" action="{% if event %}{% url 'manager_subevents_by_event' event_id=event.id %}{% else %}{% url 'manager_subevents' %}{% endif %}">
                 {% csrf_token %}
                 <input type="hidden" name="subevent_id" value="{{ subevent.id }}">
                 <div class="modal-header">

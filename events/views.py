@@ -1283,12 +1283,16 @@ def manager_subevents(request, event_id=None):
         # Get the form for creating a new subevent
         form = SubEventForm(initial={'event': event} if event else {})
         
+        # Get all events for the dropdown in the edit modal
+        all_events = Event.objects.all().order_by('name')
+        
         # Context for the template
         context = {
             'subevents': subevents,
             'event': event,
             'form': form,
             'section': 'subevents',
+            'all_events': all_events,
         }
         
         return render(request, 'events/manager/subevents.html', context)
