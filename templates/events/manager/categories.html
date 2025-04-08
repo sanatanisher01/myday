@@ -20,69 +20,9 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <h6>Categories Management</h6>
                         <div class="d-flex align-items-center gap-2">
-                            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#uploadCategoryModal">
-                                <i class="fas fa-upload me-1"></i> Upload Category
-                            </button>
                             {% if subevent %}
                                 <span class="badge bg-primary manager-badge">{{ subevent.name }}</span>
                             {% endif %}
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Upload Category Modal -->
-                <div class="modal fade" id="uploadCategoryModal" tabindex="-1" aria-labelledby="uploadCategoryModalLabel" aria-hidden="true">
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="uploadCategoryModalLabel">
-                                    <i class="fas fa-upload me-2"></i>Upload Category
-                                </h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                                <form method="post" enctype="multipart/form-data" class="category-upload-form">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="upload_category" value="1">
-                                    
-                                    <div class="mb-3">
-                                        <label for="categoryName" class="form-label">Category Name</label>
-                                        <input type="text" class="form-control" id="categoryName" name="name" required>
-                                    </div>
-                                    
-                                    <div class="mb-3">
-                                        <label for="categoryDescription" class="form-label">Description</label>
-                                        <textarea class="form-control" id="categoryDescription" name="description" rows="3" required></textarea>
-                                    </div>
-                                    
-                                    <div class="mb-3">
-                                        <label for="categoryImage" class="form-label">Category Image</label>
-                                        <input type="file" class="form-control" id="categoryImage" name="image" accept="image/*" required>
-                                    </div>
-                                    
-                                    <div class="mb-3">
-                                        <label for="categoryPrice" class="form-label">Price</label>
-                                        <input type="number" class="form-control" id="categoryPrice" name="price" step="0.01" min="0" required>
-                                    </div>
-                                    
-                                    <div class="mb-3">
-                                        <label for="categoryOrder" class="form-label">Display Order</label>
-                                        <input type="number" class="form-control" id="categoryOrder" name="order" min="0" value="0">
-                                    </div>
-                                    
-                                    <div class="mb-3 form-check">
-                                        <input type="checkbox" class="form-check-input" id="categoryActive" name="is_active" checked>
-                                        <label class="form-check-label" for="categoryActive">Active</label>
-                                    </div>
-                                    
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-save me-1"></i> Save Category
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
                         </div>
                     </div>
                 </div>
