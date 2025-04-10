@@ -1,0 +1,261 @@
+{% load static %}
+
+<!-- Chatbot Container -->
+<div class="chatbot-container" id="chatbotContainer">
+    <!-- Chatbot Button -->
+    <button class="chatbot-toggle" id="chatbotToggle">
+        <i class="fas fa-comments"></i>
+        <span class="notification-badge d-none" id="chatNotification">1</span>
+    </button>
+
+    <!-- Chatbot Interface -->
+    <div class="chatbot-interface d-none" id="chatbotInterface">
+        <div class="chatbot-header">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-robot me-2"></i>
+                <h5 class="mb-0">MyDay Assistant</h5>
+            </div>
+            <button class="btn-close" id="chatbotClose"></button>
+        </div>
+        <div class="chatbot-messages" id="chatbotMessages">
+            <div class="message bot-message">
+                <div class="message-content">
+                    Hi! I'm your MyDay Events assistant. How can I help you today?
+                </div>
+                <div class="message-time">Just now</div>
+            </div>
+        </div>
+        <div class="quick-replies mb-2" id="quickReplies">
+            <button class="quick-reply-btn" onclick="handleQuickReply('Book Event')">Book Event</button>
+            <button class="quick-reply-btn" onclick="handleQuickReply('Event Pricing')">Event Pricing</button>
+            <button class="quick-reply-btn" onclick="handleQuickReply('Support')">Support</button>
+        </div>
+        <div class="chatbot-input">
+            <form id="chatbotForm" onsubmit="return false;">
+                <div class="input-group">
+                    <input type="text" class="form-control" id="chatbotInput" placeholder="Type your message..." required>
+                    <button class="btn btn-primary" type="submit">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Chatbot Styles -->
+<style>
+.chatbot-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.chatbot-toggle {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: var(--bs-primary);
+    color: white;
+    border: none;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    position: relative;
+    transition: transform 0.3s;
+}
+
+.chatbot-toggle:hover {
+    transform: scale(1.1);
+}
+
+.notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background-color: var(--bs-danger);
+    color: white;
+    border-radius: 50%;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+.chatbot-interface {
+    position: fixed;
+    bottom: 90px;
+    right: 20px;
+    width: 350px;
+    height: 500px;
+    background-color: white;
+    border-radius: 15px;
+    box-shadow: 0 5px 25px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+}
+
+.chatbot-header {
+    padding: 1rem;
+    background-color: var(--bs-primary);
+    color: white;
+    border-radius: 15px 15px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.chatbot-header .btn-close {
+    filter: brightness(0) invert(1);
+}
+
+.chatbot-messages {
+    flex-grow: 1;
+    padding: 1rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    background-color: #f8f9fa;
+}
+
+.message {
+    max-width: 80%;
+    padding: 0.75rem 1rem;
+    border-radius: 15px;
+    margin-bottom: 0.5rem;
+    position: relative;
+}
+
+.message-time {
+    font-size: 0.7rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+}
+
+.quick-replies {
+    padding: 0 1rem;
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    scrollbar-width: thin;
+}
+
+.quick-reply-btn {
+    background: #f0f2f5;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    color: var(--bs-primary);
+    font-size: 0.9rem;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+}
+
+.quick-reply-btn:hover {
+    background: var(--bs-primary);
+    color: white;
+}
+
+.bot-message {
+    align-self: flex-start;
+    background-color: #f0f2f5;
+}
+
+.user-message {
+    align-self: flex-end;
+    background-color: var(--bs-primary);
+    color: white;
+}
+
+.chatbot-input {
+    padding: 1rem;
+    border-top: 1px solid #dee2e6;
+}
+
+.chatbot-input .form-control {
+    border-radius: 20px 0 0 20px;
+}
+
+.chatbot-input .btn {
+    border-radius: 0 20px 20px 0;
+}
+
+@media (max-width: 576px) {
+    .chatbot-interface {
+        width: calc(100% - 40px);
+        height: calc(100vh - 120px);
+    }
+}
+</style>
+
+<!-- Chatbot Scripts -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chatbotToggle = document.getElementById('chatbotToggle');
+    const chatbotInterface = document.getElementById('chatbotInterface');
+    const chatbotClose = document.getElementById('chatbotClose');
+    const chatbotForm = document.getElementById('chatbotForm');
+    const chatbotInput = document.getElementById('chatbotInput');
+    const chatbotMessages = document.getElementById('chatbotMessages');
+
+    // Toggle chatbot interface
+    chatbotToggle.addEventListener('click', () => {
+        chatbotInterface.classList.toggle('d-none');
+        document.getElementById('chatNotification').classList.add('d-none');
+    });
+
+    chatbotClose.addEventListener('click', () => {
+        chatbotInterface.classList.add('d-none');
+    });
+
+    // Handle message submission
+    chatbotForm.addEventListener('submit', () => {
+        const message = chatbotInput.value.trim();
+        if (message) {
+            addMessage(message, 'user');
+            chatbotInput.value = '';
+            // Simulate bot response
+            setTimeout(() => {
+                processUserMessage(message);
+            }, 1000);
+        }
+    });
+
+    function addMessage(content, sender) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${sender}-message`;
+        messageDiv.innerHTML = `
+            <div class="message-content">${content}</div>
+        `;
+        chatbotMessages.appendChild(messageDiv);
+        chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+    }
+
+    function handleQuickReply(message) {
+        addMessage(message, 'user');
+        processUserMessage(message);
+    }
+
+    function processUserMessage(message) {
+        let response = "I'm sorry, I don't understand that. Can you please rephrase or use one of the quick reply options?";
+        
+        message = message.toLowerCase();
+        
+        if (message.includes('book') || message.includes('reservation') || message.includes('book event')) {
+            response = "To book an event, please browse our events page and click on 'Book Now' for the event you're interested in. Would you like me to show you our available events? <a href='/events/' class='text-primary'>View Events</a>";
+        } else if (message.includes('price') || message.includes('cost') || message.includes('event pricing')) {
+            response = "Event prices vary depending on the type and scale. You can find detailed pricing information on each event's page. Would you like to see our most popular events?";
+        } else if (message.includes('support') || message.includes('help')) {
+            response = "I'm here to help! You can reach our support team at support@myday.com or call us at +91 6397664902 during business hours. How can I assist you today?";
+        } else if (message.includes('cancel') || message.includes('refund')) {
+            response = "For cancellations and refunds, please check our cancellation policy in the FAQ section. Would you like me to explain our cancellation policy?";
+        } else if (message.includes('contact') || message.includes('support')) {
+            response = "You can reach our support team at support@mydayevents.com or call us at +91 6397664902. Would you like me to connect you with a support representative?";
+        } else if (message.includes('price') || message.includes('cost')) {
+            response = "Our event prices vary depending on the type and scale of the event. You can find detailed pricing information on each event's page. Would you like to know about any specific event?";
+        } else if (message.includes('hello') || message.includes('hi')) {
+            response = "Hello! How can I assist you with your event planning today?";
+        }
+        
+        addMessage(response, 'bot');
+    }
+});
+</script>
