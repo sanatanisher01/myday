@@ -48,8 +48,9 @@
 .chatbot-container {
     position: fixed;
     bottom: 20px;
-    right: 20px;
+    left: 20px;
     z-index: 1000;
+    transition: all 0.3s ease;
 }
 
 .chatbot-toggle {
@@ -59,9 +60,13 @@
     background-color: var(--bs-primary);
     color: white;
     border: none;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
     position: relative;
-    transition: transform 0.3s;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
 }
 
 .chatbot-toggle:hover {
@@ -82,14 +87,22 @@
 .chatbot-interface {
     position: fixed;
     bottom: 90px;
-    right: 20px;
+    left: 20px;
     width: 350px;
     height: 500px;
     background-color: white;
-    border-radius: 15px;
-    box-shadow: 0 5px 25px rgba(0,0,0,0.1);
+    border-radius: 20px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.12);
     display: flex;
     flex-direction: column;
+    transition: all 0.3s ease;
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+.chatbot-interface.show {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 .chatbot-header {
@@ -119,9 +132,21 @@
 .message {
     max-width: 80%;
     padding: 0.75rem 1rem;
-    border-radius: 15px;
-    margin-bottom: 0.5rem;
+    border-radius: 18px;
+    margin-bottom: 0.75rem;
     position: relative;
+    animation: messageSlideIn 0.3s ease;
+}
+
+@keyframes messageSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .message-time {
@@ -141,12 +166,14 @@
 .quick-reply-btn {
     background: #f0f2f5;
     border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
+    padding: 0.75rem 1.25rem;
+    border-radius: 25px;
     color: var(--bs-primary);
     font-size: 0.9rem;
     white-space: nowrap;
     transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    margin: 0.25rem;
 }
 
 .quick-reply-btn:hover {
@@ -199,12 +226,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Toggle chatbot interface
     chatbotToggle.addEventListener('click', () => {
-        chatbotInterface.classList.toggle('d-none');
+        chatbotInterface.classList.remove('d-none');
+        setTimeout(() => {
+            chatbotInterface.classList.add('show');
+        }, 10);
         document.getElementById('chatNotification').classList.add('d-none');
+        chatbotToggle.style.transform = 'scale(0.9)';
+        setTimeout(() => chatbotToggle.style.transform = 'scale(1)', 200);
     });
 
     chatbotClose.addEventListener('click', () => {
-        chatbotInterface.classList.add('d-none');
+        chatbotInterface.classList.remove('show');
+        setTimeout(() => {
+            chatbotInterface.classList.add('d-none');
+        }, 300);
     });
 
     // Handle message submission

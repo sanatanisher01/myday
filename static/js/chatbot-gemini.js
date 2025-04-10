@@ -1,5 +1,5 @@
 // Gemini API Configuration and Helper Functions
-const GEMINI_API_KEY = 'AIzaSyBcK8IrtKT-5Bnfqq5Sx-5y8FxhpnGVoec'; // Add your Gemini API key here
+const GEMINI_API_KEY = 'AIzaSyCYPr16pDrZ2TayEkGKyAJQrHf9mSVCAxA'; // Add your Gemini API key here
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
 
 // Context information about the website that will be used to guide Gemini's responses
@@ -18,7 +18,7 @@ async function generateGeminiResponse(userMessage) {
     try {
         if (!GEMINI_API_KEY) {
             console.error('Gemini API key not configured');
-            return getDefaultResponse(userMessage);
+            throw new Error('API key not configured');
         }
 
         const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
