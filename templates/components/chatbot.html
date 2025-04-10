@@ -187,6 +187,7 @@
 </style>
 
 <!-- Chatbot Scripts -->
+<script src="{% static 'js/chatbot-gemini.js' %}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const chatbotToggle = document.getElementById('chatbotToggle');
@@ -207,15 +208,24 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Handle message submission
-    chatbotForm.addEventListener('submit', () => {
+    chatbotForm.addEventListener('submit', async () => {
         const message = chatbotInput.value.trim();
         if (message) {
             addMessage(message, 'user');
             chatbotInput.value = '';
-            // Simulate bot response
-            setTimeout(() => {
-                processUserMessage(message);
-            }, 1000);
+            
+            // Show typing indicator
+            const typingIndicator = document.createElement('div');
+            typingIndicator.className = 'message bot-message';
+            typingIndicator.innerHTML = '<div class="message-content">Typing...</div>';
+            chatbotMessages.appendChild(typingIndicator);
+            
+            // Get response from Gemini API
+            const response = await generateGeminiResponse(message);
+            
+            // Remove typing indicator and add response
+            chatbotMessages.removeChild(typingIndicator);
+            addMessage(response, 'bot');
         }
     });
 
@@ -234,27 +244,20 @@ document.addEventListener('DOMContentLoaded', function() {
         processUserMessage(message);
     }
 
-    function processUserMessage(message) {
-        let response = "I'm sorry, I don't understand that. Can you please rephrase or use one of the quick reply options?";
+    async function handleQuickReply(message) {
+        addMessage(message, 'user');
         
-        message = message.toLowerCase();
+        // Show typing indicator
+        const typingIndicator = document.createElement('div');
+        typingIndicator.className = 'message bot-message';
+        typingIndicator.innerHTML = '<div class="message-content">Typing...</div>';
+        chatbotMessages.appendChild(typingIndicator);
         
-        if (message.includes('book') || message.includes('reservation') || message.includes('book event')) {
-            response = "To book an event, please browse our events page and click on 'Book Now' for the event you're interested in. Would you like me to show you our available events? <a href='/events/' class='text-primary'>View Events</a>";
-        } else if (message.includes('price') || message.includes('cost') || message.includes('event pricing')) {
-            response = "Event prices vary depending on the type and scale. You can find detailed pricing information on each event's page. Would you like to see our most popular events?";
-        } else if (message.includes('support') || message.includes('help')) {
-            response = "I'm here to help! You can reach our support team at support@myday.com or call us at +91 6397664902 during business hours. How can I assist you today?";
-        } else if (message.includes('cancel') || message.includes('refund')) {
-            response = "For cancellations and refunds, please check our cancellation policy in the FAQ section. Would you like me to explain our cancellation policy?";
-        } else if (message.includes('contact') || message.includes('support')) {
-            response = "You can reach our support team at support@mydayevents.com or call us at +91 6397664902. Would you like me to connect you with a support representative?";
-        } else if (message.includes('price') || message.includes('cost')) {
-            response = "Our event prices vary depending on the type and scale of the event. You can find detailed pricing information on each event's page. Would you like to know about any specific event?";
-        } else if (message.includes('hello') || message.includes('hi')) {
-            response = "Hello! How can I assist you with your event planning today?";
-        }
+        // Get response from Gemini API
+        const response = await generateGeminiResponse(message);
         
+        // Remove typing indicator and add response
+        chatbotMessages.removeChild(typingIndicator);
         addMessage(response, 'bot');
     }
 });
