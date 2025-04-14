@@ -1825,17 +1825,78 @@ def subscribe_newsletter(request):
                     description=f"Subscribed to newsletter with email: {email}",
                 )
 
-            # Send welcome email using SendGrid
+            # Send welcome email using Django's built-in email functionality
             try:
                 from django.core.mail import send_mail
+                from django.template.loader import render_to_string
+                from django.utils.html import strip_tags
 
-                # Send welcome email
+                # Create HTML content
+                html_message = f'''
+                <html>
+                <head>
+                    <style>
+                        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                        .header {{ background-color: #4e73df; color: white; padding: 20px; text-align: center; }}
+                        .content {{ padding: 20px; background-color: #f9f9f9; }}
+                        .footer {{ text-align: center; margin-top: 20px; font-size: 12px; color: #777; }}
+                        ul {{ padding-left: 20px; }}
+                        .button {{ display: inline-block; background-color: #4e73df; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; }}
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="header">
+                            <h1>Welcome to MyDay Events Newsletter!</h1>
+                        </div>
+                        <div class="content">
+                            <p>Hello {name or "there"},</p>
+                            <p>Thank you for subscribing to the MyDay Events newsletter!</p>
+                            <p>You will now receive updates about:</p>
+                            <ul>
+                                <li>Our latest event offerings</li>
+                                <li>Special promotions and discounts</li>
+                                <li>Seasonal packages and themes</li>
+                                <li>Event planning tips and inspiration</li>
+                            </ul>
+                            <p>If you have any questions or need assistance with planning your event, feel free to reply to this email or contact our support team at +91 6397664902.</p>
+                            <p><a href="https://myday-kokr.onrender.com/events/" class="button">Explore Our Events</a></p>
+                        </div>
+                        <div class="footer">
+                            <p>Best regards,<br>Aryan Sanatani<br>MyDay Events Team</p>
+                            <p>&copy; 2025 MyDay Events. All rights reserved.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                '''
+
+                # Plain text version
+                plain_message = f'''Hello {name or "there"},
+
+Thank you for subscribing to the MyDay Events newsletter!
+
+You will now receive updates about:
+- Our latest event offerings
+- Special promotions and discounts
+- Seasonal packages and themes
+- Event planning tips and inspiration
+
+If you have any questions or need assistance with planning your event, feel free to reply to this email or contact our support team at +91 6397664902.
+
+Best regards,
+Aryan Sanatani
+MyDay Events Team'''
+
+                # Send email
                 send_mail(
-                    subject='Welcome to MyDay Events Newsletter',
-                    message=f'Hello {name or "there"},\n\nThank you for subscribing to our newsletter! You will now receive updates about our latest events and special offers.\n\nBest regards,\nMyDay Events Team',
+                    subject='Welcome to MyDay Events Newsletter!',
+                    message=plain_message,
                     from_email=settings.DEFAULT_FROM_EMAIL,
                     recipient_list=[email],
                     fail_silently=False,
+                    html_message=html_message
                 )
 
                 # Update last_sent timestamp

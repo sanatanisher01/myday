@@ -11,13 +11,14 @@ if [ -z "$CLOUDINARY_CLOUD_NAME" ] || [ -z "$CLOUDINARY_API_KEY" ] || [ -z "$CLO
     export CLOUDINARY_URL="cloudinary://$CLOUDINARY_API_KEY:$CLOUDINARY_API_SECRET@$CLOUDINARY_CLOUD_NAME"
 fi
 
-# Set SendGrid environment variables if they're not already set
-if [ -z "$SENDGRID_API_KEY" ] || [ -z "$DEFAULT_FROM_EMAIL" ]; then
-    echo "Setting SendGrid environment variables"
-    # Replace these with your actual SendGrid credentials
-    export SENDGRID_API_KEY="your_sendgrid_api_key"
-    export DEFAULT_FROM_EMAIL="noreply@mydayevents.com"
+# Set email environment variables if not already set
+if [ -z "$DEFAULT_FROM_EMAIL" ]; then
+    echo "Setting email environment variables"
+    export DEFAULT_FROM_EMAIL="aryansanatani01@gmail.com"
 fi
+
+# Create directory for email files
+mkdir -p sent_emails
 
 echo "Starting build process..."
 
