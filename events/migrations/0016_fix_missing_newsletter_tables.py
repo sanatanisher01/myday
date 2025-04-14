@@ -106,6 +106,12 @@ def create_newsletter_tables(apps, schema_editor):
             """)
 
 
+def reverse_migration(apps, schema_editor):
+    """Dummy reverse function - we don't want to drop tables on reverse"""
+    # This is a no-op function that allows the migration to be reversed without doing anything
+    pass
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -116,5 +122,5 @@ class Migration(migrations.Migration):
         # This migration is a safety check to ensure the newsletter tables exist
         # It recreates the tables if they don't exist using a Python function
         # that works with both PostgreSQL and SQLite
-        migrations.RunPython(create_newsletter_tables),
+        migrations.RunPython(create_newsletter_tables, reverse_migration),
     ]
