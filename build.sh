@@ -46,6 +46,9 @@ cp -r static/images/event-placeholder.jpg media/events/default-birthday.jpg 2>/d
 cp -r static/images/event-placeholder.jpg media/events/default-anniversary.jpg 2>/dev/null || true
 cp -r static/images/event-placeholder.jpg media/events/default-corporate.jpg 2>/dev/null || true
 
+# Make the image persistence script executable
+chmod +x ensure_image_persistence.py
+
 # Collect static files
 echo "Collecting static files..."
 DJANGO_SETTINGS_MODULE=myday.settings python manage.py collectstatic --noinput
@@ -62,10 +65,21 @@ python manage.py migrate events 0011_increase_image_field_length
 echo "Creating cache table..."
 python manage.py createcachetable
 
-# Create symbolic link from media to staticfiles for WhiteNoise
+# Run the image persistence script to ensure all images are in the persistent storage
+echo "Ensuring image persistence..."
+python ensure_image_persistence.py
+
+# Copy media files to staticfiles for WhiteNoise to serve them
 echo "Setting up media files for production..."
 if [ -d "media" ] && [ -d "staticfiles" ]; then
-    # Copy all media files to staticfiles directory
+    # Create media directory in staticfiles
+    mkdir -p staticfiles/media
+
+    # Copy all media files to staticfiles/media directory
+    cp -r media/* staticfiles/media/ 2>/dev/null || true
+    echo "Media files copied to staticfiles/media directory"
+
+    # Also copy directly to staticfiles for backward compatibility
     cp -r media/* staticfiles/ 2>/dev/null || true
     echo "Media files copied to staticfiles directory"
 
@@ -73,6 +87,9 @@ if [ -d "media" ] && [ -d "staticfiles" ]; then
     mkdir -p staticfiles/events
     cp -r media/events/* staticfiles/events/ 2>/dev/null || true
     echo "Event images copied to staticfiles/events directory"
+
+    # Set proper permissions
+    chmod -R 755 staticfiles/media staticfiles/events
 fi
 
 # Run a script to ensure default events exist

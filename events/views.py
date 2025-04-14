@@ -1747,17 +1747,24 @@ def signup(request):
 # Media file serving
 def serve_media_file(request, path):
     """Serve media files in production environment"""
-    from django.http import FileResponse, Http404, HttpResponse
+    from django.http import FileResponse, Http404, HttpResponse, HttpResponseRedirect
     import os
     from django.conf import settings
     import mimetypes
     import re
-
-    # Construct the full path to the media file
-    full_path = os.path.join(settings.MEDIA_ROOT, path)
+    from django.core.files.storage import default_storage
 
     # Log the request for debugging
     print(f"Media file requested: {path}")
+
+    # First, try to redirect to the static version if we're using WhiteNoise
+    if not settings.DEBUG and hasattr(settings, 'WHITENOISE_ADD_MEDIA_TO_STATICFILES') and settings.WHITENOISE_ADD_MEDIA_TO_STATICFILES:
+        # WhiteNoise should be serving this file from the staticfiles directory
+        return HttpResponseRedirect(f"{settings.STATIC_URL}{path}")
+
+    # If we're still here, try to serve the file directly
+    # Construct the full path to the media file
+    full_path = os.path.join(settings.MEDIA_ROOT, path)
     print(f"Looking for file at: {full_path}")
 
     # Check if the file exists
@@ -1774,6 +1781,14 @@ def serve_media_file(request, path):
                 full_path = render_path
             else:
                 print(f"File not found on Render persistent disk either")
+
+        # Try to use default_storage to find the file
+        try:
+            if default_storage.exists(path):
+                print(f"File found in default storage")
+                return HttpResponseRedirect(default_storage.url(path))
+        except Exception as e:
+            print(f"Error checking default storage: {str(e)}")
 
         # If still not found, try to find a default image
         if not os.path.exists(full_path):

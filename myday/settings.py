@@ -232,8 +232,11 @@ if not DEBUG:
     # Add media files to the static files dirs so WhiteNoise can serve them
     STATICFILES_DIRS = [
         os.path.join(BASE_DIR, 'static'),
-        os.path.join(BASE_DIR, 'media'),  # Include media directory for WhiteNoise
     ]
+
+    # Configure WhiteNoise to serve files from the media directory
+    WHITENOISE_ROOT = STATIC_ROOT
+    WHITENOISE_ADD_MEDIA_TO_STATICFILES = True
 
 # Configure storage for static and media files - using the new STORAGES setting
 STORAGES = {
