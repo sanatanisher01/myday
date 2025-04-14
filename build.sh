@@ -25,9 +25,8 @@ if [ -d "/opt/render/project/src" ]; then
     # Set proper permissions
     chmod -R 755 /opt/render/project/src/media
 
-    # Create a symbolic link from the local media directory to the persistent disk
-    # This helps with local development paths
-    ln -sf /opt/render/project/src/media media
+    # Instead of creating a symbolic link which can cause recursive issues,
+    # we'll just use the persistent disk path directly in settings.py
 else
     echo "Running locally..."
     # Create local media directories
