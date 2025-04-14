@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Newsletter Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="mb-4">Newsletter Management</h1>
+            
+            <!-- Quick Actions -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <a href="{% url 'admin_newsletter_subscribers' %}" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-users me-2"></i> Manage Subscribers
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{% url 'admin_newsletter_templates' %}" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-file-alt me-2"></i> Manage Templates
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{% url 'admin_newsletter_campaigns' %}" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-paper-plane me-2"></i> Manage Campaigns
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{% url 'admin_newsletter_campaign_add' %}" class="btn btn-outline-success w-100">
+                                <i class="fas fa-plus me-2"></i> Create Campaign
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Statistics -->
+            <div class="row mb-4">
+                <div class="col-md-3 mb-3">
+                    <div class="card bg-primary text-white h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Total Subscribers</h5>
+                            <h2 class="display-4">{{ total_subscribers }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card bg-success text-white h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Active Subscribers</h5>
+                            <h2 class="display-4">{{ active_subscribers }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card bg-info text-white h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Total Campaigns</h5>
+                            <h2 class="display-4">{{ total_campaigns }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card bg-warning text-white h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Sent Campaigns</h5>
+                            <h2 class="display-4">{{ sent_campaigns }}</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Subscribers -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Recent Subscribers</h5>
+                    <a href="{% url 'admin_newsletter_subscribers' %}" class="btn btn-sm btn-light">View All</a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Email</th>
+                                    <th>Name</th>
+                                    <th>Subscribed At</th>
+                                    <th>Status</th>
+                                    <th>Last Sent</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for subscriber in subscribers %}
+                                <tr>
+                                    <td>{{ subscriber.email }}</td>
+                                    <td>{{ subscriber.name|default:"--" }}</td>
+                                    <td>{{ subscriber.subscribed_at|date:"M d, Y" }}</td>
+                                    <td>
+                                        {% if subscriber.is_active %}
+                                        <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ subscriber.last_sent|date:"M d, Y"|default:"Never" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center">No subscribers found</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Campaigns -->
+            <div class="card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Recent Campaigns</h5>
+                    <a href="{% url 'admin_newsletter_campaigns' %}" class="btn btn-sm btn-light">View All</a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Subject</th>
+                                    <th>Status</th>
+                                    <th>Sent At</th>
+                                    <th>Sent Count</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for campaign in campaigns %}
+                                <tr>
+                                    <td>{{ campaign.name }}</td>
+                                    <td>{{ campaign.subject }}</td>
+                                    <td>
+                                        {% if campaign.status == 'draft' %}
+                                        <span class="badge bg-secondary">Draft</span>
+                                        {% elif campaign.status == 'scheduled' %}
+                                        <span class="badge bg-info">Scheduled</span>
+                                        {% elif campaign.status == 'sending' %}
+                                        <span class="badge bg-warning">Sending</span>
+                                        {% elif campaign.status == 'sent' %}
+                                        <span class="badge bg-success">Sent</span>
+                                        {% elif campaign.status == 'failed' %}
+                                        <span class="badge bg-danger">Failed</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ campaign.sent_at|date:"M d, Y"|default:"--" }}</td>
+                                    <td>{{ campaign.sent_count }}</td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="{% url 'admin_newsletter_campaign_preview' campaign.id %}" class="btn btn-sm btn-info" target="_blank">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'admin_newsletter_campaign_edit' campaign.id %}" class="btn btn-sm btn-primary">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            {% if campaign.status == 'draft' or campaign.status == 'scheduled' or campaign.status == 'failed' %}
+                                            <a href="{% url 'admin_newsletter_campaign_send' campaign.id %}" class="btn btn-sm btn-success" onclick="return confirm('Are you sure you want to send this campaign?')">
+                                                <i class="fas fa-paper-plane"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center">No campaigns found</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

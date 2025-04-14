@@ -274,6 +274,61 @@ class Newsletter(models.Model):
         return self.email
 
 
+class NewsletterTemplate(models.Model):
+    """Model for newsletter templates"""
+    name = models.CharField(max_length=100)
+    subject = models.CharField(max_length=200)
+    content = models.TextField(help_text="You can use HTML and template variables like {{ name }}, {{ custom_message }}, etc.")
+    is_default = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Newsletter Template'
+        verbose_name_plural = 'Newsletter Templates'
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        # If this template is set as default, unset default for all other templates
+        if self.is_default:
+            NewsletterTemplate.objects.filter(is_default=True).update(is_default=False)
+        super().save(*args, **kwargs)
+
+
+class NewsletterCampaign(models.Model):
+    """Model for newsletter campaigns"""
+    STATUS_CHOICES = (
+        ('draft', 'Draft'),
+        ('scheduled', 'Scheduled'),
+        ('sending', 'Sending'),
+        ('sent', 'Sent'),
+        ('failed', 'Failed'),
+    )
+
+    name = models.CharField(max_length=100)
+    subject = models.CharField(max_length=200)
+    content = models.TextField()
+    template = models.ForeignKey(NewsletterTemplate, on_delete=models.SET_NULL, null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    scheduled_at = models.DateTimeField(null=True, blank=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    sent_count = models.PositiveIntegerField(default=0)
+    error_message = models.TextField(blank=True, null=True)
+
+    class Meta:
+        verbose_name = 'Newsletter Campaign'
+        verbose_name_plural = 'Newsletter Campaigns'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.name
+
+
 class ActivityLog(models.Model):
     """Model for tracking system activities"""
     ACTION_TYPES = (
