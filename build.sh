@@ -92,6 +92,10 @@ python manage.py migrate events 0013_remove_mailersend_field
 echo "Creating cache table..."
 python manage.py createcachetable
 
+# Ensure newsletter template exists
+echo "Ensuring newsletter template exists..."
+python manage.py ensure_newsletter_template
+
 # Run the image persistence script to ensure all images are in the persistent storage
 echo "Ensuring image persistence..."
 python ensure_image_persistence.py

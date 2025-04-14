@@ -1112,11 +1112,36 @@ def admin_add_user(request):
 @user_passes_test(lambda u: u.is_staff or u.is_superuser)
 def manager_template_list(request):
     """View for listing all newsletter templates"""
+    # Check if the table exists
+    table_exists = False
     try:
-        templates = NewsletterTemplate.objects.all().order_by('-is_default', '-updated_at')
+        from django.db import connection
+        with connection.cursor() as cursor:
+            if connection.vendor == 'postgresql':
+                cursor.execute("""
+                    SELECT EXISTS (
+                        SELECT FROM information_schema.tables
+                        WHERE table_name = 'events_newslettertemplate'
+                    );
+                """)
+                table_exists = cursor.fetchone()[0]
+            else:  # SQLite
+                cursor.execute("""
+                    SELECT COUNT(*) FROM sqlite_master
+                    WHERE type='table' AND name='events_newslettertemplate';
+                """)
+                table_exists = cursor.fetchone()[0] > 0
     except Exception as e:
-        templates = []
-        messages.error(request, f"Error loading templates: {str(e)}")
+        messages.error(request, f"Error checking database tables: {str(e)}")
+
+    templates = []
+    if table_exists:
+        try:
+            templates = NewsletterTemplate.objects.all().order_by('-is_default', '-updated_at')
+        except Exception as e:
+            messages.error(request, f"Error loading templates: {str(e)}")
+    else:
+        messages.warning(request, "Newsletter template table does not exist yet. Please run migrations first.")
 
     context = {
         'templates': templates
@@ -1377,31 +1402,50 @@ def manager_send_newsletter(request):
         recent_subscribers = 0
 
         # Check if the tables exist
-        with connection.cursor() as cursor:
-            # Check if NewsletterTemplate table exists
-            cursor.execute("""
-                SELECT EXISTS (
-                    SELECT FROM information_schema.tables
-                    WHERE table_name = 'events_newslettertemplate'
-                );
-            """)
-            template_table_exists = cursor.fetchone()[0]
+        template_table_exists = False
+        newsletter_table_exists = False
 
-            # Check if Newsletter table exists
-            cursor.execute("""
-                SELECT EXISTS (
-                    SELECT FROM information_schema.tables
-                    WHERE table_name = 'events_newsletter'
-                );
-            """)
-            newsletter_table_exists = cursor.fetchone()[0]
+        try:
+            with connection.cursor() as cursor:
+                # Check if NewsletterTemplate table exists
+                if connection.vendor == 'postgresql':
+                    cursor.execute("""
+                        SELECT EXISTS (
+                            SELECT FROM information_schema.tables
+                            WHERE table_name = 'events_newslettertemplate'
+                        );
+                    """)
+                    template_table_exists = cursor.fetchone()[0]
+
+                    # Check if Newsletter table exists
+                    cursor.execute("""
+                        SELECT EXISTS (
+                            SELECT FROM information_schema.tables
+                            WHERE table_name = 'events_newsletter'
+                        );
+                    """)
+                    newsletter_table_exists = cursor.fetchone()[0]
+                else:  # SQLite
+                    cursor.execute("""
+                        SELECT COUNT(*) FROM sqlite_master
+                        WHERE type='table' AND name='events_newslettertemplate';
+                    """)
+                    template_table_exists = cursor.fetchone()[0] > 0
+
+                    cursor.execute("""
+                        SELECT COUNT(*) FROM sqlite_master
+                        WHERE type='table' AND name='events_newsletter';
+                    """)
+                    newsletter_table_exists = cursor.fetchone()[0] > 0
+        except Exception as e:
+            messages.error(request, f"Error checking database tables: {str(e)}")
 
         # Only query if tables exist
         if template_table_exists:
             try:
                 templates = NewsletterTemplate.objects.all().order_by('-updated_at')
             except Exception as e:
-                print(f"Error fetching templates: {str(e)}")
+                messages.error(request, f"Error fetching templates: {str(e)}")
 
         # Get subscriber counts with error handling
         if newsletter_table_exists:
@@ -1415,7 +1459,7 @@ def manager_send_newsletter(request):
                 thirty_days_ago = timezone.now() - timedelta(days=30)
                 recent_subscribers = Newsletter.objects.filter(subscribed_at__gte=thirty_days_ago, is_active=True).count()
             except Exception as e:
-                print(f"Error fetching subscriber counts: {str(e)}")
+                messages.error(request, f"Error fetching subscriber counts: {str(e)}")
 
         if request.method == 'POST':
             try:
