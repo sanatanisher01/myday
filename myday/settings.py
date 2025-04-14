@@ -297,6 +297,10 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/'
 
+# MailerSend settings
+MAILERSEND_API_KEY = os.environ.get('MAILERSEND_API_KEY', '')
+MAILERSEND_LIST_ID = os.environ.get('MAILERSEND_LIST_ID', '')
+
 # Security settings for production
 if not DEBUG:
     SECURE_SSL_REDIRECT = True

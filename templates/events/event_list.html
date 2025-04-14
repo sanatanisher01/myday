@@ -21,7 +21,7 @@
             <div class="col-lg-8 text-center">
                 <h1 class="display-4 fw-bold">Browse Events</h1>
                 <p class="lead">Discover the perfect event services for your special occasions</p>
-                
+
                 <!-- Search Form -->
                 <div class="search-container my-4">
                     <form method="get" action="{% url 'event_list' %}" class="search-form">
@@ -91,7 +91,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Event Listings -->
         <div class="row g-4 staggered-fade">
             {% if events %}
@@ -159,7 +159,7 @@
                 </div>
             {% endif %}
         </div>
-        
+
         <!-- Pagination if needed -->
         {% if events.has_other_pages %}
         <nav aria-label="Page navigation" class="mt-5">
@@ -171,7 +171,7 @@
                     </a>
                 </li>
                 {% endif %}
-                
+
                 {% for i in events.paginator.page_range %}
                 {% if events.number == i %}
                 <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
@@ -179,7 +179,7 @@
                 <li class="page-item"><a class="page-link" href="?page={{ i }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ i }}</a></li>
                 {% endif %}
                 {% endfor %}
-                
+
                 {% if events.has_next %}
                 <li class="page-item">
                     <a class="page-link" href="?page={{ events.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Next">
@@ -190,7 +190,7 @@
             </ul>
         </nav>
         {% endif %}
-        
+
         {% if events and not events.has_other_pages and events.paginator.num_pages > 1 %}
         <div class="text-center mt-5">
             <a href="?page=all{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="btn btn-outline-primary load-more-btn">
@@ -210,10 +210,13 @@
                     <h2 class="mb-3">Subscribe to Our Newsletter</h2>
                     <p class="mb-4">Stay updated with our latest events and exclusive offers</p>
                     <div class="newsletter-form">
-                        <div class="input-group mb-3">
-                            <input type="email" class="form-control" placeholder="Your email address" aria-label="Your email address">
-                            <button class="btn" type="button">Subscribe</button>
-                        </div>
+                        <form method="post" action="{% url 'subscribe_newsletter' %}">
+                            {% csrf_token %}
+                            <div class="input-group mb-3">
+                                <input type="email" name="email" class="form-control" placeholder="Your email address" aria-label="Your email address" required>
+                                <button class="btn" type="submit">Subscribe</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -233,41 +236,41 @@
         color: white;
         position: relative;
     }
-    
+
     .page-header h1 {
         font-weight: 700;
         margin-bottom: 1rem;
         text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
     }
-    
+
     .page-header p {
         font-size: 1.25rem;
         margin-bottom: 2rem;
         text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
     }
-    
+
     .search-container {
         max-width: 600px;
         margin: 0 auto;
     }
-    
+
     .search-form .input-group {
         box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         border-radius: 50px;
         overflow: hidden;
     }
-    
+
     .search-form .form-control {
         border: none;
         padding: 0.8rem 1.5rem;
         font-size: 1rem;
     }
-    
+
     .search-form .btn {
         padding: 0.8rem 1.8rem;
         border-radius: 0 50px 50px 0;
     }
-    
+
     /* Filter options */
     .filter-card {
         border: none;
@@ -276,17 +279,17 @@
         margin-bottom: 2rem;
         transition: all 0.3s ease;
     }
-    
+
     .filter-card:hover {
         box-shadow: 0 10px 25px rgba(0,0,0,0.1);
     }
-    
+
     .filter-btn {
         border-radius: 30px;
         padding: 0.6rem 1.5rem;
         font-weight: 500;
     }
-    
+
     /* Event cards */
     .event-card {
         border: none;
@@ -296,38 +299,38 @@
         transition: all 0.3s ease;
         height: 100%;
     }
-    
+
     .event-card:hover {
         transform: translateY(-10px);
         box-shadow: 0 15px 30px rgba(0,0,0,0.1);
     }
-    
+
     /* Touch device specific styles */
     .event-card.touch-device:hover {
         transform: none;
     }
-    
+
     .event-card.touch-device:active {
         transform: scale(0.98);
     }
-    
+
     .card-img-container {
         height: 220px;
         position: relative;
         overflow: hidden;
     }
-    
+
     .card-img-container img {
         width: 100%;
         height: 100%;
         object-fit: cover;
         transition: transform 0.5s ease;
     }
-    
+
     .event-card:hover .card-img-container img {
         transform: scale(1.1);
     }
-    
+
     .price-badge {
         position: absolute;
         top: 15px;
@@ -341,27 +344,27 @@
         box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         z-index: 2;
     }
-    
+
     .card-body {
         padding: 1.5rem;
     }
-    
+
     .card-title {
         font-weight: 700;
         margin-bottom: 0.75rem;
         font-size: 1.35rem;
     }
-    
+
     .card-text {
         color: #6c757d;
         margin-bottom: 1rem;
         font-size: 0.95rem;
     }
-    
+
     .ratings-container {
         margin-bottom: 1rem;
     }
-    
+
     .event-meta {
         display: flex;
         justify-content: space-between;
@@ -370,16 +373,16 @@
         color: #6c757d;
         margin-bottom: 1rem;
     }
-    
+
     .event-meta span {
         display: flex;
         align-items: center;
     }
-    
+
     .event-meta i {
         margin-right: 5px;
     }
-    
+
     /* Newsletter section */
     .newsletter-section {
         background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
@@ -388,28 +391,28 @@
         border-radius: 15px;
         margin: 3rem 0;
     }
-    
+
     .newsletter-section h2 {
         font-weight: 700;
         margin-bottom: 1rem;
     }
-    
+
     .newsletter-form {
         max-width: 500px;
         margin: 0 auto;
     }
-    
+
     .newsletter-form .input-group {
         box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         border-radius: 50px;
         overflow: hidden;
     }
-    
+
     .newsletter-form .form-control {
         border: none;
         padding: 0.8rem 1.5rem;
     }
-    
+
     .newsletter-form .btn {
         padding: 0.8rem 1.8rem;
         border-radius: 0 50px 50px 0;
@@ -417,7 +420,7 @@
         color: #4e73df;
         font-weight: 600;
     }
-    
+
     /* Load more button */
     .load-more-btn {
         padding: 0.8rem 2.5rem;
@@ -427,39 +430,39 @@
         box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         transition: all 0.3s ease;
     }
-    
+
     .load-more-btn:hover {
         transform: translateY(-3px);
         box-shadow: 0 8px 25px rgba(0,0,0,0.15);
     }
-    
+
     /* Empty state */
     .empty-state {
         text-align: center;
         padding: 3rem 0;
     }
-    
+
     .empty-state i {
         font-size: 4rem;
         margin-bottom: 2rem;
     }
-    
+
     .empty-state h3 {
         font-weight: 600;
         margin-bottom: 1rem;
     }
-    
+
     .empty-state p {
         color: #6c757d;
         margin-bottom: 2rem;
     }
-    
+
     /* Pagination */
     .pagination {
         justify-content: center;
         margin-top: 3rem;
     }
-    
+
     .pagination .page-item .page-link {
         border: none;
         color: #4e73df;
@@ -472,75 +475,75 @@
         justify-content: center;
         transition: all 0.3s ease;
     }
-    
+
     .pagination .page-item.active .page-link,
     .pagination .page-item .page-link:hover {
         background-color: #4e73df;
         color: white;
         box-shadow: 0 5px 15px rgba(78, 115, 223, 0.2);
     }
-    
+
     /* Animation classes */
     .fade-up {
         opacity: 0;
         transform: translateY(20px);
         transition: all 0.6s ease;
     }
-    
+
     .fade-up.active {
         opacity: 1;
         transform: translateY(0);
     }
-    
+
     .staggered-fade .fade-up:nth-child(2) { transition-delay: 0.1s; }
     .staggered-fade .fade-up:nth-child(3) { transition-delay: 0.2s; }
     .staggered-fade .fade-up:nth-child(4) { transition-delay: 0.3s; }
     .staggered-fade .fade-up:nth-child(5) { transition-delay: 0.4s; }
     .staggered-fade .fade-up:nth-child(6) { transition-delay: 0.5s; }
-    
+
     /* Mobile responsiveness improvements */
     @media (max-width: 992px) {
         .page-header {
             padding: 3rem 0;
         }
-        
+
         .card-img-container {
             height: 180px;
         }
-        
+
         .newsletter-section {
             padding: 3rem 0;
         }
     }
-    
+
     @media (max-width: 768px) {
         .page-header h1 {
             font-size: 2rem;
         }
-        
+
         .page-header p {
             font-size: 1rem;
         }
-        
+
         .filter-btn {
             padding: 0.5rem 1rem;
         }
-        
+
         .event-card:hover {
             transform: translateY(-5px);
         }
     }
-    
+
     @media (max-width: 576px) {
         .event-meta {
             flex-direction: column;
             align-items: flex-start;
         }
-        
+
         .event-meta span:first-child {
             margin-bottom: 0.5rem;
         }
-        
+
         .pagination .page-item .page-link {
             width: 35px;
             height: 35px;
@@ -558,10 +561,10 @@
             card.style.opacity = '1';
             card.style.transform = 'none';
         });
-        
+
         // Activate animations
         const fadeElements = document.querySelectorAll('.fade-up');
-        
+
         // Helper function to check if an element is in viewport
         function isInViewport(element) {
             const rect = element.getBoundingClientRect();
@@ -572,14 +575,14 @@
                 rect.right <= (window.innerWidth || document.documentElement.clientWidth)
             );
         }
-        
+
         // Activate elements in viewport on load
         fadeElements.forEach(function(element) {
             if (isInViewport(element)) {
                 element.classList.add('active');
             }
         });
-        
+
         // Activate elements on scroll
         window.addEventListener('scroll', function() {
             fadeElements.forEach(function(element) {
@@ -588,18 +591,18 @@
                 }
             });
         });
-        
+
         // Auto-submit form when select options change
         document.querySelectorAll('#sort, #category, #rating').forEach(function(select) {
             select.addEventListener('change', function() {
                 document.getElementById('filterForm').submit();
             });
         });
-        
+
         // Handle filters clearance
         const urlParams = new URLSearchParams(window.location.search);
         const filterBtn = document.querySelector('.filter-btn');
-        
+
         if (urlParams.toString() && urlParams.toString() !== 'page=1') {
             filterBtn.innerHTML = '<i class="fas fa-times me-2"></i> Clear Filters';
             filterBtn.addEventListener('click', function(e) {
@@ -609,14 +612,14 @@
                 }
             });
         }
-        
+
         // Add touch support for mobile devices
         if ('ontouchstart' in window) {
             document.querySelectorAll('.event-card').forEach(function(card) {
                 card.classList.add('touch-device');
             });
         }
-        
+
         // Handle responsive layout adjustments
         function handleResponsiveLayout() {
             const windowWidth = window.innerWidth;
@@ -630,7 +633,7 @@
                 });
             }
         }
-        
+
         // Initial call and window resize listener
         handleResponsiveLayout();
         window.addEventListener('resize', handleResponsiveLayout);

@@ -16,10 +16,12 @@ from django.views.decorators.csrf import csrf_exempt
 from decimal import Decimal
 from rest_framework import viewsets, permissions
 from django.conf import settings
+import requests
+import json
 
-from .models import Event, SubEvent, Review, Booking, UserProfile, ContactMessage, GalleryItem, SubEventCategory, CartItem, UserMessage, ActivityLog
+from .models import Event, SubEvent, Review, Booking, UserProfile, ContactMessage, GalleryItem, SubEventCategory, CartItem, UserMessage, ActivityLog, Newsletter
 from .serializers import EventSerializer, SubEventSerializer, ReviewSerializer
-from .forms import ReviewForm, BookingForm, EventForm, SubEventForm, GalleryItemForm, SubEventCategoryForm, UserMessageForm
+from .forms import ReviewForm, BookingForm, EventForm, SubEventForm, GalleryItemForm, SubEventCategoryForm, UserMessageForm, NewsletterForm
 import json
 import os
 import datetime
@@ -1790,6 +1792,100 @@ def signup(request):
     else:
         # For GET requests, redirect to home with signup modal
         return redirect('home')
+
+# Newsletter subscription
+def subscribe_newsletter(request):
+    """Handle newsletter subscription"""
+    if request.method == 'POST':
+        form = NewsletterForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email']
+            name = form.cleaned_data.get('name', '')
+
+            # Check if email already exists
+            if Newsletter.objects.filter(email=email).exists():
+                messages.info(request, "You're already subscribed to our newsletter!")
+                return redirect(request.META.get('HTTP_REFERER', 'home'))
+
+            # Create newsletter subscription
+            newsletter = form.save(commit=False)
+
+            # If user is authenticated, link to user
+            if request.user.is_authenticated:
+                newsletter.user = request.user
+
+            # Save to database
+            newsletter.save()
+
+            # Log activity
+            if request.user.is_authenticated:
+                ActivityLog.objects.create(
+                    user=request.user,
+                    action_type='newsletter_subscription',
+                    description=f"Subscribed to newsletter with email: {email}",
+                )
+
+            # Add to MailerSend
+            try:
+                # MailerSend API endpoint for recipients
+                api_key = settings.MAILERSEND_API_KEY
+                url = "https://api.mailersend.com/v1/recipients"
+
+                headers = {
+                    "Content-Type": "application/json",
+                    "X-Requested-With": "XMLHttpRequest",
+                    "Authorization": f"Bearer {api_key}"
+                }
+
+                # Create recipient in MailerSend
+                response = requests.post(
+                    url,
+                    headers=headers,
+                    json={
+                        "email": email,
+                        "fields": {
+                            "name": name
+                        }
+                    }
+                )
+
+                if response.status_code == 201:
+                    recipient_data = response.json()
+                    if 'data' in recipient_data and 'id' in recipient_data['data']:
+                        # Save MailerSend ID to database
+                        newsletter.mailersend_id = recipient_data['data']['id']
+                        newsletter.save(update_fields=['mailersend_id'])
+
+                        # Now add to list
+                        list_id = settings.MAILERSEND_LIST_ID
+                        list_url = f"https://api.mailersend.com/v1/lists/{list_id}/recipients"
+
+                        list_response = requests.post(
+                            list_url,
+                            headers=headers,
+                            json={
+                                "recipients": [newsletter.mailersend_id]
+                            }
+                        )
+
+                        if list_response.status_code not in [200, 201, 202]:
+                            print(f"Error adding recipient to list: {list_response.text}")
+                    else:
+                        print(f"Error parsing MailerSend response: {recipient_data}")
+                else:
+                    print(f"Error creating MailerSend recipient: {response.text}")
+            except Exception as e:
+                print(f"Error with MailerSend API: {str(e)}")
+
+            messages.success(request, "Thank you for subscribing to our newsletter!")
+        else:
+            # If form is invalid
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{error}")
+
+    return redirect(request.META.get('HTTP_REFERER', 'home'))
+
 
 # Media file serving
 def serve_media_file(request, path):

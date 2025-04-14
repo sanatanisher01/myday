@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Event, SubEvent, Review, Booking, UserProfile, ContactMessage
+from .models import Event, SubEvent, Review, Booking, UserProfile, ContactMessage, Newsletter
 
 # Register your models here.
 
@@ -42,15 +42,35 @@ class ContactMessageAdmin(admin.ModelAdmin):
     list_filter = ('is_read', 'created_at')
     search_fields = ('name', 'email', 'subject', 'message')
     date_hierarchy = 'created_at'
-    
+
     actions = ['mark_as_read', 'mark_as_unread']
-    
+
     def mark_as_read(self, request, queryset):
         queryset.update(is_read=True)
         self.message_user(request, f"{queryset.count()} message(s) marked as read.")
     mark_as_read.short_description = "Mark selected messages as read"
-    
+
     def mark_as_unread(self, request, queryset):
         queryset.update(is_read=False)
         self.message_user(request, f"{queryset.count()} message(s) marked as unread.")
     mark_as_unread.short_description = "Mark selected messages as unread"
+
+
+@admin.register(Newsletter)
+class NewsletterAdmin(admin.ModelAdmin):
+    list_display = ('email', 'name', 'is_active', 'subscribed_at', 'last_sent')
+    list_filter = ('is_active', 'subscribed_at', 'last_sent')
+    search_fields = ('email', 'name')
+    readonly_fields = ('subscribed_at', 'last_sent', 'mailersend_id')
+
+    actions = ['mark_as_active', 'mark_as_inactive']
+
+    def mark_as_active(self, request, queryset):
+        queryset.update(is_active=True)
+        self.message_user(request, f"{queryset.count()} subscriber(s) marked as active.")
+    mark_as_active.short_description = "Mark selected subscribers as active"
+
+    def mark_as_inactive(self, request, queryset):
+        queryset.update(is_active=False)
+        self.message_user(request, f"{queryset.count()} subscriber(s) marked as inactive.")
+    mark_as_inactive.short_description = "Mark selected subscribers as inactive"

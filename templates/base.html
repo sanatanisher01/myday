@@ -326,10 +326,11 @@
                 <div class="col-md-4">
                     <h5 class="mb-4">Newsletter</h5>
                     <p>Subscribe to our newsletter for updates on events and special offers.</p>
-                    <form class="mt-3">
+                    <form class="mt-3" method="post" action="{% url 'subscribe_newsletter' %}">
+                        {% csrf_token %}
                         <div class="input-group mb-3">
-                            <input type="email" class="form-control" placeholder="Your Email" aria-label="Your Email">
-                            <button class="btn btn-enhanced btn-gradient-primary" type="button">Subscribe</button>
+                            <input type="email" name="email" class="form-control" placeholder="Your Email" aria-label="Your Email" required>
+                            <button class="btn btn-enhanced btn-gradient-primary" type="submit">Subscribe</button>
                         </div>
                     </form>
                 </div>

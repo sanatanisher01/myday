@@ -14,7 +14,7 @@ urlpatterns = [
     path('event/<slug:slug>/', views.event_detail, name='event_detail'),
     path('event/<slug:event_slug>/subevent/<slug:subevent_slug>/', views.subevent_detail, name='subevent_detail'),
     path('contact/', views.contact, name='contact'),
-    
+
     # User dashboard routes
     path('dashboard/', views.user_dashboard, name='user_dashboard'),
     path('dashboard/bookings/', views.user_bookings, name='user_bookings'),
@@ -28,7 +28,7 @@ urlpatterns = [
     path('dashboard/settings/privacy/', views.update_privacy_settings, name='update_privacy_settings'),
     path('dashboard/settings/setup-2fa/', views.setup_2fa, name='setup_2fa'),
     path('dashboard/settings/delete-account/', views.delete_account, name='delete_account'),
-    
+
     # Admin routes
     path('admin/dashboard/', views.admin_dashboard, name='admin_dashboard'),
     path('admin/events/', views.admin_events, name='admin_events'),
@@ -39,7 +39,7 @@ urlpatterns = [
     # Use admin_dashboard as a temporary replacement for admin_login
     path('admin/login/', views.admin_dashboard, name='admin_login'),
     path('owner-portal/', views.admin_dashboard, name='admin_login_page'),
-    
+
     # Manager routes
     path('manager-login/', views.manager_login, name='manager_login'),
     path('manager/dashboard/', views.manager_dashboard, name='manager_dashboard'),
@@ -57,12 +57,15 @@ urlpatterns = [
     path('manager/users/', views.manager_users, name='manager_users'),
     path('manager/users/<int:user_id>/', views.manager_user_detail, name='manager_user_detail'),
     path('manager/contacts/', views.manager_contacts, name='manager_contacts'),
-    
+
     # Authentication routes
     path('signup/', views.signup, name='signup'),
     path('review/<int:event_id>/add/', views.add_review, name='add_review'),
     path('booking/<int:subevent_id>/add/', views.add_booking, name='add_booking'),
-    
+
+    # Newsletter routes
+    path('newsletter/subscribe/', views.subscribe_newsletter, name='subscribe_newsletter'),
+
     # API routes
     path('', include(router.urls)),
 ]
