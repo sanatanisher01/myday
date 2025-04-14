@@ -4,12 +4,10 @@ set -o errexit
 
 # Set Cloudinary environment variables if they're not already set
 if [ -z "$CLOUDINARY_CLOUD_NAME" ] || [ -z "$CLOUDINARY_API_KEY" ] || [ -z "$CLOUDINARY_API_SECRET" ]; then
-    echo "Setting default Cloudinary environment variables"
-    # These are placeholder values - you'll need to replace them with your actual Cloudinary credentials
-    # in the Render environment variables settings
-    export CLOUDINARY_CLOUD_NAME="your_cloud_name"
-    export CLOUDINARY_API_KEY="your_api_key"
-    export CLOUDINARY_API_SECRET="your_api_secret"
+    echo "Setting Cloudinary environment variables"
+    export CLOUDINARY_CLOUD_NAME="darlb4afr"
+    export CLOUDINARY_API_KEY="324161486593486"
+    export CLOUDINARY_API_SECRET="iRqM4jQa1iifGl6OqqQOGkYIH_c"
     export CLOUDINARY_URL="cloudinary://$CLOUDINARY_API_KEY:$CLOUDINARY_API_SECRET@$CLOUDINARY_CLOUD_NAME"
 fi
 
