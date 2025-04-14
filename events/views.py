@@ -1825,57 +1825,26 @@ def subscribe_newsletter(request):
                     description=f"Subscribed to newsletter with email: {email}",
                 )
 
-            # Add to MailerSend
+            # Send welcome email using SendGrid
             try:
-                # MailerSend API endpoint for recipients
-                api_key = settings.MAILERSEND_API_KEY
-                url = "https://api.mailersend.com/v1/recipients"
+                from django.core.mail import send_mail
 
-                headers = {
-                    "Content-Type": "application/json",
-                    "X-Requested-With": "XMLHttpRequest",
-                    "Authorization": f"Bearer {api_key}"
-                }
-
-                # Create recipient in MailerSend
-                response = requests.post(
-                    url,
-                    headers=headers,
-                    json={
-                        "email": email,
-                        "fields": {
-                            "name": name
-                        }
-                    }
+                # Send welcome email
+                send_mail(
+                    subject='Welcome to MyDay Events Newsletter',
+                    message=f'Hello {name or "there"},\n\nThank you for subscribing to our newsletter! You will now receive updates about our latest events and special offers.\n\nBest regards,\nMyDay Events Team',
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[email],
+                    fail_silently=False,
                 )
 
-                if response.status_code == 201:
-                    recipient_data = response.json()
-                    if 'data' in recipient_data and 'id' in recipient_data['data']:
-                        # Save MailerSend ID to database
-                        newsletter.mailersend_id = recipient_data['data']['id']
-                        newsletter.save(update_fields=['mailersend_id'])
+                # Update last_sent timestamp
+                from django.utils import timezone
+                newsletter.last_sent = timezone.now()
+                newsletter.save(update_fields=['last_sent'])
 
-                        # Now add to list
-                        list_id = settings.MAILERSEND_LIST_ID
-                        list_url = f"https://api.mailersend.com/v1/lists/{list_id}/recipients"
-
-                        list_response = requests.post(
-                            list_url,
-                            headers=headers,
-                            json={
-                                "recipients": [newsletter.mailersend_id]
-                            }
-                        )
-
-                        if list_response.status_code not in [200, 201, 202]:
-                            print(f"Error adding recipient to list: {list_response.text}")
-                    else:
-                        print(f"Error parsing MailerSend response: {recipient_data}")
-                else:
-                    print(f"Error creating MailerSend recipient: {response.text}")
             except Exception as e:
-                print(f"Error with MailerSend API: {str(e)}")
+                print(f"Error sending welcome email: {str(e)}")
 
             messages.success(request, "Thank you for subscribing to our newsletter!")
         else:

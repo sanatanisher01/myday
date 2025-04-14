@@ -11,12 +11,12 @@ if [ -z "$CLOUDINARY_CLOUD_NAME" ] || [ -z "$CLOUDINARY_API_KEY" ] || [ -z "$CLO
     export CLOUDINARY_URL="cloudinary://$CLOUDINARY_API_KEY:$CLOUDINARY_API_SECRET@$CLOUDINARY_CLOUD_NAME"
 fi
 
-# Set MailerSend environment variables if they're not already set
-if [ -z "$MAILERSEND_API_KEY" ] || [ -z "$MAILERSEND_LIST_ID" ]; then
-    echo "Setting MailerSend environment variables"
-    # Replace these with your actual MailerSend credentials
-    export MAILERSEND_API_KEY="your_mailersend_api_key"
-    export MAILERSEND_LIST_ID="your_mailersend_list_id"
+# Set SendGrid environment variables if they're not already set
+if [ -z "$SENDGRID_API_KEY" ] || [ -z "$DEFAULT_FROM_EMAIL" ]; then
+    echo "Setting SendGrid environment variables"
+    # Replace these with your actual SendGrid credentials
+    export SENDGRID_API_KEY="your_sendgrid_api_key"
+    export DEFAULT_FROM_EMAIL="noreply@mydayevents.com"
 fi
 
 echo "Starting build process..."
@@ -81,6 +81,10 @@ python manage.py migrate events 0011_increase_image_field_length
 # Apply Cloudinary migration
 echo "Applying Cloudinary migration..."
 python manage.py migrate events 0012_cloudinary_storage
+
+# Apply SendGrid migration
+echo "Applying SendGrid migration..."
+python manage.py migrate events 0013_remove_mailersend_field
 
 # Create cache table for database cache backend
 echo "Creating cache table..."

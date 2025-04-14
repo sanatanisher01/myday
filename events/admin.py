@@ -61,9 +61,9 @@ class NewsletterAdmin(admin.ModelAdmin):
     list_display = ('email', 'name', 'is_active', 'subscribed_at', 'last_sent')
     list_filter = ('is_active', 'subscribed_at', 'last_sent')
     search_fields = ('email', 'name')
-    readonly_fields = ('subscribed_at', 'last_sent', 'mailersend_id')
+    readonly_fields = ('subscribed_at', 'last_sent')
 
-    actions = ['mark_as_active', 'mark_as_inactive']
+    actions = ['mark_as_active', 'mark_as_inactive', 'send_welcome_email']
 
     def mark_as_active(self, request, queryset):
         queryset.update(is_active=True)
@@ -74,3 +74,24 @@ class NewsletterAdmin(admin.ModelAdmin):
         queryset.update(is_active=False)
         self.message_user(request, f"{queryset.count()} subscriber(s) marked as inactive.")
     mark_as_inactive.short_description = "Mark selected subscribers as inactive"
+
+    def send_welcome_email(self, request, queryset):
+        from django.core.mail import send_mail
+        from django.conf import settings
+
+        count = 0
+        for subscriber in queryset:
+            try:
+                send_mail(
+                    subject='Welcome to MyDay Events Newsletter',
+                    message=f'Hello {subscriber.name or "there"},\n\nThank you for subscribing to our newsletter! You will now receive updates about our latest events and special offers.\n\nBest regards,\nMyDay Events Team',
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[subscriber.email],
+                    fail_silently=False,
+                )
+                count += 1
+            except Exception as e:
+                self.message_user(request, f"Error sending email to {subscriber.email}: {str(e)}", level='ERROR')
+
+        self.message_user(request, f"Welcome email sent to {count} subscriber(s).")
+    send_welcome_email.short_description = "Send welcome email to selected subscribers"

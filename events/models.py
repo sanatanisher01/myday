@@ -265,9 +265,6 @@ class Newsletter(models.Model):
     last_sent = models.DateTimeField(blank=True, null=True)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='newsletter_subscriptions')
 
-    # MailerSend specific fields
-    mailersend_id = models.CharField(max_length=255, blank=True, null=True)
-
     class Meta:
         verbose_name = 'Newsletter Subscriber'
         verbose_name_plural = 'Newsletter Subscribers'

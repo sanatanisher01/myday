@@ -297,9 +297,17 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/'
 
-# MailerSend settings
-MAILERSEND_API_KEY = os.environ.get('MAILERSEND_API_KEY', '')
-MAILERSEND_LIST_ID = os.environ.get('MAILERSEND_LIST_ID', '')
+# SendGrid settings
+SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY', '')
+
+# Email settings
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.sendgrid.net'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'apikey'  # This is exactly the string 'apikey'
+EMAIL_HOST_PASSWORD = SENDGRID_API_KEY
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@mydayevents.com')
 
 # Security settings for production
 if not DEBUG:
