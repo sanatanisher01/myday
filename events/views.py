@@ -1107,6 +1107,198 @@ def admin_add_user(request):
     return redirect('admin_users')
 
 # Manager views
+
+@login_required
+@user_passes_test(lambda u: u.is_staff or u.is_superuser)
+def manager_send_newsletter(request):
+    """Send newsletter to subscribers from manager dashboard"""
+    # Get all templates
+    templates = NewsletterTemplate.objects.all().order_by('-updated_at')
+
+    # Get subscriber counts
+    total_subscribers = Newsletter.objects.count()
+    active_subscribers = Newsletter.objects.filter(is_active=True).count()
+
+    # Get recent subscribers (last 30 days)
+    from django.utils import timezone
+    from datetime import timedelta
+    thirty_days_ago = timezone.now() - timedelta(days=30)
+    recent_subscribers = Newsletter.objects.filter(subscribed_at__gte=thirty_days_ago, is_active=True).count()
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        subject = request.POST.get('subject')
+        content = request.POST.get('content')
+        template_id = request.POST.get('template')
+        recipient_option = request.POST.get('recipient_option', 'all')
+        send_test = request.POST.get('send_test') == 'on'
+        test_email = request.POST.get('test_email')
+
+        # Validate inputs
+        if not subject:
+            messages.error(request, "Please provide a subject for your newsletter.")
+            return redirect('manager_send_newsletter')
+
+        if not content and template_id == '0':
+            messages.error(request, "Please provide content for your newsletter or select a template.")
+            return redirect('manager_send_newsletter')
+
+        if send_test and not test_email:
+            messages.error(request, "Please provide a test email address.")
+            return redirect('manager_send_newsletter')
+
+        # Create a campaign record
+        campaign = NewsletterCampaign()
+        campaign.name = f"Campaign: {subject[:50]}" + ("..." if len(subject) > 50 else "")
+        campaign.subject = subject
+        campaign.content = content
+
+        if template_id and template_id != '0':
+            campaign.template = get_object_or_404(NewsletterTemplate, id=template_id)
+
+        # If saving as draft
+        if action == 'save':
+            campaign.status = 'draft'
+            campaign.save()
+            messages.success(request, "Newsletter saved as draft.")
+            return redirect('manager_send_newsletter')
+
+        # If sending test email
+        if send_test:
+            try:
+                # Prepare template
+                from django.template import Template as DjangoTemplate, Context
+
+                template_content = content
+                if campaign.template:
+                    template_content = campaign.template.content
+
+                # Create context for template
+                context = Context({
+                    'name': 'Test User',
+                    'email': test_email,
+                    'subject': subject,
+                    'custom_message': content,
+                    'unsubscribe_url': f"{request.scheme}://{request.get_host()}/newsletter/unsubscribe/?email={test_email}"
+                })
+
+                # Render template
+                template = DjangoTemplate(template_content)
+                html_message = template.render(context)
+
+                # Send test email
+                from django.core.mail import send_mail
+                send_mail(
+                    subject=f"[TEST] {subject}",
+                    message=content,  # Plain text version
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[test_email],
+                    fail_silently=False,
+                    html_message=html_message
+                )
+
+                messages.success(request, f"Test email sent to {test_email}. Please check your inbox.")
+
+                # Save as draft after sending test
+                campaign.status = 'draft'
+                campaign.save()
+
+                return redirect('manager_send_newsletter')
+            except Exception as e:
+                messages.error(request, f"Error sending test email: {str(e)}")
+                return redirect('manager_send_newsletter')
+
+        # If sending to subscribers
+        try:
+            # Update status to sending
+            campaign.status = 'sending'
+            campaign.save()
+
+            # Get subscribers based on option
+            if recipient_option == 'all':
+                subscribers = Newsletter.objects.filter(is_active=True)
+            elif recipient_option == 'recent':
+                subscribers = Newsletter.objects.filter(
+                    is_active=True,
+                    subscribed_at__gte=thirty_days_ago
+                )
+
+            # Prepare template
+            from django.template import Template as DjangoTemplate, Context
+
+            template_content = content
+            if campaign.template:
+                template_content = campaign.template.content
+
+            # Send to each subscriber
+            from django.core.mail import send_mail
+
+            sent_count = 0
+            for subscriber in subscribers:
+                try:
+                    # Create context for template
+                    context = Context({
+                        'name': subscriber.name or 'there',
+                        'email': subscriber.email,
+                        'subject': subject,
+                        'custom_message': content,
+                        'unsubscribe_url': f"{request.scheme}://{request.get_host()}/newsletter/unsubscribe/?email={subscriber.email}"
+                    })
+
+                    # Render template
+                    template = DjangoTemplate(template_content)
+                    html_message = template.render(context)
+
+                    # Send email
+                    send_mail(
+                        subject=subject,
+                        message=content,  # Plain text version
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[subscriber.email],
+                        fail_silently=False,
+                        html_message=html_message
+                    )
+
+                    # Update subscriber's last_sent timestamp
+                    subscriber.last_sent = timezone.now()
+                    subscriber.save(update_fields=['last_sent'])
+                    sent_count += 1
+                except Exception as e:
+                    print(f"Error sending to {subscriber.email}: {str(e)}")
+                    continue
+
+            # Update campaign status
+            campaign.status = 'sent'
+            campaign.sent_at = timezone.now()
+            campaign.sent_count = sent_count
+            campaign.save(update_fields=['status', 'sent_at', 'sent_count'])
+
+            # Log activity
+            ActivityLog.objects.create(
+                user=request.user,
+                action_type='newsletter_sent',
+                description=f"Sent newsletter '{subject}' to {sent_count} subscribers",
+                target_model='Newsletter',
+                additional_data=json.dumps({'campaign_id': campaign.id})
+            )
+
+            messages.success(request, f"Newsletter sent successfully to {sent_count} subscribers!")
+        except Exception as e:
+            campaign.status = 'failed'
+            campaign.error_message = str(e)
+            campaign.save(update_fields=['status', 'error_message'])
+            messages.error(request, f"Error sending newsletter: {str(e)}")
+
+    context = {
+        'templates': templates,
+        'total_subscribers': total_subscribers,
+        'active_subscribers': active_subscribers,
+        'recent_subscribers': recent_subscribers,
+    }
+
+    return render(request, 'events/manager/send_newsletter.html', context)
+
+
 @login_required
 @user_passes_test(lambda u: u.is_staff or u.is_superuser)
 def manager_dashboard(request):
@@ -1116,6 +1308,7 @@ def manager_dashboard(request):
     subevent_count = SubEvent.objects.count()
     booking_count = Booking.objects.count()
     user_count = User.objects.filter(is_staff=False, is_superuser=False).count()
+    subscriber_count = Newsletter.objects.filter(is_active=True).count()
 
     # Recent items
     recent_bookings = Booking.objects.all().order_by('-created_at')[:5]
@@ -1133,6 +1326,7 @@ def manager_dashboard(request):
         'subevent_count': subevent_count,
         'booking_count': booking_count,
         'user_count': user_count,
+        'subscriber_count': subscriber_count,
         'recent_bookings': recent_bookings,
         'recent_events': recent_events,
         'recent_users': recent_users,

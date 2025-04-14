@@ -1,0 +1,257 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}Send Newsletter - MyDay{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/monokai.min.css">
+<style>
+    .CodeMirror {
+        height: 300px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+    .template-preview {
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 15px;
+        background-color: #f9f9f9;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    .subscriber-count {
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+    .template-card {
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .template-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    .template-card.selected {
+        border: 2px solid #4e73df;
+        box-shadow: 0 5px 15px rgba(78, 115, 223, 0.25);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="py-4">
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h1 class="mb-0 text-gradient-primary">Send Newsletter</h1>
+                    <div>
+                        <a href="{% url 'manager_dashboard' %}" class="btn btn-modern btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+                <hr class="gradient-line">
+            </div>
+        </div>
+        
+        <!-- Subscriber Stats -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="mb-0">Subscriber Statistics</h5>
+                                <p class="text-muted mb-0">Your newsletter reach</p>
+                            </div>
+                            <div class="text-end">
+                                <div class="subscriber-count text-primary">{{ active_subscribers }} Active Subscribers</div>
+                                <small class="text-muted">Out of {{ total_subscribers }} total subscribers</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <form method="post" action="{% url 'manager_send_newsletter' %}">
+            {% csrf_token %}
+            
+            <div class="row">
+                <!-- Newsletter Form -->
+                <div class="col-lg-8">
+                    <div class="card mb-4">
+                        <div class="card-header bg-gradient-primary text-white">
+                            <h5 class="mb-0"><i class="fas fa-envelope me-2"></i>Newsletter Details</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if messages %}
+                                {% for message in messages %}
+                                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                                {% endfor %}
+                            {% endif %}
+                            
+                            <div class="mb-3">
+                                <label for="subject" class="form-label">Email Subject</label>
+                                <input type="text" class="form-control" id="subject" name="subject" required placeholder="Enter a compelling subject line">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="template" class="form-label">Select Template</label>
+                                <select class="form-select" id="template" name="template">
+                                    <option value="0">No Template (Custom Content Only)</option>
+                                    {% for template in templates %}
+                                    <option value="{{ template.id }}" {% if template.is_default %}selected{% endif %}>{{ template.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="content" class="form-label">Custom Message</label>
+                                <textarea class="form-control" id="content" name="content" rows="6" placeholder="Enter your newsletter content here..."></textarea>
+                                <small class="text-muted">
+                                    This content will be inserted into the selected template. If no template is selected, this will be the entire email body.
+                                </small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="send_test" name="send_test">
+                                    <label class="form-check-label" for="send_test">
+                                        Send a test email to yourself first
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3" id="test_email_field" style="display: none;">
+                                <label for="test_email" class="form-label">Test Email Address</label>
+                                <input type="email" class="form-control" id="test_email" name="test_email" placeholder="Enter your email for testing">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-4">
+                        <div class="card-header bg-gradient-info text-white">
+                            <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Recipient Options</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="recipient_option" id="all_subscribers" value="all" checked>
+                                    <label class="form-check-label" for="all_subscribers">
+                                        Send to all active subscribers ({{ active_subscribers }})
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="recipient_option" id="recent_subscribers" value="recent">
+                                    <label class="form-check-label" for="recent_subscribers">
+                                        Send only to subscribers from the last 30 days ({{ recent_subscribers|default:"0" }})
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Preview and Submit -->
+                <div class="col-lg-4">
+                    <div class="card mb-4">
+                        <div class="card-header bg-gradient-success text-white">
+                            <h5 class="mb-0"><i class="fas fa-eye me-2"></i>Preview</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="template-preview" id="preview">
+                                <div class="text-center py-5">
+                                    <i class="fas fa-envelope-open-text fa-3x text-muted mb-3"></i>
+                                    <p>Your newsletter preview will appear here</p>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" id="previewBtn">
+                                        <i class="fas fa-sync-alt me-1"></i> Generate Preview
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-lg btn-gradient-primary" id="sendBtn" name="action" value="send">
+                                    <i class="fas fa-paper-plane me-2"></i>Send Newsletter
+                                </button>
+                                <button type="submit" class="btn btn-outline-secondary" name="action" value="save">
+                                    <i class="fas fa-save me-2"></i>Save as Draft
+                                </button>
+                            </div>
+                            <div class="text-center mt-3">
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle me-1"></i> Sending to {{ active_subscribers }} subscribers
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/htmlmixed/htmlmixed.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/xml/xml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/css/css.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize CodeMirror for content
+        var contentEditor = CodeMirror.fromTextArea(document.getElementById('content'), {
+            mode: 'htmlmixed',
+            lineNumbers: true,
+            theme: 'default',
+            lineWrapping: true
+        });
+        
+        // Show/hide test email field
+        document.getElementById('send_test').addEventListener('change', function() {
+            document.getElementById('test_email_field').style.display = this.checked ? 'block' : 'none';
+        });
+        
+        // Preview button functionality
+        document.getElementById('previewBtn').addEventListener('click', function() {
+            var subject = document.getElementById('subject').value || 'Newsletter Subject';
+            var content = contentEditor.getValue() || 'Your newsletter content will appear here.';
+            var templateId = document.getElementById('template').value;
+            
+            // Simple preview - in a real app, you'd make an AJAX call to render the actual template
+            var previewHtml = `
+                <div class="preview-container">
+                    <div class="preview-header" style="background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%); color: white; padding: 15px; text-align: center; border-radius: 4px 4px 0 0;">
+                        <h3>${subject}</h3>
+                    </div>
+                    <div class="preview-body" style="padding: 15px; background: white; border-radius: 0 0 4px 4px;">
+                        <p>Hello there,</p>
+                        <div>${content}</div>
+                        <p style="margin-top: 15px;">Best regards,<br>MyDay Events Team</p>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('preview').innerHTML = previewHtml;
+        });
+        
+        // Confirm before sending
+        document.getElementById('sendBtn').addEventListener('click', function(e) {
+            if (!confirm('Are you sure you want to send this newsletter to all selected subscribers?')) {
+                e.preventDefault();
+            }
+        });
+    });
+</script>
+{% endblock %}

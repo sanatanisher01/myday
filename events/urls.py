@@ -72,6 +72,7 @@ urlpatterns = [
     path('manager/users/', views.manager_users, name='manager_users'),
     path('manager/users/<int:user_id>/', views.manager_user_detail, name='manager_user_detail'),
     path('manager/contacts/', views.manager_contacts, name='manager_contacts'),
+    path('manager/newsletter/', views.manager_send_newsletter, name='manager_send_newsletter'),
 
     # Authentication routes
     path('signup/', views.signup, name='signup'),
