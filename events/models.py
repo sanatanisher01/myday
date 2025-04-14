@@ -256,77 +256,7 @@ class UserMessage(models.Model):
         return f"{self.subject} - {self.user.username}"
 
 
-class Newsletter(models.Model):
-    """Model for newsletter subscribers"""
-    email = models.EmailField(unique=True)
-    name = models.CharField(max_length=100, blank=True, null=True)
-    subscribed_at = models.DateTimeField(auto_now_add=True)
-    is_active = models.BooleanField(default=True)
-    last_sent = models.DateTimeField(blank=True, null=True)
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='newsletter_subscriptions')
-
-    class Meta:
-        verbose_name = 'Newsletter Subscriber'
-        verbose_name_plural = 'Newsletter Subscribers'
-        ordering = ['-subscribed_at']
-
-    def __str__(self):
-        return self.email
-
-
-class NewsletterTemplate(models.Model):
-    """Model for newsletter templates"""
-    name = models.CharField(max_length=100)
-    subject = models.CharField(max_length=200)
-    content = models.TextField(help_text="You can use HTML and template variables like {{ name }}, {{ custom_message }}, etc.")
-    is_default = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        verbose_name = 'Newsletter Template'
-        verbose_name_plural = 'Newsletter Templates'
-        ordering = ['-updated_at']
-
-    def __str__(self):
-        return self.name
-
-    def save(self, *args, **kwargs):
-        # If this template is set as default, unset default for all other templates
-        if self.is_default:
-            NewsletterTemplate.objects.filter(is_default=True).update(is_default=False)
-        super().save(*args, **kwargs)
-
-
-class NewsletterCampaign(models.Model):
-    """Model for newsletter campaigns"""
-    STATUS_CHOICES = (
-        ('draft', 'Draft'),
-        ('scheduled', 'Scheduled'),
-        ('sending', 'Sending'),
-        ('sent', 'Sent'),
-        ('failed', 'Failed'),
-    )
-
-    name = models.CharField(max_length=100)
-    subject = models.CharField(max_length=200)
-    content = models.TextField()
-    template = models.ForeignKey(NewsletterTemplate, on_delete=models.SET_NULL, null=True, blank=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
-    scheduled_at = models.DateTimeField(null=True, blank=True)
-    sent_at = models.DateTimeField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    sent_count = models.PositiveIntegerField(default=0)
-    error_message = models.TextField(blank=True, null=True)
-
-    class Meta:
-        verbose_name = 'Newsletter Campaign'
-        verbose_name_plural = 'Newsletter Campaigns'
-        ordering = ['-created_at']
-
-    def __str__(self):
-        return self.name
+# Newsletter models have been removed
 
 
 class ActivityLog(models.Model):
@@ -348,7 +278,6 @@ class ActivityLog(models.Model):
         ('message_sent', 'Message Sent'),
         ('review_posted', 'Review Posted'),
         ('admin_action', 'Admin Action'),
-        ('newsletter_subscription', 'Newsletter Subscription'),
     )
 
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='activities')

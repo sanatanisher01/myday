@@ -41,19 +41,7 @@ urlpatterns = [
     path('admin/login/', views.admin_dashboard, name='admin_login'),
     path('owner-portal/', views.admin_dashboard, name='admin_login_page'),
 
-    # Newsletter management routes
-    path('admin/newsletters/', views.admin_newsletters, name='admin_newsletters'),
-    path('admin/newsletters/subscribers/', views.admin_newsletter_subscribers, name='admin_newsletter_subscribers'),
-    path('admin/newsletters/templates/', views.admin_newsletter_templates, name='admin_newsletter_templates'),
-    path('admin/newsletters/templates/add/', views.admin_newsletter_template_edit, name='admin_newsletter_template_add'),
-    path('admin/newsletters/templates/<int:template_id>/edit/', views.admin_newsletter_template_edit, name='admin_newsletter_template_edit'),
-    path('admin/newsletters/templates/<int:template_id>/delete/', views.admin_newsletter_template_delete, name='admin_newsletter_template_delete'),
-    path('admin/newsletters/campaigns/', views.admin_newsletter_campaigns, name='admin_newsletter_campaigns'),
-    path('admin/newsletters/campaigns/add/', views.admin_newsletter_campaign_edit, name='admin_newsletter_campaign_add'),
-    path('admin/newsletters/campaigns/<int:campaign_id>/edit/', views.admin_newsletter_campaign_edit, name='admin_newsletter_campaign_edit'),
-    path('admin/newsletters/campaigns/<int:campaign_id>/delete/', views.admin_newsletter_campaign_delete, name='admin_newsletter_campaign_delete'),
-    path('admin/newsletters/campaigns/<int:campaign_id>/send/', views.admin_newsletter_campaign_send, name='admin_newsletter_campaign_send'),
-    path('admin/newsletters/campaigns/<int:campaign_id>/preview/', views.admin_newsletter_campaign_preview, name='admin_newsletter_campaign_preview'),
+    # Newsletter management routes have been removed
 
     # Manager routes
     path('manager-login/', views.manager_login, name='manager_login'),
@@ -78,8 +66,7 @@ urlpatterns = [
     path('review/<int:event_id>/add/', views.add_review, name='add_review'),
     path('booking/<int:subevent_id>/add/', views.add_booking, name='add_booking'),
 
-    # Newsletter routes
-    path('newsletter/subscribe/', views.subscribe_newsletter, name='subscribe_newsletter'),
+    # Newsletter routes have been removed
 
     # API routes
     path('', include(router.urls)),

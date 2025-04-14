@@ -72,21 +72,28 @@ chmod +x ensure_image_persistence.py
 echo "Collecting static files..."
 DJANGO_SETTINGS_MODULE=myday.settings python manage.py collectstatic --noinput
 
-# Apply database migrations
-echo "Applying database migrations..."
-python manage.py migrate
+# Apply database migrations for non-events apps
+echo "Applying core database migrations..."
+python manage.py migrate auth
+python manage.py migrate admin
+python manage.py migrate sessions
+python manage.py migrate contenttypes
 
-# Apply specific migration for image field length
-echo "Applying image field migration..."
-python manage.py migrate events 0011_increase_image_field_length
-
-# Apply Cloudinary migration
-echo "Applying Cloudinary migration..."
-python manage.py migrate events 0012_cloudinary_storage
-
-# Apply SendGrid migration
-echo "Applying SendGrid migration..."
-python manage.py migrate events 0013_remove_mailersend_field
+# Apply only specific events migrations (avoiding newsletter migrations)
+echo "Applying specific events migrations..."
+python manage.py migrate events 0001_initial --fake
+python manage.py migrate events 0002_rename_avatar_userprofile_profile_picture --fake
+python manage.py migrate events 0003_subeventcategory_galleryitem_cartitem --fake
+python manage.py migrate events 0004_remove_booking_cancellation_reason_and_more --fake
+python manage.py migrate events 0005_usermessage --fake
+python manage.py migrate events 0006_activitylog --fake
+python manage.py migrate events 0007_usermessage_section --fake
+python manage.py migrate events 0008_booking_address_booking_mobile_number --fake
+python manage.py migrate events 0009_reviewlike --fake
+python manage.py migrate events 0011_increase_image_field_length --fake
+python manage.py migrate events 0012_cloudinary_storage --fake
+python manage.py migrate events 0013_remove_mailersend_field --fake
+python manage.py migrate events 0014_remove_newsletter_tables
 
 # Create cache table for database cache backend
 echo "Creating cache table..."
