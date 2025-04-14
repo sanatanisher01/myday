@@ -270,61 +270,62 @@ def subevent_detail(request, event_slug, subevent_slug):
 @login_required
 def user_dashboard(request):
     """User dashboard view"""
-    # Get all user bookings
-    all_user_bookings = Booking.objects.filter(user=request.user)
+    try:
+        # Get all user bookings - use only() to specify exactly which fields we need
+        all_user_bookings = Booking.objects.filter(user=request.user).only(
+            'id', 'user_id', 'subevent_id', 'booking_date', 'booking_time',
+            'guests', 'status', 'created_at', 'total_amount'
+        )
 
-    # Recent bookings for the main list
-    user_bookings = all_user_bookings.order_by('-created_at')[:5]
+        # Recent bookings for the main list
+        user_bookings = all_user_bookings.select_related('subevent').order_by('-created_at')[:5]
 
-    # Calculate stats for dashboard cards
-    total_bookings = all_user_bookings.count()
+        # Calculate stats for dashboard cards
+        total_bookings = all_user_bookings.count()
 
-    # Upcoming bookings (pending or confirmed and in the future)
-    upcoming_bookings = all_user_bookings.filter(
-        booking_date__gte=timezone.now().date(),
-        status__in=['pending', 'confirmed']
-    ).order_by('booking_date', 'booking_time')
+        # Upcoming bookings (pending or confirmed and in the future)
+        upcoming_bookings = all_user_bookings.select_related('subevent').filter(
+            booking_date__gte=timezone.now().date(),
+            status__in=['pending', 'confirmed']
+        ).order_by('booking_date', 'booking_time')
 
-    # Count of upcoming bookings for stats card
-    upcoming_count = upcoming_bookings.count()
+        # Count of upcoming bookings for stats card
+        upcoming_count = upcoming_bookings.count()
 
-    # Show only 3 upcoming bookings in the list
-    upcoming_bookings_display = upcoming_bookings[:3]
+        # Count of completed bookings for stats card
+        completed_count = all_user_bookings.filter(
+            booking_date__lt=timezone.now().date(),
+            status='confirmed'
+        ).count()
 
-    # Completed events count
-    completed_count = all_user_bookings.filter(
-        status='completed'
-    ).count()
+        # Get user messages
+        user_messages = UserMessage.objects.filter(user=request.user).order_by('-created_at')[:5]
+        unread_count = user_messages.filter(is_read=False).count()
 
-    # Get user messages
-    # Messages received by the user
-    received_messages = UserMessage.objects.filter(user=request.user).order_by('-created_at')
+        # Format upcoming bookings for display
+        upcoming_bookings_display = upcoming_bookings[:3]
 
-    # Messages sent by the user
-    sent_messages = UserMessage.objects.filter(created_by=request.user).order_by('-created_at')
+        context = {
+            'user_bookings': user_bookings,
+            'upcoming_bookings': upcoming_bookings_display,
+            'user_messages': user_messages,
+            'unread_count': unread_count,
+            'total_bookings': total_bookings,
+            'upcoming_count': upcoming_count,
+            'completed_count': completed_count,
+        }
 
-    # Combine both types of messages and sort by created_at
-    from itertools import chain
-    all_user_messages = list(chain(received_messages, sent_messages))
-    all_user_messages.sort(key=lambda x: x.created_at, reverse=True)
+        return render(request, 'events/user/dashboard.html', context)
+    except Exception as e:
+        # Log the error
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Error in user_dashboard: {str(e)}\n{error_details}")
 
-    # Get the 5 most recent messages
-    user_messages = all_user_messages[:5]
+        # Return a simplified dashboard with error message
+        messages.error(request, f"An error occurred while loading the dashboard: {str(e)}")
+        return render(request, 'events/user/dashboard_error.html', {'error': str(e)})
 
-    # Count of unread messages
-    unread_count = received_messages.filter(is_read=False).count()
-
-    context = {
-        'user_bookings': user_bookings,
-        'upcoming_bookings': upcoming_bookings_display,
-        'user_messages': user_messages,
-        'unread_count': unread_count,
-        'total_bookings': total_bookings,
-        'upcoming_count': upcoming_count,
-        'completed_count': completed_count,
-    }
-
-    return render(request, 'events/user/dashboard.html', context)
 
 @login_required
 def user_bookings(request):
@@ -1118,8 +1119,10 @@ def manager_dashboard(request):
         booking_count = Booking.objects.count()
         user_count = User.objects.filter(is_staff=False, is_superuser=False).count()
 
-        # Recent items - use select_related to avoid N+1 queries
-        recent_bookings = Booking.objects.select_related('user', 'subevent', 'subevent__event').order_by('-created_at')[:5]
+        # Recent items - use select_related to avoid N+1 queries and only select needed fields
+        recent_bookings = Booking.objects.select_related('user', 'subevent', 'subevent__event').only(
+            'id', 'user__username', 'subevent__name', 'created_at', 'status', 'total_amount'
+        ).order_by('-created_at')[:5]
         recent_events = Event.objects.all().order_by('-created_at')[:5]
         recent_users = User.objects.filter(is_staff=False, is_superuser=False).order_by('-date_joined')[:5]
 
