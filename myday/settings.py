@@ -226,9 +226,7 @@ CLOUDINARY_STORAGE = {
 }
 
 # Use Cloudinary for media storage in production
-if not DEBUG or ON_RENDER:
-    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-    CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL', '')
+CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL', '')
 
 # Ensure media files persist in production
 if not DEBUG:
@@ -255,11 +253,11 @@ if not DEBUG:
 # Configure storage for static and media files - using the new STORAGES setting
 STORAGES = {
     "default": {
-        "BACKEND": "django.core.files.storage.FileSystemStorage",
+        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage" if not DEBUG or ON_RENDER else "django.core.files.storage.FileSystemStorage",
         "OPTIONS": {
             "location": MEDIA_ROOT,
             "base_url": MEDIA_URL,
-        },
+        } if DEBUG and not ON_RENDER else {},
     },
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage" if not DEBUG else "django.contrib.staticfiles.storage.StaticFilesStorage",
