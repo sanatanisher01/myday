@@ -72,56 +72,31 @@ chmod +x ensure_image_persistence.py
 echo "Collecting static files..."
 DJANGO_SETTINGS_MODULE=myday.settings python manage.py collectstatic --noinput
 
-# Apply database migrations in a specific order to avoid conflicts
+# Apply database migrations with a simplified approach
 echo "Applying database migrations..."
 
-# First apply migrations for auth and admin apps
-echo "Applying auth and admin migrations..."
+# First apply migrations for auth, admin, sessions, and contenttypes
+echo "Applying core Django migrations..."
 python manage.py migrate auth
 python manage.py migrate admin
 python manage.py migrate sessions
 python manage.py migrate contenttypes
 
-# Apply events migrations up to 0013
+# Apply events migrations up to 0013 (before newsletter migrations)
 echo "Applying early events migrations..."
 python manage.py migrate events 0013_remove_mailersend_field
 
-# Apply specific migration for image field length
-echo "Applying image field migration..."
-python manage.py migrate events 0011_increase_image_field_length --fake-initial
-
-# Apply Cloudinary migration
-echo "Applying Cloudinary migration..."
-python manage.py migrate events 0012_cloudinary_storage --fake-initial
-
-# Apply SendGrid migration
-echo "Applying SendGrid migration..."
-python manage.py migrate events 0013_remove_mailersend_field --fake-initial
-
-# Skip problematic newsletter migrations
-echo "Skipping problematic newsletter migrations..."
-python manage.py migrate events 0014_newsletter_templates_campaigns --fake
-python manage.py migrate events 0015_default_newsletter_template --fake
-python manage.py migrate events 0016_fix_missing_newsletter_tables --fake
-python manage.py migrate events 0017_create_newsletter_models --fake
-python manage.py migrate events 0018_fix_duplicate_tables --fake
-
-# Fix migration state directly
-echo "Fixing migration state..."
-python manage.py fix_migration_state
-
-# Apply our new fixed migrations
-echo "Applying fixed newsletter migrations..."
-python manage.py migrate events 0021_fix_migration_sequence
-python manage.py migrate events 0022_ensure_default_template
+# Skip all problematic migrations and apply our final fix
+echo "Applying newsletter fix migration..."
+python manage.py migrate events 0023_fix_newsletter_tables_final
 
 # Create cache table for database cache backend
 echo "Creating cache table..."
 python manage.py createcachetable
 
-# Final safety check - run migrations with --fake-initial to ensure everything is up to date
+# Final safety check - run migrations with --fake to ensure everything is up to date
 echo "Running final migration check..."
-python manage.py migrate --fake-initial
+python manage.py migrate --fake
 
 # Run the image persistence script to ensure all images are in the persistent storage
 echo "Ensuring image persistence..."
