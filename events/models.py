@@ -81,6 +81,7 @@ class Booking(models.Model):
         ('completed', 'Completed'),
     )
 
+    booking_id = models.CharField(max_length=10, unique=True, null=True, blank=True)  # Unique booking reference ID
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bookings')
     subevent = models.ForeignKey(SubEvent, on_delete=models.CASCADE, related_name='bookings')
     categories = models.ManyToManyField(SubEventCategory, blank=True, related_name='bookings')

@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Status Update - MyDay Events</title>
+    <style>
+        /* Base styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        }
+        
+        /* Header styles */
+        .header {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+        
+        /* Content styles */
+        .content {
+            padding: 30px;
+            background-color: #ffffff;
+        }
+        
+        .greeting {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #444;
+        }
+        
+        .message {
+            margin-bottom: 25px;
+            color: #555;
+        }
+        
+        /* Status badge */
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 16px;
+            color: white;
+            margin: 15px 0;
+        }
+        
+        .status-confirmed {
+            background-color: #28a745;
+        }
+        
+        .status-declined {
+            background-color: #dc3545;
+        }
+        
+        .status-pending {
+            background-color: #ffc107;
+            color: #333;
+        }
+        
+        .status-cancelled {
+            background-color: #6c757d;
+        }
+        
+        /* Booking details */
+        .booking-details {
+            background-color: #f5f7fa;
+            border-radius: 6px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .booking-details h3 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .detail-row {
+            display: flex;
+            margin-bottom: 10px;
+        }
+        
+        .detail-label {
+            font-weight: 600;
+            width: 140px;
+            color: #555;
+        }
+        
+        .detail-value {
+            flex: 1;
+        }
+        
+        /* CTA button */
+        .cta-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            text-decoration: none;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            transition: transform 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+        }
+        
+        /* Support section */
+        .support {
+            background-color: #f5f7fa;
+            padding: 20px;
+            border-radius: 6px;
+            margin-top: 25px;
+        }
+        
+        .support-title {
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 10px;
+        }
+        
+        /* Footer */
+        .footer {
+            background-color: #f0f2f5;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .social-links {
+            margin: 15px 0;
+        }
+        
+        .social-icon {
+            display: inline-block;
+            width: 32px;
+            height: 32px;
+            background-color: #ddd;
+            border-radius: 50%;
+            margin: 0 5px;
+            line-height: 32px;
+            color: #555;
+            text-decoration: none;
+        }
+        
+        /* Responsive styles */
+        @media screen and (max-width: 480px) {
+            .header {
+                padding: 20px 15px;
+            }
+            
+            .header h1 {
+                font-size: 24px;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .detail-row {
+                flex-direction: column;
+            }
+            
+            .detail-label {
+                width: 100%;
+                margin-bottom: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Booking Status Update</h1>
+        </div>
+        
+        <div class="content">
+            <p class="greeting">Hello {{ booking.user.first_name|default:booking.name }},</p>
+            
+            {% if booking.status == 'confirmed' %}
+            <p class="message">Great news! Your booking with MyDay Events has been <strong>confirmed</strong>. We're excited to host your event and make it a memorable experience.</p>
+            <div style="text-align: center;">
+                <span class="status-badge status-confirmed">Confirmed</span>
+            </div>
+            {% elif booking.status == 'declined' %}
+            <p class="message">We regret to inform you that your booking with MyDay Events has been <strong>declined</strong>. This could be due to unavailability or other constraints.</p>
+            <div style="text-align: center;">
+                <span class="status-badge status-declined">Declined</span>
+            </div>
+            <p>Reason: {{ booking.notes|default:"No specific reason provided." }}</p>
+            {% elif booking.status == 'cancelled' %}
+            <p class="message">Your booking with MyDay Events has been <strong>cancelled</strong> as requested.</p>
+            <div style="text-align: center;">
+                <span class="status-badge status-cancelled">Cancelled</span>
+            </div>
+            {% else %}
+            <p class="message">The status of your booking with MyDay Events has been updated to <strong>{{ booking.get_status_display }}</strong>.</p>
+            <div style="text-align: center;">
+                <span class="status-badge status-pending">{{ booking.get_status_display }}</span>
+            </div>
+            {% endif %}
+            
+            <div class="booking-details">
+                <h3>Booking Details</h3>
+                
+                <div class="detail-row">
+                    <div class="detail-label">Booking ID:</div>
+                    <div class="detail-value">{{ booking.booking_id }}</div>
+                </div>
+                
+                <div class="detail-row">
+                    <div class="detail-label">Event:</div>
+                    <div class="detail-value">{{ booking.event.title }}</div>
+                </div>
+                
+                {% if booking.sub_event %}
+                <div class="detail-row">
+                    <div class="detail-label">Package:</div>
+                    <div class="detail-value">{{ booking.sub_event.title }}</div>
+                </div>
+                {% endif %}
+                
+                <div class="detail-row">
+                    <div class="detail-label">Date:</div>
+                    <div class="detail-value">{{ booking.event_date|date:"F j, Y" }}</div>
+                </div>
+                
+                <div class="detail-row">
+                    <div class="detail-label">Time:</div>
+                    <div class="detail-value">{{ booking.event_time }}</div>
+                </div>
+                
+                <div class="detail-row">
+                    <div class="detail-label">Guests:</div>
+                    <div class="detail-value">{{ booking.guests }}</div>
+                </div>
+                
+                <div class="detail-row">
+                    <div class="detail-label">Total Amount:</div>
+                    <div class="detail-value">₹{{ booking.total_amount }}</div>
+                </div>
+            </div>
+            
+            {% if booking.status == 'confirmed' %}
+            <p>Please make sure to arrive on time. We look forward to hosting your event!</p>
+            {% elif booking.status == 'declined' %}
+            <p>We encourage you to explore other dates or packages that might be available. Feel free to contact us for assistance.</p>
+            {% endif %}
+            
+            <div class="cta-container">
+                <a href="{{ booking_url }}" class="cta-button">View Booking Details</a>
+            </div>
+            
+            <div class="support">
+                <p class="support-title">Need assistance?</p>
+                <p>If you have any questions or need assistance with your booking, feel free to reply to this email or contact our support team at +91 6397664902.</p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Best regards,<br>Aryan Sanatani<br>MyDay Events Team</p>
+            
+            <div class="social-links">
+                <a href="https://www.facebook.com/profile.php?id=100049095782484" class="social-icon">f</a>
+                <a href="https://x.com/aryansanatani01" class="social-icon">𝕏</a>
+                <a href="https://www.instagram.com/__aryan__gupta01/" class="social-icon">i</a>
+                <a href="https://www.linkedin.com/in/aryan-gupta-383587315/" class="social-icon">in</a>
+            </div>
+            
+            <p>&copy; {% now "Y" %} MyDay Events. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
