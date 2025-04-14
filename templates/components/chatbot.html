@@ -26,11 +26,13 @@
             </div>
         </div>
         <div class="quick-replies mb-2" id="quickReplies">
-            <button type="button" class="quick-reply-btn" onclick="handleQuickReply('Book Event')">Book Event</button>
-            <button type="button" class="quick-reply-btn" onclick="handleQuickReply('Event Pricing')">Event Pricing</button>
-            <button type="button" class="quick-reply-btn" onclick="handleQuickReply('Support')">Support</button>
-            <button type="button" class="quick-reply-btn" onclick="handleQuickReply('Tell me a joke')">Tell me a joke</button>
-            <button type="button" class="quick-reply-btn" onclick="handleQuickReply('General Knowledge')">General Knowledge</button>
+            <button type="button" class="quick-reply-btn" onclick="handleQuickReply('Wedding packages')">Wedding Packages</button>
+            <button type="button" class="quick-reply-btn" onclick="handleQuickReply('Birthday events')">Birthday Events</button>
+            <button type="button" class="quick-reply-btn" onclick="handleQuickReply('Corporate events')">Corporate Events</button>
+            <button type="button" class="quick-reply-btn" onclick="handleQuickReply('Pricing information')">Pricing</button>
+            <button type="button" class="quick-reply-btn" onclick="handleQuickReply('Cancellation policy')">Cancellations</button>
+            <button type="button" class="quick-reply-btn" onclick="handleQuickReply('Contact support')">Support</button>
+            <button type="button" class="quick-reply-btn" onclick="handleQuickReply('Tell me a joke')">Joke</button>
         </div>
         <div class="chatbot-input">
             <form id="chatbotForm" onsubmit="return false;">
@@ -69,10 +71,24 @@
     align-items: center;
     justify-content: center;
     font-size: 1.5rem;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(var(--bs-primary-rgb), 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(var(--bs-primary-rgb), 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(var(--bs-primary-rgb), 0);
+    }
 }
 
 .chatbot-toggle:hover {
     transform: scale(1.1);
+    animation: none;
 }
 
 .notification-badge {
@@ -84,6 +100,12 @@
     border-radius: 50%;
     padding: 0.25rem 0.5rem;
     font-size: 0.75rem;
+    animation: bounce 1s infinite alternate;
+}
+
+@keyframes bounce {
+    from { transform: scale(1); }
+    to { transform: scale(1.2); }
 }
 
 .chatbot-interface {
@@ -100,6 +122,7 @@
     transition: all 0.3s ease;
     opacity: 0;
     transform: translateY(20px);
+    overflow: hidden;
 }
 
 .chatbot-interface.show {
@@ -109,12 +132,13 @@
 
 .chatbot-header {
     padding: 1rem;
-    background-color: var(--bs-primary);
+    background: linear-gradient(135deg, var(--bs-primary) 0%, var(--bs-primary-dark, #0056b3) 100%);
     color: white;
     border-radius: 15px 15px 0 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 .chatbot-header .btn-close {
@@ -129,6 +153,7 @@
     flex-direction: column;
     gap: 1rem;
     background-color: #f8f9fa;
+    background-image: url('data:image/svg+xml;utf8,<svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><rect width="20" height="20" fill="%23f8f9fa"/><circle cx="3" cy="3" r="1" fill="%23e9ecef"/><circle cx="13" cy="13" r="1" fill="%23e9ecef"/></svg>');
 }
 
 .message {
@@ -138,6 +163,7 @@
     margin-bottom: 0.75rem;
     position: relative;
     animation: messageSlideIn 0.3s ease;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
 @keyframes messageSlideIn {
@@ -160,13 +186,16 @@
 }
 
 .quick-replies {
-    padding: 0 1rem;
+    padding: 0.5rem 1rem;
     display: flex;
     gap: 0.5rem;
     overflow-x: auto;
     /* Use cross-browser compatible scrollbar styling */
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: thin;  /* Firefox */
+    background-color: rgba(248, 249, 250, 0.9);
+    backdrop-filter: blur(5px);
+    border-top: 1px solid rgba(0,0,0,0.05);
 }
 
 /* Custom scrollbar for Webkit browsers (Chrome, Safari) */
@@ -204,30 +233,90 @@
 .quick-reply-btn:hover {
     background: var(--bs-primary);
     color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .bot-message {
     align-self: flex-start;
     background-color: #f0f2f5;
+    border-bottom-left-radius: 5px;
 }
 
 .user-message {
     align-self: flex-end;
-    background-color: var(--bs-primary);
+    background: linear-gradient(135deg, var(--bs-primary) 0%, var(--bs-primary-dark, #0056b3) 100%);
     color: white;
+    border-bottom-right-radius: 5px;
 }
 
 .chatbot-input {
     padding: 1rem;
     border-top: 1px solid #dee2e6;
+    background-color: white;
+    position: relative;
+    z-index: 2;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
 }
 
 .chatbot-input .form-control {
     border-radius: 20px 0 0 20px;
+    border: 1px solid rgba(var(--bs-primary-rgb), 0.3);
+    padding-right: 40px;
+    transition: all 0.3s ease;
+}
+
+.chatbot-input .form-control:focus {
+    box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
+    border-color: var(--bs-primary);
 }
 
 .chatbot-input .btn {
     border-radius: 0 20px 20px 0;
+    background: linear-gradient(135deg, var(--bs-primary) 0%, var(--bs-primary-dark, #0056b3) 100%);
+    transition: all 0.3s ease;
+}
+
+.chatbot-input .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* Typing indicator */
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 0;
+}
+
+.typing-indicator span {
+    height: 8px;
+    width: 8px;
+    float: left;
+    margin: 0 1px;
+    background-color: #9E9EA1;
+    display: block;
+    border-radius: 50%;
+    opacity: 0.4;
+}
+
+.typing-indicator span:nth-of-type(1) {
+    animation: 1s blink infinite 0.3333s;
+}
+
+.typing-indicator span:nth-of-type(2) {
+    animation: 1s blink infinite 0.6666s;
+}
+
+.typing-indicator span:nth-of-type(3) {
+    animation: 1s blink infinite 0.9999s;
+}
+
+@keyframes blink {
+    50% {
+        opacity: 1;
+    }
 }
 
 @media (max-width: 576px) {
@@ -274,11 +363,12 @@ document.addEventListener('DOMContentLoaded', function() {
             addMessage(message, 'user');
             chatbotInput.value = '';
 
-            // Show typing indicator
+            // Show typing indicator with animated dots
             const typingIndicator = document.createElement('div');
             typingIndicator.className = 'message bot-message';
-            typingIndicator.innerHTML = '<div class="message-content">Typing...</div>';
+            typingIndicator.innerHTML = '<div class="message-content"><div class="typing-indicator"><span></span><span></span><span></span></div></div>';
             chatbotMessages.appendChild(typingIndicator);
+            chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
 
             // Get response from Gemini API
             const response = await generateGeminiResponse(message);
@@ -286,6 +376,11 @@ document.addEventListener('DOMContentLoaded', function() {
             // Remove typing indicator and add response
             chatbotMessages.removeChild(typingIndicator);
             addMessage(response, 'bot');
+
+            // Show notification badge when chat is closed
+            if (chatbotInterface.classList.contains('d-none')) {
+                document.getElementById('chatNotification').classList.remove('d-none');
+            }
         }
     });
 
@@ -299,19 +394,15 @@ document.addEventListener('DOMContentLoaded', function() {
         chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
     }
 
-    function handleQuickReply(message) {
-        addMessage(message, 'user');
-        processUserMessage(message);
-    }
-
     async function handleQuickReply(message) {
         addMessage(message, 'user');
 
         // Show typing indicator
         const typingIndicator = document.createElement('div');
         typingIndicator.className = 'message bot-message';
-        typingIndicator.innerHTML = '<div class="message-content">Typing...</div>';
+        typingIndicator.innerHTML = '<div class="message-content"><div class="typing-indicator"><span></span><span></span><span></span></div></div>';
         chatbotMessages.appendChild(typingIndicator);
+        chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
 
         // Get response from Gemini API
         const response = await generateGeminiResponse(message);

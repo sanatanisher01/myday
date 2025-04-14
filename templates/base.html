@@ -4,40 +4,42 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}MyDay - Event Memory Management{% endblock %}</title>
-    
+
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
+
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-    
+
     <!-- GSAP Animation Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/ScrollTrigger.min.js"></script>
-    
+
     <!-- AOS Animation Library -->
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-    
+
     <!-- Three.js for 3D effects -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    
+
     <!-- Vanilla-tilt.js for 3D card effects -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.7.2/vanilla-tilt.min.js"></script>
-    
+
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="/static/css/custom.css">
     <link rel="stylesheet" href="/static/css/modern-effects.css">
     <link rel="stylesheet" href="/static/css/dark-theme.css" id="dark-theme-css">
     <link rel="stylesheet" href="/static/css/ui-enhancements.css">
-    
+    <link rel="stylesheet" href="/static/css/reviews-enhanced.css">
+
     <!-- Custom JavaScript -->
     <script src="/static/js/nav-animations.js" defer></script>
-    
+    <script src="/static/js/reviews-enhanced.js" defer></script>
+
     <style>
         :root {
             --primary-color: #4e73df;
@@ -51,60 +53,60 @@
             --warning-color: #f6c23e;
             --danger-color: #e74a3b;
         }
-        
+
         html {
             scroll-behavior: smooth;
         }
-        
+
         body {
             font-family: 'Poppins', sans-serif;
             color: var(--text-color);
             overflow-x: hidden;
         }
-        
+
         h1, h2, h3, h4, h5, h6 {
             font-family: 'Playfair Display', serif;
         }
-        
+
         .btn {
             border-radius: 30px;
             padding: 0.5rem 1.5rem;
             transition: all 0.3s ease;
         }
-        
+
         .btn-primary {
             background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
             border: none;
         }
-        
+
         .btn-primary:hover {
             background: linear-gradient(135deg, #224abe 0%, #1a3891 100%);
             transform: translateY(-3px);
             box-shadow: 0 5px 15px rgba(78, 115, 223, 0.3);
         }
-        
+
         .navbar {
             transition: all 0.3s ease;
             padding: 1rem 0;
         }
-        
+
         .navbar-scrolled {
             background-color: rgba(255, 255, 255, 0.95) !important;
             box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
             padding: 0.5rem 0;
         }
-        
+
         .navbar-brand {
             font-weight: 700;
             font-size: 1.5rem;
         }
-        
+
         .nav-link {
             font-weight: 500;
             position: relative;
             padding: 0.5rem 1rem !important;
         }
-        
+
         .nav-link::after {
             content: '';
             position: absolute;
@@ -116,17 +118,17 @@
             background: var(--primary-color);
             transition: width 0.3s ease;
         }
-        
+
         .nav-link:hover::after,
         .nav-link.active::after {
             width: 80%;
         }
-        
+
         /* Footer styling */
         footer {
             background: linear-gradient(135deg, #343a40 0%, #212529 100%);
         }
-        
+
         .back-to-top {
             position: fixed;
             bottom: 30px;
@@ -144,17 +146,17 @@
             transition: all 0.3s ease;
             z-index: 1000;
         }
-        
+
         .back-to-top.visible {
             opacity: 1;
             visibility: visible;
         }
-        
+
         .back-to-top:hover {
             transform: translateY(-5px);
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
         }
-        
+
         /* Theme toggle button */
         .theme-toggle {
             position: fixed;
@@ -173,26 +175,26 @@
             cursor: pointer;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
         }
-        
+
         .theme-toggle:hover {
             transform: translateY(-5px);
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
         }
-        
+
         /* Custom animation classes */
         .fade-in {
             animation: fadeIn 1s ease forwards;
         }
-        
+
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
         }
-        
+
         .brand-text-animated {
             transition: all 0.3s ease;
         }
-        
+
         .brand-dot {
             display: inline-block;
             width: 10px;
@@ -202,7 +204,7 @@
             margin-left: 5px;
             animation: pulse 2s infinite;
         }
-        
+
         @keyframes pulse {
             0% {
                 transform: scale(1);
@@ -215,7 +217,7 @@
             }
         }
     </style>
-    
+
     {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -273,7 +275,7 @@
             </div>
         </nav>
     </header>
-    
+
     <!-- Main Content -->
     <main>
         {% if messages %}
@@ -286,10 +288,10 @@
             {% endfor %}
         </div>
         {% endif %}
-        
+
         {% block content %}{% endblock %}
     </main>
-    
+
     <!-- Footer -->
     <footer class="footer-enhanced pt-5 pb-3 mt-5">
         <div class="container">
@@ -307,7 +309,7 @@
                         <a href="https://www.linkedin.com/in/aryan-gupta-383587315/" class="text-white"><i class="fab fa-linkedin-in"></i></a>
                     </div>
                 </div>
-                
+
                 <!-- Quick Links -->
                 <div class="col-md-4 mb-4 mb-md-0">
                     <h5 class="mb-4">Quick Links</h5>
@@ -319,7 +321,7 @@
                         <li><a href="#" class="text-white text-decoration-none"><i class="fas fa-angle-right me-2"></i>Privacy Policy</a></li>
                     </ul>
                 </div>
-                
+
                 <!-- Newsletter -->
                 <div class="col-md-4">
                     <h5 class="mb-4">Newsletter</h5>
@@ -332,9 +334,9 @@
                     </form>
                 </div>
             </div>
-            
+
             <hr class="mt-4 mb-3 border-light">
-            
+
             <div class="row">
                 <div class="col-md-6 text-center text-md-start">
                     <p class="mb-0">&copy; 2025 MyDay Events. All rights reserved.</p>
@@ -345,17 +347,17 @@
             </div>
         </div>
     </footer>
-    
+
     <!-- Back to Top Button -->
     <a href="#" class="back-to-top" id="backToTop">
         <i class="fas fa-arrow-up"></i>
     </a>
-    
+
     <!-- Theme Toggle Button -->
     <div class="theme-toggle" id="themeToggle">
         <i class="fas fa-sun"></i>
     </div>
-    
+
     <!-- Login Modal -->
     <div class="modal fade modal-enhanced" id="loginModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -390,7 +392,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Signup Modal -->
     <div class="modal fade modal-enhanced" id="signupModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -430,10 +432,10 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
+
     <script>
         // Initialize AOS
         AOS.init({
@@ -442,7 +444,7 @@
             once: true,
             mirror: false
         });
-        
+
         // CSRF Token handling for AJAX requests
         function getCookie(name) {
             let cookieValue = null;
@@ -458,10 +460,10 @@
             }
             return cookieValue;
         }
-        
+
         // Set up CSRF token for all AJAX requests
         const csrftoken = getCookie('csrftoken');
-        
+
         // Add CSRF token to all AJAX requests
         document.addEventListener('DOMContentLoaded', function() {
             // Set up AJAX headers with CSRF token
@@ -470,17 +472,17 @@
                 window.fetch = function(url, options) {
                     options = options || {};
                     options.headers = options.headers || {};
-                    
+
                     // Only add CSRF token to same-origin requests
                     const sameOrigin = url.startsWith(window.location.origin) || url.startsWith('/');
                     if (sameOrigin && csrftoken) {
                         options.headers['X-CSRFToken'] = csrftoken;
                     }
-                    
+
                     return originalFetch(url, options);
                 };
             }
-            
+
             // Add CSRF token to all forms that don't have it
             document.querySelectorAll('form[method="post"]').forEach(form => {
                 if (!form.querySelector('input[name="csrfmiddlewaretoken"]')) {
@@ -492,7 +494,7 @@
                 }
             });
         });
-        
+
         // Initialize 3D card effect
         VanillaTilt.init(document.querySelectorAll(".card-3d"), {
             max: 10,
@@ -500,10 +502,10 @@
             glare: true,
             "max-glare": 0.3
         });
-        
+
         // Back to top button
         const backToTopButton = document.getElementById('backToTop');
-        
+
         window.addEventListener('scroll', () => {
             if (window.scrollY > 300) {
                 backToTopButton.classList.add('visible');
@@ -511,15 +513,15 @@
                 backToTopButton.classList.remove('visible');
             }
         });
-        
+
         backToTopButton.addEventListener('click', (e) => {
             e.preventDefault();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         });
-        
+
         // Navbar scroll effect
         const navbar = document.querySelector('.navbar');
-        
+
         window.addEventListener('scroll', () => {
             if (window.scrollY > 50) {
                 navbar.classList.add('navbar-scrolled');
@@ -529,23 +531,23 @@
                 navbar.classList.remove('scrolled');
             }
         });
-        
+
         // Theme toggle functionality
         const themeToggle = document.getElementById('themeToggle');
         const darkThemeCss = document.getElementById('dark-theme-css');
         const htmlElement = document.documentElement;
         const themeIcon = themeToggle.querySelector('i');
-        
+
         // Check for saved theme preference or use default
         const savedTheme = localStorage.getItem('theme') || 'dark';
-        
+
         // Apply the saved theme on page load
         if (savedTheme === 'dark') {
             enableDarkMode();
         } else {
             enableLightMode();
         }
-        
+
         // Toggle theme when button is clicked
         themeToggle.addEventListener('click', () => {
             if (htmlElement.getAttribute('data-theme') === 'light') {
@@ -554,7 +556,7 @@
                 enableLightMode();
             }
         });
-        
+
         function enableDarkMode() {
             htmlElement.setAttribute('data-theme', 'dark');
             darkThemeCss.removeAttribute('disabled');
@@ -562,7 +564,7 @@
             themeIcon.classList.add('fa-sun');
             localStorage.setItem('theme', 'dark');
         }
-        
+
         function enableLightMode() {
             htmlElement.setAttribute('data-theme', 'light');
             darkThemeCss.setAttribute('disabled', '');
@@ -572,7 +574,7 @@
         }
     </script>
     {% block extra_js %}{% endblock %}
-    
+
     {% include 'components/chatbot.html' %}
 </body>
 </html>
