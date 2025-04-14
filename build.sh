@@ -72,31 +72,21 @@ chmod +x ensure_image_persistence.py
 echo "Collecting static files..."
 DJANGO_SETTINGS_MODULE=myday.settings python manage.py collectstatic --noinput
 
-# Apply database migrations with a completely new approach
+# Apply database migrations
 echo "Applying database migrations..."
+python manage.py migrate
 
-# First apply migrations for auth, admin, sessions, and contenttypes
-echo "Applying core Django migrations..."
-python manage.py migrate auth
-python manage.py migrate admin
-python manage.py migrate sessions
-python manage.py migrate contenttypes
+# Apply specific migration for image field length
+echo "Applying image field migration..."
+python manage.py migrate events 0011_increase_image_field_length
 
-# Apply non-newsletter migrations
-echo "Applying non-newsletter migrations..."
+# Apply Cloudinary migration
+echo "Applying Cloudinary migration..."
+python manage.py migrate events 0012_cloudinary_storage
+
+# Apply SendGrid migration
+echo "Applying SendGrid migration..."
 python manage.py migrate events 0013_remove_mailersend_field
-
-# Set up newsletter tables directly
-echo "Setting up newsletter tables directly..."
-python setup_database.py
-
-# Mark all newsletter migrations as applied
-echo "Marking newsletter migrations as applied..."
-python fix_migrations_simple.py
-
-# Fake all migrations to ensure everything is up to date
-echo "Faking all migrations..."
-python manage.py migrate --fake
 
 # Create cache table for database cache backend
 echo "Creating cache table..."
