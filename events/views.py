@@ -1152,7 +1152,26 @@ def manager_events(request):
             if 'create_event' in request.POST:
                 form = EventForm(request.POST, request.FILES)
                 if form.is_valid():
-                    form.save()
+                    event = form.save(commit=False)
+
+                    # Ensure the image is properly saved to the persistent disk
+                    if 'image' in request.FILES:
+                        # The clean_image method in the form has already validated the image
+                        event.image = request.FILES['image']
+
+                    # Save the event
+                    event.save()
+
+                    # Log the activity
+                    ActivityLog.log_activity(
+                        request.user,
+                        'event_created',
+                        f"Created new event: {event.name}",
+                        'Event',
+                        event.id,
+                        request=request
+                    )
+
                     messages.success(request, "Event created successfully!")
                     return redirect('manager_events')
 
@@ -1162,7 +1181,35 @@ def manager_events(request):
                 event = get_object_or_404(Event, id=event_id)
                 form = EventForm(request.POST, request.FILES, instance=event)
                 if form.is_valid():
-                    form.save()
+                    updated_event = form.save(commit=False)
+
+                    # Ensure the image is properly saved to the persistent disk
+                    if 'image' in request.FILES:
+                        # The clean_image method in the form has already validated the image
+                        updated_event.image = request.FILES['image']
+
+                        # If there was a previous image, try to remove it to avoid orphaned files
+                        if event.image and event.image != updated_event.image:
+                            try:
+                                if os.path.isfile(event.image.path):
+                                    os.remove(event.image.path)
+                            except Exception as e:
+                                # Log the error but continue with the update
+                                print(f"Error removing old event image: {str(e)}")
+
+                    # Save the updated event
+                    updated_event.save()
+
+                    # Log the activity
+                    ActivityLog.log_activity(
+                        request.user,
+                        'event_updated',
+                        f"Updated event: {updated_event.name}",
+                        'Event',
+                        updated_event.id,
+                        request=request
+                    )
+
                     messages.success(request, "Event updated successfully!")
                     return redirect('manager_events')
 
@@ -1757,81 +1804,73 @@ def serve_media_file(request, path):
     # Log the request for debugging
     print(f"Media file requested: {path}")
 
-    # First, try to redirect to the static version if we're using WhiteNoise
-    if not settings.DEBUG and hasattr(settings, 'WHITENOISE_ADD_MEDIA_TO_STATICFILES') and settings.WHITENOISE_ADD_MEDIA_TO_STATICFILES:
-        # WhiteNoise should be serving this file from the staticfiles directory
-        return HttpResponseRedirect(f"{settings.STATIC_URL}{path}")
+    # Possible locations for the file
+    possible_paths = [
+        # Primary location - persistent disk on Render
+        os.path.join(settings.MEDIA_ROOT, path),
+        # Alternative location - local media directory
+        os.path.join(settings.BASE_DIR, 'media', path),
+        # Static directory
+        os.path.join(settings.STATIC_ROOT, path),
+    ]
 
-    # If we're still here, try to serve the file directly
-    # Construct the full path to the media file
-    full_path = os.path.join(settings.MEDIA_ROOT, path)
-    print(f"Looking for file at: {full_path}")
+    # Check all possible locations
+    for full_path in possible_paths:
+        if os.path.exists(full_path) and os.path.isfile(full_path):
+            print(f"Found file at: {full_path}")
+            # Determine the content type
+            content_type, _ = mimetypes.guess_type(full_path)
+            # Serve the file
+            try:
+                response = FileResponse(open(full_path, 'rb'))
+                if content_type:
+                    response['Content-Type'] = content_type
+                return response
+            except Exception as e:
+                print(f"Error serving file {full_path}: {str(e)}")
+                continue
 
-    # Check if the file exists
-    if not os.path.exists(full_path):
-        # Log the missing file
-        print(f"Media file not found: {full_path}")
+    # If we get here, the file wasn't found in any of the standard locations
+    print(f"File not found in standard locations: {path}")
 
-        # Check if we're on Render and should look in the persistent disk path
-        if hasattr(settings, 'ON_RENDER') and settings.ON_RENDER:
-            render_path = f"/opt/render/project/src/media/{path}"
-            print(f"Checking Render persistent disk path: {render_path}")
-            if os.path.exists(render_path):
-                print(f"Found file on Render persistent disk")
-                full_path = render_path
-            else:
-                print(f"File not found on Render persistent disk either")
+    # For event images, try to find a default
+    if path.startswith('events/'):
+        # Extract the event slug from the filename
+        filename = os.path.basename(path)
+        event_slug = filename.split('.')[0]
+        if '_' in event_slug:  # Handle Django's auto-added suffixes like filename_XYZ123.jpg
+            event_slug = event_slug.split('_')[0]
 
-        # Try to use default_storage to find the file
-        try:
-            if default_storage.exists(path):
-                print(f"File found in default storage")
-                return HttpResponseRedirect(default_storage.url(path))
-        except Exception as e:
-            print(f"Error checking default storage: {str(e)}")
+        # Try default image for this event
+        default_path = os.path.join(settings.MEDIA_ROOT, 'events', f'default-{event_slug}.jpg')
+        if os.path.exists(default_path):
+            print(f"Using default image for {event_slug}: {default_path}")
+            content_type, _ = mimetypes.guess_type(default_path)
+            try:
+                response = FileResponse(open(default_path, 'rb'))
+                if content_type:
+                    response['Content-Type'] = content_type
+                return response
+            except Exception as e:
+                print(f"Error serving default image: {str(e)}")
 
-        # If still not found, try to find a default image
-        if not os.path.exists(full_path):
-            # Check if this is an event image and try to find a default
-            if path.startswith('events/') and re.match(r'events/[\w-]+\.\w+$', path):
-                event_slug = os.path.basename(path).split('.')[0]
-                default_path = os.path.join(settings.MEDIA_ROOT, 'events', f'default-{event_slug}.jpg')
+    # For subevent images, try to use a generic placeholder
+    if path.startswith('subevents/'):
+        placeholder_path = os.path.join(settings.STATIC_ROOT, 'images', 'event-placeholder.jpg')
+        if os.path.exists(placeholder_path):
+            print(f"Using generic placeholder for subevent: {placeholder_path}")
+            content_type, _ = mimetypes.guess_type(placeholder_path)
+            try:
+                response = FileResponse(open(placeholder_path, 'rb'))
+                if content_type:
+                    response['Content-Type'] = content_type
+                return response
+            except Exception as e:
+                print(f"Error serving placeholder image: {str(e)}")
 
-                if os.path.exists(default_path):
-                    print(f"Using default image instead: {default_path}")
-                    full_path = default_path
-                else:
-                    # Try a generic default image
-                    generic_default = os.path.join(settings.STATIC_ROOT, 'images', 'event-placeholder.jpg')
-                    if os.path.exists(generic_default):
-                        print(f"Using generic placeholder: {generic_default}")
-                        full_path = generic_default
-                    else:
-                        # Try alternative path in case of deployment directory structure differences
-                        alt_path = os.path.join(settings.BASE_DIR, 'media', path)
-                        if os.path.exists(alt_path):
-                            full_path = alt_path
-                        else:
-                            alt_static_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'event-placeholder.jpg')
-                            if os.path.exists(alt_static_path):
-                                full_path = alt_static_path
-                            else:
-                                # If all else fails, return a simple placeholder image
-                                print(f"No placeholder found, returning empty image response")
-                                return HttpResponse("No image available", content_type="text/plain")
-
-    # Determine the content type
-    content_type, encoding = mimetypes.guess_type(full_path)
-
-    try:
-        # Return the file as a response with proper content type
-        response = FileResponse(open(full_path, 'rb'))
-        if content_type:
-            response['Content-Type'] = content_type
-        return response
-    except Exception as e:
-        print(f"Error serving media file: {str(e)}")
-        return HttpResponse("Error serving image", content_type="text/plain", status=500)
+    # If all else fails, return a simple placeholder image
+    print(f"No suitable image found for {path}, returning empty response")
+    return HttpResponse("No image available", content_type="text/plain")
 
 # Review and Booking actions
 @login_required

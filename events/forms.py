@@ -9,14 +9,28 @@ class EventForm(forms.ModelForm):
     class Meta:
         model = Event
         fields = ['name', 'description', 'image']
-        
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.form_method = 'post'
         self.helper.add_input(Submit('event_form', 'Save Event', css_class='btn-primary'))
         self.fields['description'].widget.attrs = {'rows': 4}
-        
+
+    def clean_image(self):
+        """Validate and process the uploaded image"""
+        image = self.cleaned_data.get('image')
+        if image:
+            # Validate file type
+            if not image.name.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
+                raise forms.ValidationError("Unsupported image format. Please use PNG, JPG, JPEG, or GIF.")
+
+            # Validate file size (max 5MB)
+            if image.size > 5 * 1024 * 1024:
+                raise forms.ValidationError("Image file is too large. Maximum size is 5MB.")
+
+        return image
+
 
 class SubEventForm(forms.ModelForm):
     """Form for creating and updating sub-events"""
@@ -27,7 +41,7 @@ class SubEventForm(forms.ModelForm):
             'description': forms.Textarea(attrs={'rows': 4}),
             'slug': forms.TextInput(attrs={'placeholder': 'Will be auto-generated if left blank'}),
         }
-        
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Filter out deleted events by checking if they exist
@@ -35,13 +49,27 @@ class SubEventForm(forms.ModelForm):
         self.helper = FormHelper()
         self.helper.form_method = 'post'
         self.helper.add_input(Submit('subevent_form', 'Save Sub-Event', css_class='btn-primary'))
-        
+
         # Add Bootstrap classes to form fields
         for field_name, field in self.fields.items():
             field.widget.attrs['class'] = 'form-control'
-            
+
         # Make slug optional
         self.fields['slug'].required = False
+
+    def clean_image(self):
+        """Validate and process the uploaded image"""
+        image = self.cleaned_data.get('image')
+        if image:
+            # Validate file type
+            if not image.name.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
+                raise forms.ValidationError("Unsupported image format. Please use PNG, JPG, JPEG, or GIF.")
+
+            # Validate file size (max 5MB)
+            if image.size > 5 * 1024 * 1024:
+                raise forms.ValidationError("Image file is too large. Maximum size is 5MB.")
+
+        return image
 
 
 class ReviewForm(forms.ModelForm):
@@ -51,14 +79,14 @@ class ReviewForm(forms.ModelForm):
         fields = ['rating', 'comment', 'image']
         widgets = {
             'rating': forms.NumberInput(attrs={
-                'min': 1, 
-                'max': 5, 
+                'min': 1,
+                'max': 5,
                 'class': 'form-range',
                 'step': 1
             }),
             'comment': forms.Textarea(attrs={'rows': 4}),
         }
-        
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
@@ -83,7 +111,7 @@ class BookingForm(forms.ModelForm):
             'mobile_number': forms.TextInput(attrs={'placeholder': 'Enter your mobile number', 'class': 'form-control'}),
             'notes': forms.Textarea(attrs={'rows': 3}),
         }
-        
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
@@ -106,7 +134,7 @@ class UserProfileForm(forms.ModelForm):
     class Meta:
         model = User
         fields = ['first_name', 'last_name', 'email']
-        
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
@@ -131,15 +159,15 @@ class GalleryItemForm(forms.ModelForm):
             'caption': forms.TextInput(attrs={'placeholder': 'Brief description of the image'}),
             'order': forms.NumberInput(attrs={'min': 0, 'placeholder': 'Display order (lower numbers appear first)'}),
         }
-        
+
     def __init__(self, *args, **kwargs):
         subevent_id = kwargs.pop('subevent_id', None)
         super().__init__(*args, **kwargs)
-        
+
         if subevent_id:
             self.fields['subevent'].initial = subevent_id
             self.fields['subevent'].widget = forms.HiddenInput()
-        
+
         self.helper = FormHelper()
         self.helper.form_method = 'post'
         self.helper.layout = Layout(
@@ -159,11 +187,11 @@ class SubEventCategoryForm(forms.ModelForm):
         widgets = {
             'description': forms.Textarea(attrs={'rows': 3}),
         }
-    
+
     def __init__(self, *args, **kwargs):
         subevent_id = kwargs.pop('subevent_id', None)
         super().__init__(*args, **kwargs)
-        
+
         # If a specific subevent_id is provided, filter the subevent field
         if subevent_id:
             self.fields['subevent'].initial = subevent_id
@@ -182,7 +210,7 @@ class UserMessageForm(forms.ModelForm):
         widgets = {
             'message': forms.Textarea(attrs={'rows': 5}),
         }
-        
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Only show regular users (not staff or superusers)
@@ -202,15 +230,15 @@ class AddToCartForm(forms.ModelForm):
             'guests': forms.NumberInput(attrs={'min': 1, 'value': 1}),
             'notes': forms.Textarea(attrs={'rows': 2, 'placeholder': 'Any special requests or notes'}),
         }
-        
+
     def __init__(self, *args, **kwargs):
         subevent_id = kwargs.pop('subevent_id', None)
         categories = kwargs.pop('categories', None)
         super().__init__(*args, **kwargs)
-        
+
         if categories:
             self.fields['category'].queryset = categories
-            
+
         self.helper = FormHelper()
         self.helper.form_method = 'post'
         self.helper.layout = Layout(
