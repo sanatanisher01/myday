@@ -72,6 +72,10 @@ chmod +x ensure_image_persistence.py
 echo "Collecting static files..."
 DJANGO_SETTINGS_MODULE=myday.settings python manage.py collectstatic --noinput
 
+# Fix migration issues first
+echo "Fixing migration issues..."
+python fix_migrations.py
+
 # Apply database migrations with a simplified approach
 echo "Applying database migrations..."
 
@@ -86,9 +90,26 @@ python manage.py migrate contenttypes
 echo "Applying early events migrations..."
 python manage.py migrate events 0013_remove_mailersend_field
 
-# Skip all problematic migrations and apply our final fix
+# Fake all problematic migrations
+echo "Faking problematic migrations..."
+python manage.py migrate events 0014_newsletter_templates_campaigns --fake
+python manage.py migrate events 0015_default_newsletter_template --fake
+python manage.py migrate events 0016_fix_missing_newsletter_tables --fake
+python manage.py migrate events 0017_create_newsletter_models --fake
+python manage.py migrate events 0018_fix_duplicate_tables --fake
+python manage.py migrate events 0019_create_newsletter_tables_properly --fake
+python manage.py migrate events 0020_create_default_newsletter_template --fake
+python manage.py migrate events 0021_fix_migration_sequence --fake
+python manage.py migrate events 0022_ensure_default_template --fake
+
+# Apply our final fix migration
 echo "Applying newsletter fix migration..."
 python manage.py migrate events 0023_fix_newsletter_tables_final
+
+# Apply the merge migration and final fix
+echo "Applying merge migration..."
+python manage.py migrate events 0024_merge_20240601_0001
+python manage.py migrate events 0025_final_newsletter_fix
 
 # Create cache table for database cache backend
 echo "Creating cache table..."
