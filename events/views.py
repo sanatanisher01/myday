@@ -1110,6 +1110,260 @@ def admin_add_user(request):
 
 @login_required
 @user_passes_test(lambda u: u.is_staff or u.is_superuser)
+def manager_template_list(request):
+    """View for listing all newsletter templates"""
+    try:
+        templates = NewsletterTemplate.objects.all().order_by('-is_default', '-updated_at')
+    except Exception as e:
+        templates = []
+        messages.error(request, f"Error loading templates: {str(e)}")
+
+    context = {
+        'templates': templates
+    }
+
+    return render(request, 'events/manager/template_list.html', context)
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff or u.is_superuser)
+def manager_template_create(request):
+    """View for creating a new newsletter template"""
+    if request.method == 'POST':
+        try:
+            name = request.POST.get('name')
+            subject = request.POST.get('subject')
+            content = request.POST.get('content')
+            is_default = request.POST.get('is_default') == 'on'
+
+            if not name or not subject or not content:
+                messages.error(request, "All fields are required.")
+                return render(request, 'events/manager/template_edit.html', {
+                    'is_new': True,
+                    'template': {
+                        'name': name,
+                        'subject': subject,
+                        'content': content,
+                        'is_default': is_default
+                    }
+                })
+
+            template = NewsletterTemplate(
+                name=name,
+                subject=subject,
+                content=content,
+                is_default=is_default
+            )
+            template.save()
+
+            messages.success(request, f"Template '{name}' created successfully.")
+            return redirect('manager_template_list')
+        except Exception as e:
+            messages.error(request, f"Error creating template: {str(e)}")
+
+    # Default template HTML
+    default_html = """<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ subject }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .content {
+            padding: 20px;
+        }
+
+        .footer {
+            background-color: #f5f5f5;
+            padding: 20px;
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .button {
+            display: inline-block;
+            background-color: #4e73df;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>{{ subject }}</h1>
+        </div>
+
+        <div class="content">
+            <p>Hello {{ name|default:"there" }},</p>
+
+            <div>{{ custom_message }}</div>
+
+            <p>Thank you for subscribing to our newsletter!</p>
+
+            <div style="text-align: center;">
+                <a href="https://myday-kokr.onrender.com/events/" class="button">Visit Our Website</a>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Best regards,<br>MyDay Events Team</p>
+            <p>&copy; 2024 MyDay Events. All rights reserved.</p>
+            <p>
+                <a href="{{ unsubscribe_url }}">Unsubscribe</a> from this newsletter
+            </p>
+        </div>
+    </div>
+</body>
+</html>"""
+
+    context = {
+        'is_new': True,
+        'template': {
+            'name': '',
+            'subject': '',
+            'content': default_html,
+            'is_default': False
+        }
+    }
+
+    return render(request, 'events/manager/template_edit.html', context)
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff or u.is_superuser)
+def manager_template_edit(request, template_id):
+    """View for editing an existing newsletter template"""
+    try:
+        template = get_object_or_404(NewsletterTemplate, id=template_id)
+
+        if request.method == 'POST':
+            try:
+                name = request.POST.get('name')
+                subject = request.POST.get('subject')
+                content = request.POST.get('content')
+                is_default = request.POST.get('is_default') == 'on'
+
+                if not name or not subject or not content:
+                    messages.error(request, "All fields are required.")
+                    return render(request, 'events/manager/template_edit.html', {
+                        'is_new': False,
+                        'template': {
+                            'id': template_id,
+                            'name': name,
+                            'subject': subject,
+                            'content': content,
+                            'is_default': is_default
+                        }
+                    })
+
+                template.name = name
+                template.subject = subject
+                template.content = content
+                template.is_default = is_default
+                template.save()
+
+                messages.success(request, f"Template '{name}' updated successfully.")
+                return redirect('manager_template_list')
+            except Exception as e:
+                messages.error(request, f"Error updating template: {str(e)}")
+
+        context = {
+            'is_new': False,
+            'template': template
+        }
+
+        return render(request, 'events/manager/template_edit.html', context)
+    except Exception as e:
+        messages.error(request, f"Error loading template: {str(e)}")
+        return redirect('manager_template_list')
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff or u.is_superuser)
+def manager_template_preview(request, template_id):
+    """View for previewing a newsletter template"""
+    try:
+        template = get_object_or_404(NewsletterTemplate, id=template_id)
+
+        # Replace template variables with sample values
+        template_content = template.content
+        template_content = template_content.replace('{{ name }}', 'John Doe')
+        template_content = template_content.replace('{{ email }}', 'john.doe@example.com')
+        template_content = template_content.replace('{{ subject }}', template.subject)
+        template_content = template_content.replace('{{ custom_message }}', 'This is a sample custom message for the newsletter preview.')
+        template_content = template_content.replace('{{ unsubscribe_url }}', '#')
+
+        context = {
+            'template': template,
+            'template_content': template_content
+        }
+
+        return render(request, 'events/manager/template_preview.html', context)
+    except Exception as e:
+        messages.error(request, f"Error previewing template: {str(e)}")
+        return redirect('manager_template_list')
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff or u.is_superuser)
+def manager_template_delete(request, template_id):
+    """View for deleting a newsletter template"""
+    try:
+        template = get_object_or_404(NewsletterTemplate, id=template_id)
+        name = template.name
+
+        # Check if this is the only template
+        if NewsletterTemplate.objects.count() <= 1:
+            messages.error(request, "Cannot delete the only template. Please create another template first.")
+            return redirect('manager_template_list')
+
+        # If this is the default template, set another one as default
+        if template.is_default:
+            other_template = NewsletterTemplate.objects.exclude(id=template_id).first()
+            if other_template:
+                other_template.is_default = True
+                other_template.save()
+
+        template.delete()
+        messages.success(request, f"Template '{name}' deleted successfully.")
+    except Exception as e:
+        messages.error(request, f"Error deleting template: {str(e)}")
+
+    return redirect('manager_template_list')
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff or u.is_superuser)
 def manager_send_newsletter(request):
     """Send newsletter to subscribers from manager dashboard"""
     try:

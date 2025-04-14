@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Template Preview - {{ template.name }} - MyDay{% endblock %}
+
+{% block extra_head %}
+<style>
+    .preview-container {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+    }
+    .preview-frame {
+        width: 100%;
+        height: 700px;
+        border: none;
+    }
+    .template-info {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .template-info-item {
+        margin-bottom: 10px;
+    }
+    .template-info-label {
+        font-weight: bold;
+        color: #495057;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="py-4">
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h1 class="mb-0 text-gradient-primary">Template Preview</h1>
+                    <div>
+                        <a href="{% url 'manager_template_list' %}" class="btn btn-modern btn-outline-secondary me-2">
+                            <i class="fas fa-arrow-left"></i> Back to Templates
+                        </a>
+                        <a href="{% url 'manager_template_edit' template.id %}" class="btn btn-modern btn-outline-primary">
+                            <i class="fas fa-edit"></i> Edit Template
+                        </a>
+                    </div>
+                </div>
+                <hr class="gradient-line">
+            </div>
+        </div>
+        
+        <div class="row mb-4">
+            <div class="col-lg-4">
+                <div class="template-info">
+                    <h4 class="mb-4">Template Information</h4>
+                    
+                    <div class="template-info-item">
+                        <div class="template-info-label">Name:</div>
+                        <div>{{ template.name }}</div>
+                    </div>
+                    
+                    <div class="template-info-item">
+                        <div class="template-info-label">Subject:</div>
+                        <div>{{ template.subject }}</div>
+                    </div>
+                    
+                    <div class="template-info-item">
+                        <div class="template-info-label">Default Template:</div>
+                        <div>
+                            {% if template.is_default %}
+                            <span class="badge bg-success">Yes</span>
+                            {% else %}
+                            <span class="badge bg-secondary">No</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="template-info-item">
+                        <div class="template-info-label">Created:</div>
+                        <div>{{ template.created_at|date:"F j, Y" }}</div>
+                    </div>
+                    
+                    <div class="template-info-item">
+                        <div class="template-info-label">Last Updated:</div>
+                        <div>{{ template.updated_at|date:"F j, Y" }}</div>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-header bg-gradient-info text-white">
+                        <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>About This Preview</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>This preview shows how your template will look when sent to subscribers. The following sample data is used:</p>
+                        <ul>
+                            <li><strong>Name:</strong> John Doe</li>
+                            <li><strong>Email:</strong> john.doe@example.com</li>
+                            <li><strong>Subject:</strong> {{ template.subject }}</li>
+                            <li><strong>Custom Message:</strong> Sample custom message for preview</li>
+                        </ul>
+                        <div class="alert alert-info">
+                            <i class="fas fa-lightbulb me-2"></i> When sending an actual newsletter, these placeholders will be replaced with real subscriber data.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header bg-gradient-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-eye me-2"></i>Template Preview</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="preview-container">
+                            <iframe id="previewFrame" class="preview-frame"></iframe>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var content = `{{ template_content|safe }}`;
+        var iframe = document.getElementById('previewFrame');
+        
+        iframe.onload = function() {
+            iframe.contentDocument.open();
+            iframe.contentDocument.write(content);
+            iframe.contentDocument.close();
+        };
+        
+        if (iframe.contentDocument) {
+            iframe.contentDocument.open();
+            iframe.contentDocument.write(content);
+            iframe.contentDocument.close();
+        }
+    });
+</script>
+{% endblock %}

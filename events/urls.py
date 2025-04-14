@@ -73,6 +73,11 @@ urlpatterns = [
     path('manager/users/<int:user_id>/', views.manager_user_detail, name='manager_user_detail'),
     path('manager/contacts/', views.manager_contacts, name='manager_contacts'),
     path('manager/newsletter/', views.manager_send_newsletter, name='manager_send_newsletter'),
+    path('manager/templates/', views.manager_template_list, name='manager_template_list'),
+    path('manager/templates/create/', views.manager_template_create, name='manager_template_create'),
+    path('manager/templates/<int:template_id>/edit/', views.manager_template_edit, name='manager_template_edit'),
+    path('manager/templates/<int:template_id>/preview/', views.manager_template_preview, name='manager_template_preview'),
+    path('manager/templates/<int:template_id>/delete/', views.manager_template_delete, name='manager_template_delete'),
 
     # Authentication routes
     path('signup/', views.signup, name='signup'),
