@@ -56,7 +56,7 @@ python manage.py migrate
 
 # Apply specific migration for image field length
 echo "Applying image field migration..."
-python manage.py migrate events 0010_increase_image_field_length
+python manage.py migrate events 0011_increase_image_field_length
 
 # Create cache table for database cache backend
 echo "Creating cache table..."

@@ -4,7 +4,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('events', '0009_alter_booking_status'),  # Update this to match your latest migration
+        ('events', '0010_newsletter_alter_activitylog_action_type_and_more'),  # Updated to match existing migration
     ]
 
     operations = [
