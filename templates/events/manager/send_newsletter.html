@@ -1,6 +1,11 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% comment %}
+This template is designed to be robust and work even if there are issues with the database or models.
+It includes fallbacks for all dynamic content.
+{% endcomment %}
+
 {% block title %}Send Newsletter - MyDay{% endblock %}
 
 {% block extra_head %}
@@ -67,8 +72,8 @@
                                 <p class="text-muted mb-0">Your newsletter reach</p>
                             </div>
                             <div class="text-end">
-                                <div class="subscriber-count text-primary">{{ active_subscribers }} Active Subscribers</div>
-                                <small class="text-muted">Out of {{ total_subscribers }} total subscribers</small>
+                                <div class="subscriber-count text-primary">{{ active_subscribers|default:"0" }} Active Subscribers</div>
+                                <small class="text-muted">Out of {{ total_subscribers|default:"0" }} total subscribers</small>
                             </div>
                         </div>
                     </div>
@@ -107,6 +112,8 @@
                                     <option value="0">No Template (Custom Content Only)</option>
                                     {% for template in templates %}
                                     <option value="{{ template.id }}" {% if template.is_default %}selected{% endif %}>{{ template.name }}</option>
+                                    {% empty %}
+                                    <option value="0" disabled>No templates available</option>
                                     {% endfor %}
                                 </select>
                             </div>
@@ -144,7 +151,7 @@
                                 <div class="form-check">
                                     <input class="form-check-input" type="radio" name="recipient_option" id="all_subscribers" value="all" checked>
                                     <label class="form-check-label" for="all_subscribers">
-                                        Send to all active subscribers ({{ active_subscribers }})
+                                        Send to all active subscribers ({{ active_subscribers|default:"0" }})
                                     </label>
                                 </div>
                                 <div class="form-check">
@@ -153,6 +160,12 @@
                                         Send only to subscribers from the last 30 days ({{ recent_subscribers|default:"0" }})
                                     </label>
                                 </div>
+                                {% if active_subscribers == 0 %}
+                                <div class="alert alert-warning mt-3">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    No active subscribers found. You need to have subscribers before sending newsletters.
+                                </div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -189,7 +202,7 @@
                             </div>
                             <div class="text-center mt-3">
                                 <small class="text-muted">
-                                    <i class="fas fa-info-circle me-1"></i> Sending to {{ active_subscribers }} subscribers
+                                    <i class="fas fa-info-circle me-1"></i> Sending to {{ active_subscribers|default:"0" }} subscribers
                                 </small>
                             </div>
                         </div>
@@ -209,53 +222,102 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/css/css.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialize CodeMirror for content
-        var contentEditor = CodeMirror.fromTextArea(document.getElementById('content'), {
-            mode: 'htmlmixed',
-            lineNumbers: true,
-            theme: 'default',
-            lineWrapping: true
-        });
+        try {
+            // Initialize CodeMirror for content if available
+            var contentTextarea = document.getElementById('content');
+            var contentEditor;
 
-        // Show/hide test email field
-        document.getElementById('send_test').addEventListener('change', function() {
-            const testEmailField = document.getElementById('test_email_field');
-            if (this.checked) {
-                testEmailField.classList.remove('d-none');
+            if (contentTextarea && typeof CodeMirror !== 'undefined') {
+                try {
+                    contentEditor = CodeMirror.fromTextArea(contentTextarea, {
+                        mode: 'htmlmixed',
+                        lineNumbers: true,
+                        theme: 'default',
+                        lineWrapping: true
+                    });
+                } catch (e) {
+                    console.error('Error initializing CodeMirror:', e);
+                    // Fallback to regular textarea
+                    contentEditor = {
+                        getValue: function() {
+                            return contentTextarea.value;
+                        }
+                    };
+                }
             } else {
-                testEmailField.classList.add('d-none');
+                // Fallback if CodeMirror is not available
+                contentEditor = {
+                    getValue: function() {
+                        return contentTextarea ? contentTextarea.value : '';
+                    }
+                };
             }
-        });
 
-        // Preview button functionality
-        document.getElementById('previewBtn').addEventListener('click', function() {
-            var subject = document.getElementById('subject').value || 'Newsletter Subject';
-            var content = contentEditor.getValue() || 'Your newsletter content will appear here.';
-            var templateId = document.getElementById('template').value;
+            // Show/hide test email field
+            var sendTestCheckbox = document.getElementById('send_test');
+            var testEmailField = document.getElementById('test_email_field');
 
-            // Simple preview - in a real app, you'd make an AJAX call to render the actual template
-            var previewHtml = `
-                <div class="preview-container">
-                    <div class="preview-header bg-gradient-primary text-white p-3 text-center rounded-top">
-                        <h3>${subject}</h3>
-                    </div>
-                    <div class="preview-body p-3 bg-white rounded-bottom">
-                        <p>Hello there,</p>
-                        <div>${content}</div>
-                        <p class="mt-3">Best regards,<br>MyDay Events Team</p>
-                    </div>
-                </div>
-            `;
-
-            document.getElementById('preview').innerHTML = previewHtml;
-        });
-
-        // Confirm before sending
-        document.getElementById('sendBtn').addEventListener('click', function(e) {
-            if (!confirm('Are you sure you want to send this newsletter to all selected subscribers?')) {
-                e.preventDefault();
+            if (sendTestCheckbox && testEmailField) {
+                sendTestCheckbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        testEmailField.classList.remove('d-none');
+                    } else {
+                        testEmailField.classList.add('d-none');
+                    }
+                });
             }
-        });
+
+            // Preview button functionality
+            var previewBtn = document.getElementById('previewBtn');
+            var previewContainer = document.getElementById('preview');
+
+            if (previewBtn && previewContainer) {
+                previewBtn.addEventListener('click', function() {
+                    var subjectInput = document.getElementById('subject');
+                    var templateSelect = document.getElementById('template');
+
+                    var subject = (subjectInput && subjectInput.value) ? subjectInput.value : 'Newsletter Subject';
+                    var content = contentEditor.getValue() || 'Your newsletter content will appear here.';
+                    var templateId = (templateSelect && templateSelect.value) ? templateSelect.value : '0';
+
+                    // Simple preview - in a real app, you'd make an AJAX call to render the actual template
+                    var previewHtml = `
+                        <div class="preview-container">
+                            <div class="preview-header bg-gradient-primary text-white p-3 text-center rounded-top">
+                                <h3>${subject}</h3>
+                            </div>
+                            <div class="preview-body p-3 bg-white rounded-bottom">
+                                <p>Hello there,</p>
+                                <div>${content}</div>
+                                <p class="mt-3">Best regards,<br>MyDay Events Team</p>
+                            </div>
+                        </div>
+                    `;
+
+                    previewContainer.innerHTML = previewHtml;
+                });
+            }
+
+            // Confirm before sending
+            var sendBtn = document.getElementById('sendBtn');
+            if (sendBtn) {
+                sendBtn.addEventListener('click', function(e) {
+                    var activeSubscribers = {{ active_subscribers|default:"0" }};
+
+                    if (activeSubscribers <= 0) {
+                        alert('There are no active subscribers to send to.');
+                        e.preventDefault();
+                        return;
+                    }
+
+                    if (!confirm('Are you sure you want to send this newsletter to all selected subscribers?')) {
+                        e.preventDefault();
+                    }
+                });
+            }
+        } catch (e) {
+            console.error('Error initializing newsletter form:', e);
+        }
     });
 </script>
 {% endblock %}
