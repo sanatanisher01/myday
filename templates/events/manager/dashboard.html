@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load custom_filters %}
 
 {% block title %}Manager Dashboard - MyDay{% endblock %}
 
@@ -261,7 +262,7 @@
                             {% for booking in recent_bookings %}
                             <div class="list-group-item list-hover-item">
                                 <div class="d-flex w-100 justify-content-between">
-                                    <h6 class="mb-1 text-truncate">{{ booking.user.username }} - {{ booking.subevent.name }}</h6>
+                                    <h6 class="mb-1 text-truncate">{{ booking.user.username }} - {% if booking.subevent %}{{ booking.subevent.name }}{% else %}Unknown Event{% endif %}</h6>
                                     <small class="text-muted">{{ booking.created_at|date:"M d, Y" }}</small>
                                 </div>
                                 <p class="mb-1 small">
@@ -343,12 +344,12 @@
                                         <div class="timeline-dot bg-gradient-primary"></div>
                                         <div class="timeline-content">
                                             <div class="timeline-header">
-                                                <h6 class="mb-0">{{ activity.action_type }}</h6>
+                                                <h6 class="mb-0">{{ activity.action_type|format_action_type }}</h6>
                                                 <small class="text-muted">{{ activity.timestamp|date:"M d, Y H:i" }}</small>
                                             </div>
                                             <div class="timeline-body">
                                                 <p>{{ activity.description }}</p>
-                                                {% if activity.user %}
+                                                {% if activity.user and activity.user.username %}
                                                 <small class="text-muted">By: {{ activity.user.username }}</small>
                                                 {% endif %}
                                             </div>

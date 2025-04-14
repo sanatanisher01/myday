@@ -1111,36 +1111,46 @@ def admin_add_user(request):
 @user_passes_test(lambda u: u.is_staff or u.is_superuser)
 def manager_dashboard(request):
     """Manager dashboard with overview of site data"""
-    # Count statistics for dashboard
-    event_count = Event.objects.count()
-    subevent_count = SubEvent.objects.count()
-    booking_count = Booking.objects.count()
-    user_count = User.objects.filter(is_staff=False, is_superuser=False).count()
+    try:
+        # Count statistics for dashboard
+        event_count = Event.objects.count()
+        subevent_count = SubEvent.objects.count()
+        booking_count = Booking.objects.count()
+        user_count = User.objects.filter(is_staff=False, is_superuser=False).count()
 
-    # Recent items
-    recent_bookings = Booking.objects.all().order_by('-created_at')[:5]
-    recent_events = Event.objects.all().order_by('-created_at')[:5]
-    recent_users = User.objects.filter(is_staff=False, is_superuser=False).order_by('-date_joined')[:5]
+        # Recent items - use select_related to avoid N+1 queries
+        recent_bookings = Booking.objects.select_related('user', 'subevent', 'subevent__event').order_by('-created_at')[:5]
+        recent_events = Event.objects.all().order_by('-created_at')[:5]
+        recent_users = User.objects.filter(is_staff=False, is_superuser=False).order_by('-date_joined')[:5]
 
-    # Get recent system activities
-    recent_activities = ActivityLog.objects.all().order_by('-timestamp')[:10]
+        # Get recent system activities
+        recent_activities = ActivityLog.objects.select_related('user').all().order_by('-timestamp')[:10]
 
-    # Calculate revenue
-    total_revenue = Booking.objects.filter(status='confirmed').aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+        # Calculate revenue
+        total_revenue = Booking.objects.filter(status='confirmed').aggregate(Sum('total_amount'))['total_amount__sum'] or 0
 
-    context = {
-        'event_count': event_count,
-        'subevent_count': subevent_count,
-        'booking_count': booking_count,
-        'user_count': user_count,
-        'recent_bookings': recent_bookings,
-        'recent_events': recent_events,
-        'recent_users': recent_users,
-        'recent_activities': recent_activities,
-        'total_revenue': total_revenue,
-    }
+        context = {
+            'event_count': event_count,
+            'subevent_count': subevent_count,
+            'booking_count': booking_count,
+            'user_count': user_count,
+            'recent_bookings': recent_bookings,
+            'recent_events': recent_events,
+            'recent_users': recent_users,
+            'recent_activities': recent_activities,
+            'total_revenue': total_revenue,
+        }
 
-    return render(request, 'events/manager/dashboard.html', context)
+        return render(request, 'events/manager/dashboard.html', context)
+    except Exception as e:
+        # Log the error
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Error in manager_dashboard: {str(e)}\n{error_details}")
+
+        # Return a simplified dashboard with error message
+        messages.error(request, f"An error occurred while loading the dashboard: {str(e)}")
+        return render(request, 'events/manager/dashboard_error.html', {'error': str(e)})
 
 @login_required
 @user_passes_test(lambda u: u.is_staff or u.is_superuser)

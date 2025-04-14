@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard Error - MyDay{% endblock %}
+
+{% block content %}
+<section class="py-4">
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h1 class="mb-0 text-gradient-primary">Manager Dashboard</h1>
+                    <div>
+                        <a href="{% url 'home' %}" class="btn btn-modern btn-outline-secondary">
+                            <i class="fas fa-home"></i> Website Home
+                        </a>
+                    </div>
+                </div>
+                <hr class="gradient-line">
+            </div>
+        </div>
+        
+        <!-- Error Card -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-danger">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Dashboard Error</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center py-5">
+                            <i class="fas fa-exclamation-circle fa-5x text-danger mb-4"></i>
+                            <h3 class="mb-3">We encountered an error loading the dashboard</h3>
+                            <p class="mb-4">Our team has been notified and is working to fix this issue. Please try again later.</p>
+                            <div class="alert alert-secondary">
+                                <strong>Error details:</strong> {{ error }}
+                            </div>
+                            <div class="mt-4">
+                                <a href="{% url 'manager_dashboard' %}" class="btn btn-primary me-2">
+                                    <i class="fas fa-sync-alt me-2"></i> Retry Loading Dashboard
+                                </a>
+                                <a href="{% url 'manager_events' %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-calendar-alt me-2"></i> Go to Events
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Links -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-link me-2"></i>Management Links</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <a href="{% url 'manager_events' %}" class="btn btn-outline-primary w-100">
+                                    <i class="fas fa-calendar-alt me-2"></i> Manage Events
+                                </a>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <a href="{% url 'manager_subevents' %}" class="btn btn-outline-success w-100">
+                                    <i class="fas fa-list-alt me-2"></i> Manage Subevents
+                                </a>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <a href="{% url 'manager_bookings' %}" class="btn btn-outline-info w-100">
+                                    <i class="fas fa-ticket-alt me-2"></i> Manage Bookings
+                                </a>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <a href="{% url 'manager_users' %}" class="btn btn-outline-warning w-100">
+                                    <i class="fas fa-users me-2"></i> Manage Users
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
