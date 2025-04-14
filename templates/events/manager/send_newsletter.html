@@ -16,22 +16,33 @@ It includes fallbacks for all dynamic content.
         height: 300px;
         border: 1px solid #ddd;
         border-radius: 4px;
+        font-family: 'Courier New', monospace;
+        font-size: 14px;
+    }
+    .custom-editor {
+        border: 1px solid #4e73df;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(78, 115, 223, 0.1);
     }
     .template-preview {
         border: 1px solid #ddd;
-        border-radius: 4px;
-        padding: 15px;
+        border-radius: 8px;
+        padding: 20px;
         background-color: #f9f9f9;
-        max-height: 300px;
+        max-height: 400px;
         overflow-y: auto;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     }
     .subscriber-count {
         font-size: 1.2rem;
         font-weight: 600;
+        color: #4e73df;
     }
     .template-card {
         cursor: pointer;
         transition: all 0.3s ease;
+        border-radius: 8px;
+        overflow: hidden;
     }
     .template-card:hover {
         transform: translateY(-5px);
@@ -40,6 +51,45 @@ It includes fallbacks for all dynamic content.
     .template-card.selected {
         border: 2px solid #4e73df;
         box-shadow: 0 5px 15px rgba(78, 115, 223, 0.25);
+    }
+    .card {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        border: none;
+    }
+    .card-header {
+        border-bottom: none;
+        padding: 15px 20px;
+    }
+    .card-body {
+        padding: 20px;
+    }
+    .form-control, .form-select {
+        border-radius: 6px;
+        padding: 10px 15px;
+        border: 1px solid #e0e0e0;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #4e73df;
+        box-shadow: 0 0 0 0.25rem rgba(78, 115, 223, 0.25);
+    }
+    .btn-modern {
+        border-radius: 6px;
+        padding: 10px 20px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    .btn-gradient-primary {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+        border: none;
+    }
+    .btn-gradient-primary:hover {
+        background: linear-gradient(135deg, #224abe 0%, #1a3a8f 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(78, 115, 223, 0.3);
+        color: white;
     }
 </style>
 {% endblock %}
@@ -132,7 +182,7 @@ It includes fallbacks for all dynamic content.
 
                             <div class="mb-3">
                                 <label for="content" class="form-label">Custom Message</label>
-                                <textarea class="form-control" id="content" name="content" rows="6" placeholder="Enter your newsletter content here..."></textarea>
+                                <textarea class="form-control" id="content" name="content" rows="10" placeholder="Enter your newsletter content here..."></textarea>
                                 <small class="text-muted">
                                     This content will be inserted into the selected template. If no template is selected, this will be the entire email body.
                                 </small>
@@ -241,12 +291,22 @@ It includes fallbacks for all dynamic content.
 
             if (contentTextarea && typeof CodeMirror !== 'undefined') {
                 try {
+                    // Use a simpler mode for the custom message (not HTML)
                     contentEditor = CodeMirror.fromTextArea(contentTextarea, {
-                        mode: 'htmlmixed',
+                        mode: 'text/plain',
                         lineNumbers: true,
                         theme: 'default',
-                        lineWrapping: true
+                        lineWrapping: true,
+                        viewportMargin: Infinity,
+                        placeholder: 'Enter your newsletter content here...',
+                        autofocus: true
                     });
+
+                    // Set height for better visibility
+                    contentEditor.setSize(null, 200);
+
+                    // Add custom class for styling
+                    contentEditor.getWrapperElement().classList.add('custom-editor');
                 } catch (e) {
                     console.error('Error initializing CodeMirror:', e);
                     // Fallback to regular textarea

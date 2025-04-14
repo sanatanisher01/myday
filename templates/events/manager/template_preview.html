@@ -19,16 +19,61 @@
     }
     .template-info {
         background-color: #f8f9fa;
-        border-radius: 8px;
-        padding: 20px;
+        border-radius: 10px;
+        padding: 25px;
         margin-bottom: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
     }
     .template-info-item {
-        margin-bottom: 10px;
+        margin-bottom: 15px;
+        border-bottom: 1px solid #e9ecef;
+        padding-bottom: 15px;
+    }
+    .template-info-item:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
     }
     .template-info-label {
-        font-weight: bold;
-        color: #495057;
+        font-weight: 600;
+        color: #4e73df;
+        margin-bottom: 5px;
+    }
+    .card {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        border: none;
+    }
+    .card-header {
+        border-bottom: none;
+        padding: 15px 20px;
+    }
+    .card-body {
+        padding: 20px;
+    }
+    .btn-modern {
+        border-radius: 6px;
+        padding: 10px 20px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    .btn-gradient-primary {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+        border: none;
+    }
+    .btn-gradient-primary:hover {
+        background: linear-gradient(135deg, #224abe 0%, #1a3a8f 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(78, 115, 223, 0.3);
+        color: white;
+    }
+    .alert-info {
+        background-color: #e8f4fd;
+        border-color: #c5e7fb;
+        color: #0c63e4;
+        border-radius: 8px;
     }
 </style>
 {% endblock %}
@@ -52,22 +97,22 @@
                 <hr class="gradient-line">
             </div>
         </div>
-        
+
         <div class="row mb-4">
             <div class="col-lg-4">
                 <div class="template-info">
                     <h4 class="mb-4">Template Information</h4>
-                    
+
                     <div class="template-info-item">
                         <div class="template-info-label">Name:</div>
                         <div>{{ template.name }}</div>
                     </div>
-                    
+
                     <div class="template-info-item">
                         <div class="template-info-label">Subject:</div>
                         <div>{{ template.subject }}</div>
                     </div>
-                    
+
                     <div class="template-info-item">
                         <div class="template-info-label">Default Template:</div>
                         <div>
@@ -78,18 +123,18 @@
                             {% endif %}
                         </div>
                     </div>
-                    
+
                     <div class="template-info-item">
                         <div class="template-info-label">Created:</div>
                         <div>{{ template.created_at|date:"F j, Y" }}</div>
                     </div>
-                    
+
                     <div class="template-info-item">
                         <div class="template-info-label">Last Updated:</div>
                         <div>{{ template.updated_at|date:"F j, Y" }}</div>
                     </div>
                 </div>
-                
+
                 <div class="card mb-4">
                     <div class="card-header bg-gradient-info text-white">
                         <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>About This Preview</h5>
@@ -108,7 +153,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="col-lg-8">
                 <div class="card">
                     <div class="card-header bg-gradient-primary text-white">
@@ -116,7 +161,7 @@
                     </div>
                     <div class="card-body p-0">
                         <div class="preview-container">
-                            <iframe id="previewFrame" class="preview-frame"></iframe>
+                            <iframe id="previewFrame" class="preview-frame" title="Newsletter Template Preview" aria-label="Preview of the newsletter template"></iframe>
                         </div>
                     </div>
                 </div>
@@ -131,13 +176,13 @@
     document.addEventListener('DOMContentLoaded', function() {
         var content = `{{ template_content|safe }}`;
         var iframe = document.getElementById('previewFrame');
-        
+
         iframe.onload = function() {
             iframe.contentDocument.open();
             iframe.contentDocument.write(content);
             iframe.contentDocument.close();
         };
-        
+
         if (iframe.contentDocument) {
             iframe.contentDocument.open();
             iframe.contentDocument.write(content);

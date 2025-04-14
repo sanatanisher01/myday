@@ -1,6 +1,100 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block extra_head %}
+<style>
+    .card {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        border: none;
+    }
+    .card-header {
+        border-bottom: none;
+        padding: 15px 20px;
+    }
+    .card-body {
+        padding: 20px;
+    }
+    .table {
+        border-collapse: separate;
+        border-spacing: 0 8px;
+    }
+    .table thead th {
+        border-bottom: none;
+        font-weight: 600;
+        color: #4e73df;
+    }
+    .table tbody tr {
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+    .table tbody tr:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .table tbody td {
+        padding: 15px;
+        vertical-align: middle;
+        border-top: none;
+    }
+    .table tbody tr td:first-child {
+        border-top-left-radius: 8px;
+        border-bottom-left-radius: 8px;
+    }
+    .table tbody tr td:last-child {
+        border-top-right-radius: 8px;
+        border-bottom-right-radius: 8px;
+    }
+    .badge {
+        padding: 6px 10px;
+        font-weight: 500;
+        border-radius: 6px;
+    }
+    .btn-modern {
+        border-radius: 6px;
+        padding: 10px 20px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    .btn-gradient-primary {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+        border: none;
+    }
+    .btn-gradient-primary:hover {
+        background: linear-gradient(135deg, #224abe 0%, #1a3a8f 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(78, 115, 223, 0.3);
+        color: white;
+    }
+    .btn-gradient-success {
+        background: linear-gradient(135deg, #1cc88a 0%, #13855c 100%);
+        color: white;
+        border: none;
+    }
+    .btn-gradient-success:hover {
+        background: linear-gradient(135deg, #13855c 0%, #0f6848 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(28, 200, 138, 0.3);
+        color: white;
+    }
+    .btn-sm {
+        padding: 5px 10px;
+        font-size: 0.875rem;
+    }
+    .btn-group .btn {
+        margin-right: 5px;
+    }
+    .alert-info {
+        background-color: #e8f4fd;
+        border-color: #c5e7fb;
+        color: #0c63e4;
+    }
+</style>
+{% endblock %}
+
 {% block title %}Newsletter Templates - MyDay{% endblock %}
 
 {% block content %}
@@ -22,7 +116,7 @@
                 <hr class="gradient-line">
             </div>
         </div>
-        
+
         {% if messages %}
         <div class="row mb-4">
             <div class="col-12">
@@ -35,7 +129,7 @@
             </div>
         </div>
         {% endif %}
-        
+
         <div class="row mb-4">
             <div class="col-12">
                 <div class="card">
@@ -78,13 +172,13 @@
                                                 <a href="{% url 'manager_template_preview' template.id %}" class="btn btn-sm btn-outline-info">
                                                     <i class="fas fa-eye"></i> Preview
                                                 </a>
-                                                <button type="button" class="btn btn-sm btn-outline-danger" 
-                                                        data-bs-toggle="modal" 
+                                                <button type="button" class="btn btn-sm btn-outline-danger"
+                                                        data-bs-toggle="modal"
                                                         data-bs-target="#deleteModal{{ template.id }}">
                                                     <i class="fas fa-trash"></i> Delete
                                                 </button>
                                             </div>
-                                            
+
                                             <!-- Delete Modal -->
                                             <div class="modal fade" id="deleteModal{{ template.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ template.id }}" aria-hidden="true">
                                                 <div class="modal-dialog">
@@ -124,7 +218,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="row">
             <div class="col-12">
                 <div class="card">
@@ -139,7 +233,7 @@
                             <li>Use HTML to customize the appearance of your newsletters</li>
                             <li>Include variables that will be replaced with actual content when sending</li>
                         </ul>
-                        
+
                         <div class="alert alert-info">
                             <h6><i class="fas fa-lightbulb me-2"></i>Available Variables</h6>
                             <p class="mb-2">You can use these variables in your templates:</p>
