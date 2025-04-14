@@ -17,7 +17,7 @@ if [ -z "$EMAIL_HOST_USER" ] || [ -z "$EMAIL_HOST_PASSWORD" ] || [ -z "$DEFAULT_
     export EMAIL_HOST_USER="aryansanatani01@gmail.com"
     # You need to generate an app password for your Gmail account
     # Go to Google Account > Security > 2-Step Verification > App passwords
-    export EMAIL_HOST_PASSWORD="your_app_password_here"
+    export EMAIL_HOST_PASSWORD="quoy aufm yllf hxcg"  # Replace with your actual app password
     export DEFAULT_FROM_EMAIL="aryansanatani01@gmail.com"
 fi
 
