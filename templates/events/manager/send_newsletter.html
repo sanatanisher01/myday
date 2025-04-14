@@ -24,6 +24,46 @@ It includes fallbacks for all dynamic content.
         border-radius: 8px;
         box-shadow: 0 2px 10px rgba(78, 115, 223, 0.1);
     }
+    .content-editor-container {
+        position: relative;
+        border: 1px solid #4e73df;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(78, 115, 223, 0.1);
+    }
+    .content-editor-container .CodeMirror {
+        height: 250px;
+        font-size: 16px;
+    }
+    .alert-info {
+        background-color: #e8f4fd;
+        border-color: #c5e7fb;
+        color: #0c63e4;
+        border-radius: 8px;
+    }
+    .editor-toolbar {
+        display: flex;
+        gap: 5px;
+        padding: 8px;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #e0e0e0;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+    .editor-toolbar button {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+    }
+    .editor-toolbar button:hover {
+        background-color: #4e73df;
+        color: white;
+        border-color: #4e73df;
+    }
     .template-preview {
         border: 1px solid #ddd;
         border-radius: 8px;
@@ -182,10 +222,14 @@ It includes fallbacks for all dynamic content.
 
                             <div class="mb-3">
                                 <label for="content" class="form-label">Custom Message</label>
-                                <textarea class="form-control" id="content" name="content" rows="10" placeholder="Enter your newsletter content here..."></textarea>
-                                <small class="text-muted">
-                                    This content will be inserted into the selected template. If no template is selected, this will be the entire email body.
-                                </small>
+                                <div class="content-editor-container">
+                                    <textarea class="form-control" id="content" name="content" rows="10" placeholder="Enter your newsletter content here..."></textarea>
+                                </div>
+                                <div class="alert alert-info mt-2">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <strong>How this works:</strong> Your custom message will be inserted into the selected template.
+                                    You can use plain text or basic HTML formatting. This is the main content your subscribers will see.
+                                </div>
                             </div>
 
                             <div class="mb-3">
@@ -291,22 +335,79 @@ It includes fallbacks for all dynamic content.
 
             if (contentTextarea && typeof CodeMirror !== 'undefined') {
                 try {
-                    // Use a simpler mode for the custom message (not HTML)
+                    // Use a rich text editor for the custom message
                     contentEditor = CodeMirror.fromTextArea(contentTextarea, {
-                        mode: 'text/plain',
+                        mode: 'htmlmixed',  // Allow HTML formatting
                         lineNumbers: true,
                         theme: 'default',
                         lineWrapping: true,
                         viewportMargin: Infinity,
                         placeholder: 'Enter your newsletter content here...',
-                        autofocus: true
+                        autofocus: true,
+                        autoCloseTags: true,
+                        autoCloseBrackets: true,
+                        matchTags: {bothTags: true},
+                        extraKeys: {
+                            'Ctrl-Space': 'autocomplete',
+                            'Tab': function(cm) {
+                                var spaces = Array(cm.getOption('indentUnit') + 1).join(' ');
+                                cm.replaceSelection(spaces);
+                            }
+                        }
                     });
 
                     // Set height for better visibility
-                    contentEditor.setSize(null, 200);
+                    contentEditor.setSize(null, 250);
 
                     // Add custom class for styling
                     contentEditor.getWrapperElement().classList.add('custom-editor');
+
+                    // Add a toolbar with common formatting options
+                    var toolbar = document.createElement('div');
+                    toolbar.className = 'editor-toolbar';
+                    toolbar.innerHTML = `
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-format="bold"><i class="fas fa-bold"></i></button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-format="italic"><i class="fas fa-italic"></i></button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-format="link"><i class="fas fa-link"></i></button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-format="ul"><i class="fas fa-list-ul"></i></button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-format="ol"><i class="fas fa-list-ol"></i></button>
+                    `;
+
+                    // Insert toolbar before the editor
+                    contentTextarea.parentNode.insertBefore(toolbar, contentTextarea.parentNode.firstChild);
+
+                    // Add event listeners to toolbar buttons
+                    toolbar.querySelectorAll('button').forEach(function(button) {
+                        button.addEventListener('click', function() {
+                            var format = this.getAttribute('data-format');
+                            var doc = contentEditor.getDoc();
+                            var cursor = doc.getCursor();
+                            var selection = doc.getSelection();
+
+                            switch(format) {
+                                case 'bold':
+                                    doc.replaceSelection('<strong>' + selection + '</strong>');
+                                    break;
+                                case 'italic':
+                                    doc.replaceSelection('<em>' + selection + '</em>');
+                                    break;
+                                case 'link':
+                                    var url = prompt('Enter URL:', 'https://');
+                                    if (url) {
+                                        doc.replaceSelection('<a href="' + url + '">' + (selection || 'link text') + '</a>');
+                                    }
+                                    break;
+                                case 'ul':
+                                    doc.replaceSelection('<ul>\n  <li>' + selection + '</li>\n</ul>');
+                                    break;
+                                case 'ol':
+                                    doc.replaceSelection('<ol>\n  <li>' + selection + '</li>\n</ol>');
+                                    break;
+                            }
+
+                            contentEditor.focus();
+                        });
+                    });
                 } catch (e) {
                     console.error('Error initializing CodeMirror:', e);
                     // Fallback to regular textarea

@@ -1401,63 +1401,176 @@ def manager_send_newsletter(request):
         active_subscribers = 0
         recent_subscribers = 0
 
-        # Check if the tables exist
+        # Check if the tables exist and create them if they don't
         template_table_exists = False
         newsletter_table_exists = False
 
         try:
-            with connection.cursor() as cursor:
-                # Check if NewsletterTemplate table exists
-                if connection.vendor == 'postgresql':
-                    cursor.execute("""
-                        SELECT EXISTS (
-                            SELECT FROM information_schema.tables
-                            WHERE table_name = 'events_newslettertemplate'
-                        );
-                    """)
-                    template_table_exists = cursor.fetchone()[0]
+            # First try to access the models directly - this will work if the tables exist
+            try:
+                # Try to count the templates - if this works, the table exists
+                template_count = NewsletterTemplate.objects.count()
+                template_table_exists = True
 
-                    # Check if Newsletter table exists
-                    cursor.execute("""
-                        SELECT EXISTS (
-                            SELECT FROM information_schema.tables
-                            WHERE table_name = 'events_newsletter'
-                        );
-                    """)
-                    newsletter_table_exists = cursor.fetchone()[0]
-                else:  # SQLite
-                    cursor.execute("""
-                        SELECT COUNT(*) FROM sqlite_master
-                        WHERE type='table' AND name='events_newslettertemplate';
-                    """)
-                    template_table_exists = cursor.fetchone()[0] > 0
+                # Try to get all templates
+                templates = NewsletterTemplate.objects.all().order_by('-is_default', '-updated_at')
 
-                    cursor.execute("""
-                        SELECT COUNT(*) FROM sqlite_master
-                        WHERE type='table' AND name='events_newsletter';
-                    """)
-                    newsletter_table_exists = cursor.fetchone()[0] > 0
+                # If we don't have any templates, create a default one
+                if template_count == 0:
+                    default_template = NewsletterTemplate(
+                        name="Default Newsletter Template",
+                        subject="Newsletter from MyDay Events",
+                        content="""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyDay Events Newsletter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .content {
+            padding: 20px;
+        }
+
+        .footer {
+            background-color: #f5f5f5;
+            padding: 20px;
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .button {
+            display: inline-block;
+            background-color: #4e73df;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>{{ subject }}</h1>
+        </div>
+
+        <div class="content">
+            <p>Hello {{ name|default:"there" }},</p>
+
+            <div>{{ custom_message }}</div>
+
+            <p>Thank you for subscribing to our newsletter!</p>
+
+            <div style="text-align: center;">
+                <a href="https://myday-kokr.onrender.com/events/" class="button">Visit Our Website</a>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Best regards,<br>MyDay Events Team</p>
+            <p>&copy; 2024 MyDay Events. All rights reserved.</p>
+            <p>
+                <a href="{{ unsubscribe_url }}">Unsubscribe</a> from this newsletter
+            </p>
+        </div>
+    </div>
+</body>
+</html>""",
+                        is_default=True
+                    )
+                    default_template.save()
+                    messages.success(request, "Created a default newsletter template.")
+                    templates = NewsletterTemplate.objects.all().order_by('-is_default', '-updated_at')
+            except Exception as e:
+                # If we get here, the tables might not exist
+                # Let's check if they exist using SQL
+                with connection.cursor() as cursor:
+                    # Check if NewsletterTemplate table exists
+                    if connection.vendor == 'postgresql':
+                        cursor.execute("""
+                            SELECT EXISTS (
+                                SELECT FROM information_schema.tables
+                                WHERE table_name = 'events_newslettertemplate'
+                            );
+                        """)
+                        template_table_exists = cursor.fetchone()[0]
+
+                        # Check if Newsletter table exists
+                        cursor.execute("""
+                            SELECT EXISTS (
+                                SELECT FROM information_schema.tables
+                                WHERE table_name = 'events_newsletter'
+                            );
+                        """)
+                        newsletter_table_exists = cursor.fetchone()[0]
+                    else:  # SQLite
+                        cursor.execute("""
+                            SELECT COUNT(*) FROM sqlite_master
+                            WHERE type='table' AND name='events_newslettertemplate';
+                        """)
+                        template_table_exists = cursor.fetchone()[0] > 0
+
+                        cursor.execute("""
+                            SELECT COUNT(*) FROM sqlite_master
+                            WHERE type='table' AND name='events_newsletter';
+                        """)
+                        newsletter_table_exists = cursor.fetchone()[0] > 0
+
+                if not template_table_exists:
+                    messages.warning(request, "Newsletter template table does not exist. Please run migrations first.")
+                    # Create an empty list for templates
+                    templates = []
+                else:
+                    # Table exists but we had an error accessing it
+                    messages.error(request, f"Error accessing templates: {str(e)}")
+                    templates = []
         except Exception as e:
             messages.error(request, f"Error checking database tables: {str(e)}")
-
-        # Only query if tables exist
-        if template_table_exists:
-            try:
-                templates = NewsletterTemplate.objects.all().order_by('-updated_at')
-            except Exception as e:
-                messages.error(request, f"Error fetching templates: {str(e)}")
+            templates = []
 
         # Get subscriber counts with error handling
         if newsletter_table_exists:
             try:
-                total_subscribers = Newsletter.objects.count()
-                active_subscribers = Newsletter.objects.filter(is_active=True).count()
+                # Try to access the Newsletter model
+                try:
+                    total_subscribers = Newsletter.objects.count()
+                    active_subscribers = Newsletter.objects.filter(is_active=True).count()
 
-                # Get recent subscribers (last 30 days)
-                from django.utils import timezone
-                from datetime import timedelta
-                thirty_days_ago = timezone.now() - timedelta(days=30)
-                recent_subscribers = Newsletter.objects.filter(subscribed_at__gte=thirty_days_ago, is_active=True).count()
+                    # Get recent subscribers (last 30 days)
+                    from django.utils import timezone
+                    from datetime import timedelta
+                    thirty_days_ago = timezone.now() - timedelta(days=30)
+                    recent_subscribers = Newsletter.objects.filter(subscribed_at__gte=thirty_days_ago, is_active=True).count()
+                except Exception as e:
+                    # If we get here, the table might exist but there's an issue with the model
+                    messages.warning(request, f"Error accessing newsletter subscribers: {str(e)}")
             except Exception as e:
                 messages.error(request, f"Error fetching subscriber counts: {str(e)}")
 
