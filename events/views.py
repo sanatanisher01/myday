@@ -1113,28 +1113,55 @@ def admin_add_user(request):
 def manager_send_newsletter(request):
     """Send newsletter to subscribers from manager dashboard"""
     try:
+        # Check if the tables exist before trying to query them
+        from django.db import connection
+
         # Get all templates
-        try:
-            templates = NewsletterTemplate.objects.all().order_by('-updated_at')
-        except Exception as e:
-            templates = []
-            print(f"Error fetching templates: {str(e)}")
+        templates = []
+        total_subscribers = 0
+        active_subscribers = 0
+        recent_subscribers = 0
+
+        # Check if the tables exist
+        with connection.cursor() as cursor:
+            # Check if NewsletterTemplate table exists
+            cursor.execute("""
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables
+                    WHERE table_name = 'events_newslettertemplate'
+                );
+            """)
+            template_table_exists = cursor.fetchone()[0]
+
+            # Check if Newsletter table exists
+            cursor.execute("""
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables
+                    WHERE table_name = 'events_newsletter'
+                );
+            """)
+            newsletter_table_exists = cursor.fetchone()[0]
+
+        # Only query if tables exist
+        if template_table_exists:
+            try:
+                templates = NewsletterTemplate.objects.all().order_by('-updated_at')
+            except Exception as e:
+                print(f"Error fetching templates: {str(e)}")
 
         # Get subscriber counts with error handling
-        try:
-            total_subscribers = Newsletter.objects.count()
-            active_subscribers = Newsletter.objects.filter(is_active=True).count()
+        if newsletter_table_exists:
+            try:
+                total_subscribers = Newsletter.objects.count()
+                active_subscribers = Newsletter.objects.filter(is_active=True).count()
 
-            # Get recent subscribers (last 30 days)
-            from django.utils import timezone
-            from datetime import timedelta
-            thirty_days_ago = timezone.now() - timedelta(days=30)
-            recent_subscribers = Newsletter.objects.filter(subscribed_at__gte=thirty_days_ago, is_active=True).count()
-        except Exception as e:
-            total_subscribers = 0
-            active_subscribers = 0
-            recent_subscribers = 0
-            print(f"Error fetching subscriber counts: {str(e)}")
+                # Get recent subscribers (last 30 days)
+                from django.utils import timezone
+                from datetime import timedelta
+                thirty_days_ago = timezone.now() - timedelta(days=30)
+                recent_subscribers = Newsletter.objects.filter(subscribed_at__gte=thirty_days_ago, is_active=True).count()
+            except Exception as e:
+                print(f"Error fetching subscriber counts: {str(e)}")
 
         if request.method == 'POST':
             try:
@@ -1335,19 +1362,44 @@ def manager_send_newsletter(request):
 @user_passes_test(lambda u: u.is_staff or u.is_superuser)
 def manager_dashboard(request):
     """Manager dashboard with overview of site data"""
-    # Ensure newsletter template exists
-    try:
-        from django.core.management import call_command
-        call_command('ensure_newsletter_template')
-    except Exception as e:
-        print(f"Error ensuring newsletter template: {str(e)}")
+    # Check if tables exist before trying to access them
+    from django.db import connection
+    subscriber_count = 0
+
+    # Check if Newsletter table exists
+    with connection.cursor() as cursor:
+        try:
+            cursor.execute("""
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables
+                    WHERE table_name = 'events_newsletter'
+                );
+            """)
+            newsletter_table_exists = cursor.fetchone()[0]
+        except Exception as e:
+            newsletter_table_exists = False
+            print(f"Error checking if newsletter table exists: {str(e)}")
+
+    # Only try to run the command if the table exists
+    if newsletter_table_exists:
+        try:
+            from django.core.management import call_command
+            call_command('ensure_newsletter_template')
+        except Exception as e:
+            print(f"Error ensuring newsletter template: {str(e)}")
 
     # Count statistics for dashboard
     event_count = Event.objects.count()
     subevent_count = SubEvent.objects.count()
     booking_count = Booking.objects.count()
     user_count = User.objects.filter(is_staff=False, is_superuser=False).count()
-    subscriber_count = Newsletter.objects.filter(is_active=True).count()
+
+    # Only count subscribers if the table exists
+    if newsletter_table_exists:
+        try:
+            subscriber_count = Newsletter.objects.filter(is_active=True).count()
+        except Exception as e:
+            print(f"Error counting subscribers: {str(e)}")
 
     # Recent items
     recent_bookings = Booking.objects.all().order_by('-created_at')[:5]
