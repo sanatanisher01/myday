@@ -1917,6 +1917,84 @@ MyDay Events Team'''
     return redirect(request.META.get('HTTP_REFERER', 'home'))
 
 
+# Test email sending
+def test_email(request):
+    """Test email sending functionality (admin only)"""
+    if not request.user.is_superuser:
+        messages.error(request, "You don't have permission to access this page.")
+        return redirect('home')
+
+    try:
+        from django.core.mail import send_mail
+        from django.conf import settings
+
+        # Create HTML content
+        html_message = f'''
+        <html>
+        <head>
+            <style>
+                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                .header {{ background-color: #4e73df; color: white; padding: 20px; text-align: center; }}
+                .content {{ padding: 20px; background-color: #f9f9f9; }}
+                .footer {{ text-align: center; margin-top: 20px; font-size: 12px; color: #777; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>Test Email</h1>
+                </div>
+                <div class="content">
+                    <p>Hello {request.user.username},</p>
+                    <p>This is a test email to verify that your email configuration is working correctly.</p>
+                    <p>If you're seeing this, it means your email setup is successful!</p>
+                    <p>Email details:</p>
+                    <ul>
+                        <li>Sent from: {settings.DEFAULT_FROM_EMAIL}</li>
+                        <li>Sent to: {request.user.email}</li>
+                        <li>Sent at: {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}</li>
+                    </ul>
+                </div>
+                <div class="footer">
+                    <p>This is an automated test email. Please do not reply.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        '''
+
+        # Plain text version
+        plain_message = f'''Hello {request.user.username},
+
+This is a test email to verify that your email configuration is working correctly.
+
+If you're seeing this, it means your email setup is successful!
+
+Email details:
+- Sent from: {settings.DEFAULT_FROM_EMAIL}
+- Sent to: {request.user.email}
+- Sent at: {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+This is an automated test email. Please do not reply.'''
+
+        # Send email
+        send_mail(
+            subject='MyDay Events - Email Test',
+            message=plain_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[request.user.email],
+            fail_silently=False,
+            html_message=html_message
+        )
+
+        messages.success(request, f"Test email sent to {request.user.email}. Please check your inbox (and spam folder).")
+    except Exception as e:
+        messages.error(request, f"Error sending test email: {str(e)}")
+
+    return redirect('admin_dashboard')
+
+
 # Media file serving
 def serve_media_file(request, path):
     """Serve media files in production environment"""

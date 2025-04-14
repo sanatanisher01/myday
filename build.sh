@@ -12,13 +12,14 @@ if [ -z "$CLOUDINARY_CLOUD_NAME" ] || [ -z "$CLOUDINARY_API_KEY" ] || [ -z "$CLO
 fi
 
 # Set email environment variables if not already set
-if [ -z "$DEFAULT_FROM_EMAIL" ]; then
+if [ -z "$EMAIL_HOST_USER" ] || [ -z "$EMAIL_HOST_PASSWORD" ] || [ -z "$DEFAULT_FROM_EMAIL" ]; then
     echo "Setting email environment variables"
+    export EMAIL_HOST_USER="aryansanatani01@gmail.com"
+    # You need to generate an app password for your Gmail account
+    # Go to Google Account > Security > 2-Step Verification > App passwords
+    export EMAIL_HOST_PASSWORD="your_app_password_here"
     export DEFAULT_FROM_EMAIL="aryansanatani01@gmail.com"
 fi
-
-# Create directory for email files
-mkdir -p sent_emails
 
 echo "Starting build process..."
 

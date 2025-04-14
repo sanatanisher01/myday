@@ -36,6 +36,7 @@ urlpatterns = [
     path('admin/reviews/', views.admin_reviews, name='admin_reviews'),
     path('admin/users/', views.admin_users, name='admin_users'),
     path('admin/users/add/', views.admin_add_user, name='admin_add_user'),
+    path('admin/test-email/', views.test_email, name='test_email'),
     # Use admin_dashboard as a temporary replacement for admin_login
     path('admin/login/', views.admin_dashboard, name='admin_login'),
     path('owner-portal/', views.admin_dashboard, name='admin_login_page'),
