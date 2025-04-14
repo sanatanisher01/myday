@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Event, SubEvent, Review, Booking, UserProfile, ContactMessage, Newsletter
+from .models import Event, SubEvent, Review, Booking, UserProfile, ContactMessage, EmailSubscription
 
 # Register your models here.
 
@@ -56,12 +56,12 @@ class ContactMessageAdmin(admin.ModelAdmin):
     mark_as_unread.short_description = "Mark selected messages as unread"
 
 
-@admin.register(Newsletter)
-class NewsletterAdmin(admin.ModelAdmin):
-    list_display = ('email', 'name', 'is_active', 'subscribed_at', 'last_sent')
-    list_filter = ('is_active', 'subscribed_at', 'last_sent')
+@admin.register(EmailSubscription)
+class EmailSubscriptionAdmin(admin.ModelAdmin):
+    list_display = ('email', 'name', 'is_active', 'subscribed_at')
+    list_filter = ('is_active', 'subscribed_at')
     search_fields = ('email', 'name')
-    readonly_fields = ('subscribed_at', 'last_sent')
+    readonly_fields = ('subscribed_at',)
 
     actions = ['mark_as_active', 'mark_as_inactive', 'send_welcome_email']
 
@@ -78,7 +78,6 @@ class NewsletterAdmin(admin.ModelAdmin):
     def send_welcome_email(self, request, queryset):
         from django.core.mail import send_mail
         from django.conf import settings
-        from django.utils import timezone
 
         count = 0
         for subscriber in queryset:
@@ -151,9 +150,7 @@ MyDay Events Team'''
                     html_message=html_message
                 )
 
-                # Update last_sent timestamp
-                subscriber.last_sent = timezone.now()
-                subscriber.save(update_fields=['last_sent'])
+                # No need to update last_sent timestamp as it's not in our model
                 count += 1
             except Exception as e:
                 self.message_user(request, f"Error sending email to {subscriber.email}: {str(e)}", level='ERROR')

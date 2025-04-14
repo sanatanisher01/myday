@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.models import User
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Submit, Row, Column
-from .models import Event, SubEvent, Review, Booking, GalleryItem, SubEventCategory, CartItem, UserMessage, Newsletter
+from .models import Event, SubEvent, Review, Booking, GalleryItem, SubEventCategory, CartItem, UserMessage, EmailSubscription
 
 class EventForm(forms.ModelForm):
     """Form for creating and updating events"""
@@ -258,10 +258,10 @@ class AddToCartForm(forms.ModelForm):
         )
 
 
-class NewsletterForm(forms.ModelForm):
-    """Form for newsletter subscription"""
+class EmailSubscriptionForm(forms.ModelForm):
+    """Form for email subscription"""
     class Meta:
-        model = Newsletter
+        model = EmailSubscription
         fields = ['email', 'name']
         widgets = {
             'email': forms.EmailInput(attrs={'placeholder': 'Your email address', 'class': 'form-control'}),
@@ -273,7 +273,7 @@ class NewsletterForm(forms.ModelForm):
         self.helper = FormHelper()
         self.helper.form_method = 'post'
         self.helper.form_show_labels = False
-        self.helper.add_input(Submit('newsletter_form', 'Subscribe', css_class='btn-primary'))
+        self.helper.add_input(Submit('subscribe_form', 'Subscribe', css_class='btn-primary'))
 
         # Make name field optional
         self.fields['name'].required = False

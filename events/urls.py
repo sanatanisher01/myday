@@ -64,8 +64,8 @@ urlpatterns = [
     path('review/<int:event_id>/add/', views.add_review, name='add_review'),
     path('booking/<int:subevent_id>/add/', views.add_booking, name='add_booking'),
 
-    # Newsletter routes
-    path('newsletter/subscribe/', views.subscribe_newsletter, name='subscribe_newsletter'),
+    # Email subscription route
+    path('subscribe/', views.subscribe_email, name='subscribe_email'),
 
     # API routes
     path('', include(router.urls)),

@@ -19,9 +19,9 @@ from django.conf import settings
 import requests
 import json
 
-from .models import Event, SubEvent, Review, Booking, UserProfile, ContactMessage, GalleryItem, SubEventCategory, CartItem, UserMessage, ActivityLog, Newsletter
+from .models import Event, SubEvent, Review, Booking, UserProfile, ContactMessage, GalleryItem, SubEventCategory, CartItem, UserMessage, ActivityLog, EmailSubscription
 from .serializers import EventSerializer, SubEventSerializer, ReviewSerializer
-from .forms import ReviewForm, BookingForm, EventForm, SubEventForm, GalleryItemForm, SubEventCategoryForm, UserMessageForm, NewsletterForm
+from .forms import ReviewForm, BookingForm, EventForm, SubEventForm, GalleryItemForm, SubEventCategoryForm, UserMessageForm, EmailSubscriptionForm
 import json
 import os
 import datetime
@@ -1915,6 +1915,129 @@ MyDay Events Team'''
                     messages.error(request, f"{error}")
 
     return redirect(request.META.get('HTTP_REFERER', 'home'))
+
+
+# Email subscription
+def subscribe_email(request):
+    """Handle email subscription"""
+    if request.method == 'POST':
+        form = EmailSubscriptionForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email']
+            name = form.cleaned_data.get('name', '')
+
+            # Check if email already exists
+            if EmailSubscription.objects.filter(email=email).exists():
+                messages.info(request, "You're already subscribed!")
+                return redirect(request.META.get('HTTP_REFERER', 'home'))
+
+            # Create email subscription
+            subscription = form.save()
+
+            # Send welcome email
+            send_welcome_email(email, name)
+
+            # Log activity
+            ActivityLog.log_activity(
+                user=request.user if request.user.is_authenticated else None,
+                action_type='email_subscription',
+                description=f"Email subscription for {email}",
+                request=request
+            )
+
+            messages.success(request, "Thank you for subscribing!")
+        else:
+            # If form is invalid
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{error}")
+
+    # Redirect back to the referring page
+    return redirect(request.META.get('HTTP_REFERER', 'home'))
+
+
+# Send welcome email to new subscriber
+def send_welcome_email(email, name=None):
+    """Send welcome email to new subscriber"""
+    if email:
+        try:
+            from django.core.mail import send_mail
+            from django.conf import settings
+
+            # Create HTML content
+            html_message = f'''
+            <html>
+            <head>
+                <style>
+                    body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                    .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                    .header {{ background-color: #4e73df; color: white; padding: 20px; text-align: center; }}
+                    .content {{ padding: 20px; background-color: #f9f9f9; }}
+                    .footer {{ text-align: center; margin-top: 20px; font-size: 12px; color: #777; }}
+                    ul {{ padding-left: 20px; }}
+                    .button {{ display: inline-block; background-color: #4e73df; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; }}
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>Thank You for Subscribing!</h1>
+                    </div>
+                    <div class="content">
+                        <p>Hello {name or "there"},</p>
+                        <p>Thank you for subscribing to our updates!</p>
+                        <p>You will now receive updates about:</p>
+                        <ul>
+                            <li>Our latest event offerings</li>
+                            <li>Special promotions and discounts</li>
+                            <li>Seasonal packages and themes</li>
+                            <li>Event planning tips and inspiration</li>
+                        </ul>
+                        <p>If you have any questions or need assistance with planning your event, feel free to contact our support team.</p>
+                        <p style="text-align: center;">
+                            <a href="https://myday-kokr.onrender.com/events/" class="button">Explore Our Events</a>
+                        </p>
+                    </div>
+                    <div class="footer">
+                        <p>Best regards,<br>MyDay Events Team</p>
+                        <p>&copy; 2024 MyDay Events. All rights reserved.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            '''
+
+            # Plain text version
+            plain_message = f'''Hello {name or "there"},
+
+Thank you for subscribing to our updates!
+
+You will now receive updates about:
+- Our latest event offerings
+- Special promotions and discounts
+- Seasonal packages and themes
+- Event planning tips and inspiration
+
+If you have any questions or need assistance with planning your event, feel free to contact our support team.
+
+Best regards,
+MyDay Events Team'''
+
+            # Send email
+            send_mail(
+                subject='Thank You for Subscribing to MyDay Events!',
+                message=plain_message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[email],
+                fail_silently=False,
+                html_message=html_message
+            )
+
+            return True
+        except Exception as e:
+            print(f"Error sending welcome email: {str(e)}")
+            return False
+    return False
 
 
 # Test email sending
