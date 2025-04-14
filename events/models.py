@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.text import slugify
+from cloudinary.models import CloudinaryField
 
 class Event(models.Model):
     """
@@ -10,7 +11,7 @@ class Event(models.Model):
     name = models.CharField(max_length=100)
     slug = models.SlugField(max_length=100, unique=True, blank=True)
     description = models.TextField()
-    image = models.ImageField(upload_to='events/', max_length=500)  # Increased max_length for full paths
+    image = CloudinaryField('image')  # Using Cloudinary for image storage
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -35,7 +36,7 @@ class SubEvent(models.Model):
     slug = models.SlugField(max_length=100, unique=True, blank=True)
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    image = models.ImageField(upload_to='subevents/', max_length=500)  # Increased max_length for full paths
+    image = CloudinaryField('image')  # Using Cloudinary for image storage
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -56,7 +57,7 @@ class SubEventCategory(models.Model):
     subevent = models.ForeignKey(SubEvent, on_delete=models.CASCADE, related_name='categories')
     name = models.CharField(max_length=100)
     description = models.TextField()
-    image = models.ImageField(upload_to='categories/')
+    image = CloudinaryField('image')  # Using Cloudinary for image storage
     price = models.DecimalField(max_digits=10, decimal_places=2)
     is_active = models.BooleanField(default=True)
     order = models.PositiveIntegerField(default=0)
@@ -108,7 +109,7 @@ class Review(models.Model):
         validators=[MinValueValidator(1), MaxValueValidator(5)]
     )
     comment = models.TextField()
-    image = models.ImageField(upload_to='reviews/', blank=True, null=True)
+    image = CloudinaryField('image', blank=True, null=True)  # Using Cloudinary for image storage
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -122,7 +123,7 @@ class Review(models.Model):
 class UserProfile(models.Model):
     """Extended user profile model"""
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
-    profile_picture = models.ImageField(upload_to='avatars/', blank=True, null=True)
+    profile_picture = CloudinaryField('profile_picture', blank=True, null=True)  # Using Cloudinary for image storage
     phone = models.CharField(max_length=20, blank=True, null=True)
     date_of_birth = models.DateField(blank=True, null=True)
     bio = models.TextField(blank=True, null=True)
@@ -184,7 +185,7 @@ class ContactMessage(models.Model):
 class GalleryItem(models.Model):
     """Model for subevent gallery images"""
     subevent = models.ForeignKey(SubEvent, on_delete=models.CASCADE, related_name='gallery_items')
-    image = models.ImageField(upload_to='gallery/')
+    image = CloudinaryField('image')  # Using Cloudinary for image storage
     caption = models.CharField(max_length=200, blank=True, null=True)
     order = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)

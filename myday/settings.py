@@ -64,6 +64,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     # Third-party apps
+    'cloudinary',
+    'cloudinary_storage',
     'rest_framework',
     'crispy_forms',
     'crispy_bootstrap5',
@@ -215,6 +217,18 @@ if ON_RENDER:
     MEDIA_ROOT = '/opt/render/project/src/media'
 else:
     MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Cloudinary settings
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME', ''),
+    'API_KEY': os.environ.get('CLOUDINARY_API_KEY', ''),
+    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET', ''),
+}
+
+# Use Cloudinary for media storage in production
+if not DEBUG or ON_RENDER:
+    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+    CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL', '')
 
 # Ensure media files persist in production
 if not DEBUG:

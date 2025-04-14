@@ -2,6 +2,17 @@
 # exit on error
 set -o errexit
 
+# Set Cloudinary environment variables if they're not already set
+if [ -z "$CLOUDINARY_CLOUD_NAME" ] || [ -z "$CLOUDINARY_API_KEY" ] || [ -z "$CLOUDINARY_API_SECRET" ]; then
+    echo "Setting default Cloudinary environment variables"
+    # These are placeholder values - you'll need to replace them with your actual Cloudinary credentials
+    # in the Render environment variables settings
+    export CLOUDINARY_CLOUD_NAME="your_cloud_name"
+    export CLOUDINARY_API_KEY="your_api_key"
+    export CLOUDINARY_API_SECRET="your_api_secret"
+    export CLOUDINARY_URL="cloudinary://$CLOUDINARY_API_KEY:$CLOUDINARY_API_SECRET@$CLOUDINARY_CLOUD_NAME"
+fi
+
 echo "Starting build process..."
 
 # Install dependencies
@@ -60,6 +71,10 @@ python manage.py migrate
 # Apply specific migration for image field length
 echo "Applying image field migration..."
 python manage.py migrate events 0011_increase_image_field_length
+
+# Apply Cloudinary migration
+echo "Applying Cloudinary migration..."
+python manage.py migrate events 0012_cloudinary_storage
 
 # Create cache table for database cache backend
 echo "Creating cache table..."
