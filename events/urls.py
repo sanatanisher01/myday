@@ -41,8 +41,6 @@ urlpatterns = [
     path('admin/login/', views.admin_dashboard, name='admin_login'),
     path('owner-portal/', views.admin_dashboard, name='admin_login_page'),
 
-    # Newsletter management routes have been removed
-
     # Manager routes
     path('manager-login/', views.manager_login, name='manager_login'),
     path('manager/dashboard/', views.manager_dashboard, name='manager_dashboard'),
@@ -66,7 +64,8 @@ urlpatterns = [
     path('review/<int:event_id>/add/', views.add_review, name='add_review'),
     path('booking/<int:subevent_id>/add/', views.add_booking, name='add_booking'),
 
-    # Newsletter routes have been removed
+    # Newsletter routes
+    path('newsletter/subscribe/', views.subscribe_newsletter, name='subscribe_newsletter'),
 
     # API routes
     path('', include(router.urls)),

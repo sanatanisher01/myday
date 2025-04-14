@@ -256,7 +256,22 @@ class UserMessage(models.Model):
         return f"{self.subject} - {self.user.username}"
 
 
-# Newsletter models have been removed
+class Newsletter(models.Model):
+    """Model for newsletter subscribers"""
+    email = models.EmailField(unique=True)
+    name = models.CharField(max_length=100, blank=True, null=True)
+    subscribed_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
+    last_sent = models.DateTimeField(blank=True, null=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='newsletter_subscriptions')
+
+    class Meta:
+        verbose_name = 'Newsletter Subscriber'
+        verbose_name_plural = 'Newsletter Subscribers'
+        ordering = ['-subscribed_at']
+
+    def __str__(self):
+        return self.email
 
 
 class ActivityLog(models.Model):
@@ -278,6 +293,7 @@ class ActivityLog(models.Model):
         ('message_sent', 'Message Sent'),
         ('review_posted', 'Review Posted'),
         ('admin_action', 'Admin Action'),
+        ('newsletter_subscription', 'Newsletter Subscription'),
     )
 
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='activities')
