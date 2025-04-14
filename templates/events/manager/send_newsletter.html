@@ -128,7 +128,7 @@
                                 </div>
                             </div>
 
-                            <div class="mb-3" id="test_email_field" style="display: none;">
+                            <div class="mb-3 d-none" id="test_email_field">
                                 <label for="test_email" class="form-label">Test Email Address</label>
                                 <input type="email" class="form-control" id="test_email" name="test_email" placeholder="Enter your email for testing">
                             </div>
@@ -219,7 +219,12 @@
 
         // Show/hide test email field
         document.getElementById('send_test').addEventListener('change', function() {
-            document.getElementById('test_email_field').style.display = this.checked ? 'block' : 'none';
+            const testEmailField = document.getElementById('test_email_field');
+            if (this.checked) {
+                testEmailField.classList.remove('d-none');
+            } else {
+                testEmailField.classList.add('d-none');
+            }
         });
 
         // Preview button functionality
@@ -231,13 +236,13 @@
             // Simple preview - in a real app, you'd make an AJAX call to render the actual template
             var previewHtml = `
                 <div class="preview-container">
-                    <div class="preview-header" style="background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%); color: white; padding: 15px; text-align: center; border-radius: 4px 4px 0 0;">
+                    <div class="preview-header bg-gradient-primary text-white p-3 text-center rounded-top">
                         <h3>${subject}</h3>
                     </div>
-                    <div class="preview-body" style="padding: 15px; background: white; border-radius: 0 0 4px 4px;">
+                    <div class="preview-body p-3 bg-white rounded-bottom">
                         <p>Hello there,</p>
                         <div>${content}</div>
-                        <p style="margin-top: 15px;">Best regards,<br>MyDay Events Team</p>
+                        <p class="mt-3">Best regards,<br>MyDay Events Team</p>
                     </div>
                 </div>
             `;
