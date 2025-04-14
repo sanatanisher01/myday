@@ -357,7 +357,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Handle message submission
-    chatbotForm.addEventListener('submit', async () => {
+    chatbotForm.addEventListener('submit', async (event) => {
+        event.preventDefault(); // Prevent form submission
         const message = chatbotInput.value.trim();
         if (message) {
             addMessage(message, 'user');

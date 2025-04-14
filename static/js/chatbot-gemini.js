@@ -69,6 +69,25 @@ async function generateGeminiResponse(userMessage) {
         // Show loading indicator in UI
         document.getElementById('chatbotMessages').lastChild.querySelector('.message-content').innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
 
+        // Normalize the user message for better matching
+        const normalizedMessage = userMessage.toLowerCase().trim();
+
+        // Check for specific keywords that should trigger default responses
+        if (normalizedMessage.includes('price') || normalizedMessage.includes('cost') || normalizedMessage.includes('fee') || normalizedMessage.includes('pricing')) {
+            console.log('Pricing question detected, using default response');
+            return getDefaultResponse(userMessage);
+        }
+
+        if (normalizedMessage.includes('book') || normalizedMessage.includes('reservation') || normalizedMessage.includes('schedule')) {
+            console.log('Booking question detected, using default response');
+            return getDefaultResponse(userMessage);
+        }
+
+        if (normalizedMessage.includes('cancel') || normalizedMessage.includes('refund')) {
+            console.log('Cancellation question detected, using default response');
+            return getDefaultResponse(userMessage);
+        }
+
         const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
             method: 'POST',
             headers: {
