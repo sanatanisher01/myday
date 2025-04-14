@@ -75,8 +75,12 @@ WSGI_APPLICATION = 'myday.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'mydays_n59u',
+        'USER': 'mydays_n59u_user',
+        'PASSWORD': 'KX35eUaw9CqUeV03GQeyXa3nqS1qfbCh',
+        'HOST': 'dpg-cvlf2kd6ubrc73bin8i0-a.oregon-postgres.render.com',
+        'PORT': '5432',
     }
 }
 

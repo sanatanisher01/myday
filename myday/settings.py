@@ -62,12 +62,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
+
     # Third-party apps
     'rest_framework',
     'crispy_forms',
     'crispy_bootstrap5',
-    
+
     # Local apps
     'events',
 ]
@@ -143,7 +143,7 @@ else:
 if not DEBUG:
     # Increase connection age for production to maintain persistent connections
     CONN_MAX_AGE = 60 * 60  # 1 hour
-    
+
     # Enable connection health checks
     CONN_HEALTH_CHECKS = True
 
@@ -206,7 +206,15 @@ STATICFILES_DIRS = [
 
 # Media files (user uploaded files)
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Check if we're on Render (they set this env var)
+ON_RENDER = os.environ.get('RENDER') == 'true'
+
+# Use the persistent disk path on Render, otherwise use local path
+if ON_RENDER:
+    MEDIA_ROOT = '/opt/render/project/src/media'
+else:
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Ensure media files persist in production
 if not DEBUG:
@@ -220,7 +228,7 @@ if not DEBUG:
         '.svg': 'image/svg+xml',
         '.pdf': 'application/pdf',
     }
-    
+
     # Add media files to the static files dirs so WhiteNoise can serve them
     STATICFILES_DIRS = [
         os.path.join(BASE_DIR, 'static'),
@@ -231,6 +239,10 @@ if not DEBUG:
 STORAGES = {
     "default": {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
+        "OPTIONS": {
+            "location": MEDIA_ROOT,
+            "base_url": MEDIA_URL,
+        },
     },
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage" if not DEBUG else "django.contrib.staticfiles.storage.StaticFilesStorage",

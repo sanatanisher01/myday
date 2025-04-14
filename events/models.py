@@ -10,18 +10,18 @@ class Event(models.Model):
     name = models.CharField(max_length=100)
     slug = models.SlugField(max_length=100, unique=True, blank=True)
     description = models.TextField()
-    image = models.ImageField(upload_to='events/')
+    image = models.ImageField(upload_to='events/', max_length=500)  # Increased max_length for full paths
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.name)
         super().save(*args, **kwargs)
-    
+
     def __str__(self):
         return self.name
-    
+
     class Meta:
         ordering = ['name']
 
@@ -35,18 +35,18 @@ class SubEvent(models.Model):
     slug = models.SlugField(max_length=100, unique=True, blank=True)
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    image = models.ImageField(upload_to='subevents/')
+    image = models.ImageField(upload_to='subevents/', max_length=500)  # Increased max_length for full paths
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(f"{self.event.name}-{self.name}")
         super().save(*args, **kwargs)
-    
+
     def __str__(self):
         return f"{self.event.name} - {self.name}"
-    
+
     class Meta:
         ordering = ['event', 'name']
 
@@ -62,11 +62,11 @@ class SubEventCategory(models.Model):
     order = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         ordering = ['order', 'name']
         verbose_name_plural = 'Sub-event categories'
-    
+
     def __str__(self):
         return f"{self.subevent.name} - {self.name}"
 
@@ -79,7 +79,7 @@ class Booking(models.Model):
         ('cancelled', 'Cancelled'),
         ('completed', 'Completed'),
     )
-    
+
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bookings')
     subevent = models.ForeignKey(SubEvent, on_delete=models.CASCADE, related_name='bookings')
     categories = models.ManyToManyField(SubEventCategory, blank=True, related_name='bookings')
@@ -93,7 +93,7 @@ class Booking(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     def __str__(self):
         return f"{self.user.username} - {self.subevent.name} - {self.booking_date}"
 
@@ -110,10 +110,10 @@ class Review(models.Model):
     comment = models.TextField()
     image = models.ImageField(upload_to='reviews/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     def __str__(self):
         return f"Review by {self.user.username} for {self.event.name}"
-    
+
     class Meta:
         ordering = ['-created_at']
         unique_together = ['user', 'event']
@@ -126,20 +126,20 @@ class UserProfile(models.Model):
     phone = models.CharField(max_length=20, blank=True, null=True)
     date_of_birth = models.DateField(blank=True, null=True)
     bio = models.TextField(blank=True, null=True)
-    
+
     # Address information
     address = models.CharField(max_length=255, blank=True, null=True)
     city = models.CharField(max_length=100, blank=True, null=True)
     state = models.CharField(max_length=100, blank=True, null=True)
     zip_code = models.CharField(max_length=20, blank=True, null=True)
     country = models.CharField(max_length=100, blank=True, null=True)
-    
+
     # Notification preferences
     email_notifications = models.BooleanField(default=True)
     email_promotions = models.BooleanField(default=False)
     email_system_updates = models.BooleanField(default=True)
     sms_notifications = models.BooleanField(default=False)
-    
+
     # Privacy settings
     profile_visibility = models.CharField(
         max_length=10,
@@ -152,14 +152,14 @@ class UserProfile(models.Model):
     )
     allow_data_collection = models.BooleanField(default=True)
     allow_third_party_sharing = models.BooleanField(default=False)
-    
+
     # Security settings
     two_factor_enabled = models.BooleanField(default=False)
     two_factor_secret = models.CharField(max_length=255, blank=True, null=True)
-    
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     def __str__(self):
         return f"{self.user.username}'s Profile"
 
@@ -173,10 +173,10 @@ class ContactMessage(models.Model):
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         ordering = ['-created_at']
-    
+
     def __str__(self):
         return f"{self.name} - {self.subject[:30]}"
 
@@ -188,10 +188,10 @@ class GalleryItem(models.Model):
     caption = models.CharField(max_length=200, blank=True, null=True)
     order = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
         ordering = ['order', 'created_at']
-    
+
     def __str__(self):
         return f"Gallery item for {self.subevent.name}"
 
@@ -208,12 +208,12 @@ class CartItem(models.Model):
     notes = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     def __str__(self):
         if self.category:
             return f"{self.user.username} - {self.subevent.name} - {self.category.name}"
         return f"{self.user.username} - {self.subevent.name}"
-    
+
     def get_total_price(self):
         """Calculate the total price for this cart item"""
         base_price = self.subevent.price * self.guests
@@ -229,7 +229,7 @@ class UserMessage(models.Model):
         ('warning', 'Warning'),
         ('danger', 'Danger'),
     )
-    
+
     SECTION_CHOICES = (
         ('general', 'General'),
         ('bookings', 'Bookings'),
@@ -238,7 +238,7 @@ class UserMessage(models.Model):
         ('categories', 'Categories'),
         ('support', 'Support'),
     )
-    
+
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='messages')
     subject = models.CharField(max_length=200)
     message = models.TextField()
@@ -247,10 +247,10 @@ class UserMessage(models.Model):
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='sent_messages')
-    
+
     class Meta:
         ordering = ['-created_at']
-        
+
     def __str__(self):
         return f"{self.subject} - {self.user.username}"
 
@@ -275,7 +275,7 @@ class ActivityLog(models.Model):
         ('review_posted', 'Review Posted'),
         ('admin_action', 'Admin Action'),
     )
-    
+
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='activities')
     action_type = models.CharField(max_length=50, choices=ACTION_TYPES)
     description = models.TextField()
@@ -284,15 +284,15 @@ class ActivityLog(models.Model):
     additional_data = models.JSONField(blank=True, null=True)
     ip_address = models.GenericIPAddressField(blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
         ordering = ['-timestamp']
         verbose_name = 'Activity Log'
         verbose_name_plural = 'Activity Logs'
-    
+
     def __str__(self):
         return f"{self.action_type} - {self.timestamp.strftime('%Y-%m-%d %H:%M')}"
-    
+
     @classmethod
     def log_activity(cls, user, action_type, description, target_model=None, target_id=None, additional_data=None, request=None):
         """
@@ -305,7 +305,7 @@ class ActivityLog(models.Model):
                 ip_address = x_forwarded_for.split(',')[0]
             else:
                 ip_address = request.META.get('REMOTE_ADDR')
-                
+
         return cls.objects.create(
             user=user,
             action_type=action_type,
