@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect, get_object_or_404, reverse
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, JsonResponse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
@@ -270,62 +270,61 @@ def subevent_detail(request, event_slug, subevent_slug):
 @login_required
 def user_dashboard(request):
     """User dashboard view"""
-    try:
-        # Get all user bookings - use only() to specify exactly which fields we need
-        all_user_bookings = Booking.objects.filter(user=request.user).only(
-            'id', 'user_id', 'subevent_id', 'booking_date', 'booking_time',
-            'guests', 'status', 'created_at', 'total_amount'
-        )
+    # Get all user bookings
+    all_user_bookings = Booking.objects.filter(user=request.user)
 
-        # Recent bookings for the main list
-        user_bookings = all_user_bookings.select_related('subevent').order_by('-created_at')[:5]
+    # Recent bookings for the main list
+    user_bookings = all_user_bookings.order_by('-created_at')[:5]
 
-        # Calculate stats for dashboard cards
-        total_bookings = all_user_bookings.count()
+    # Calculate stats for dashboard cards
+    total_bookings = all_user_bookings.count()
 
-        # Upcoming bookings (pending or confirmed and in the future)
-        upcoming_bookings = all_user_bookings.select_related('subevent').filter(
-            booking_date__gte=timezone.now().date(),
-            status__in=['pending', 'confirmed']
-        ).order_by('booking_date', 'booking_time')
+    # Upcoming bookings (pending or confirmed and in the future)
+    upcoming_bookings = all_user_bookings.filter(
+        booking_date__gte=timezone.now().date(),
+        status__in=['pending', 'confirmed']
+    ).order_by('booking_date', 'booking_time')
 
-        # Count of upcoming bookings for stats card
-        upcoming_count = upcoming_bookings.count()
+    # Count of upcoming bookings for stats card
+    upcoming_count = upcoming_bookings.count()
 
-        # Count of completed bookings for stats card
-        completed_count = all_user_bookings.filter(
-            booking_date__lt=timezone.now().date(),
-            status='confirmed'
-        ).count()
+    # Show only 3 upcoming bookings in the list
+    upcoming_bookings_display = upcoming_bookings[:3]
 
-        # Get user messages
-        user_messages = UserMessage.objects.filter(user=request.user).order_by('-created_at')[:5]
-        unread_count = user_messages.filter(is_read=False).count()
+    # Completed events count
+    completed_count = all_user_bookings.filter(
+        status='completed'
+    ).count()
 
-        # Format upcoming bookings for display
-        upcoming_bookings_display = upcoming_bookings[:3]
+    # Get user messages
+    # Messages received by the user
+    received_messages = UserMessage.objects.filter(user=request.user).order_by('-created_at')
 
-        context = {
-            'user_bookings': user_bookings,
-            'upcoming_bookings': upcoming_bookings_display,
-            'user_messages': user_messages,
-            'unread_count': unread_count,
-            'total_bookings': total_bookings,
-            'upcoming_count': upcoming_count,
-            'completed_count': completed_count,
-        }
+    # Messages sent by the user
+    sent_messages = UserMessage.objects.filter(created_by=request.user).order_by('-created_at')
 
-        return render(request, 'events/user/dashboard.html', context)
-    except Exception as e:
-        # Log the error
-        import traceback
-        error_details = traceback.format_exc()
-        print(f"Error in user_dashboard: {str(e)}\n{error_details}")
+    # Combine both types of messages and sort by created_at
+    from itertools import chain
+    all_user_messages = list(chain(received_messages, sent_messages))
+    all_user_messages.sort(key=lambda x: x.created_at, reverse=True)
 
-        # Return a simplified dashboard with error message
-        messages.error(request, f"An error occurred while loading the dashboard: {str(e)}")
-        return render(request, 'events/user/dashboard_error.html', {'error': str(e)})
+    # Get the 5 most recent messages
+    user_messages = all_user_messages[:5]
 
+    # Count of unread messages
+    unread_count = received_messages.filter(is_read=False).count()
+
+    context = {
+        'user_bookings': user_bookings,
+        'upcoming_bookings': upcoming_bookings_display,
+        'user_messages': user_messages,
+        'unread_count': unread_count,
+        'total_bookings': total_bookings,
+        'upcoming_count': upcoming_count,
+        'completed_count': completed_count,
+    }
+
+    return render(request, 'events/user/dashboard.html', context)
 
 @login_required
 def user_bookings(request):
@@ -1112,48 +1111,36 @@ def admin_add_user(request):
 @user_passes_test(lambda u: u.is_staff or u.is_superuser)
 def manager_dashboard(request):
     """Manager dashboard with overview of site data"""
-    try:
-        # Count statistics for dashboard
-        event_count = Event.objects.count()
-        subevent_count = SubEvent.objects.count()
-        booking_count = Booking.objects.count()
-        user_count = User.objects.filter(is_staff=False, is_superuser=False).count()
+    # Count statistics for dashboard
+    event_count = Event.objects.count()
+    subevent_count = SubEvent.objects.count()
+    booking_count = Booking.objects.count()
+    user_count = User.objects.filter(is_staff=False, is_superuser=False).count()
 
-        # Recent items - use select_related to avoid N+1 queries and only select needed fields
-        recent_bookings = Booking.objects.select_related('user', 'subevent', 'subevent__event').only(
-            'id', 'user__username', 'subevent__name', 'created_at', 'status', 'total_amount'
-        ).order_by('-created_at')[:5]
-        recent_events = Event.objects.all().order_by('-created_at')[:5]
-        recent_users = User.objects.filter(is_staff=False, is_superuser=False).order_by('-date_joined')[:5]
+    # Recent items
+    recent_bookings = Booking.objects.all().order_by('-created_at')[:5]
+    recent_events = Event.objects.all().order_by('-created_at')[:5]
+    recent_users = User.objects.filter(is_staff=False, is_superuser=False).order_by('-date_joined')[:5]
 
-        # Get recent system activities
-        recent_activities = ActivityLog.objects.select_related('user').all().order_by('-timestamp')[:10]
+    # Get recent system activities
+    recent_activities = ActivityLog.objects.all().order_by('-timestamp')[:10]
 
-        # Calculate revenue
-        total_revenue = Booking.objects.filter(status='confirmed').aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+    # Calculate revenue
+    total_revenue = Booking.objects.filter(status='confirmed').aggregate(Sum('total_amount'))['total_amount__sum'] or 0
 
-        context = {
-            'event_count': event_count,
-            'subevent_count': subevent_count,
-            'booking_count': booking_count,
-            'user_count': user_count,
-            'recent_bookings': recent_bookings,
-            'recent_events': recent_events,
-            'recent_users': recent_users,
-            'recent_activities': recent_activities,
-            'total_revenue': total_revenue,
-        }
+    context = {
+        'event_count': event_count,
+        'subevent_count': subevent_count,
+        'booking_count': booking_count,
+        'user_count': user_count,
+        'recent_bookings': recent_bookings,
+        'recent_events': recent_events,
+        'recent_users': recent_users,
+        'recent_activities': recent_activities,
+        'total_revenue': total_revenue,
+    }
 
-        return render(request, 'events/manager/dashboard.html', context)
-    except Exception as e:
-        # Log the error
-        import traceback
-        error_details = traceback.format_exc()
-        print(f"Error in manager_dashboard: {str(e)}\n{error_details}")
-
-        # Return a simplified dashboard with error message
-        messages.error(request, f"An error occurred while loading the dashboard: {str(e)}")
-        return render(request, 'events/manager/dashboard_error.html', {'error': str(e)})
+    return render(request, 'events/manager/dashboard.html', context)
 
 @login_required
 @user_passes_test(lambda u: u.is_staff or u.is_superuser)
@@ -1453,7 +1440,6 @@ def manager_bookings(request):
 def manager_update_booking(request, booking_id):
     """Update booking status"""
     booking = get_object_or_404(Booking, id=booking_id)
-    old_status = booking.status
 
     if request.method == 'POST':
         new_status = request.POST.get('status')
@@ -1462,67 +1448,14 @@ def manager_update_booking(request, booking_id):
             booking.save()
             messages.success(request, f"Booking status updated to {new_status}")
 
-            # Send status update email if status has changed
-            if old_status != new_status:
-                try:
-                    from django.core.mail import send_mail
-                    from django.template.loader import render_to_string
-                    from django.utils.html import strip_tags
-                    from django.conf import settings
-
-                    # Create the booking URL
-                    booking_url = request.build_absolute_uri(reverse('user_booking_detail', args=[booking.id]))
-
-                    # Render the email template
-                    html_message = render_to_string('events/email/booking_status_update.html', {
-                        'booking': booking,
-                        'booking_url': booking_url,
-                    })
-
-                    # Create plain text version
-                    plain_message = strip_tags(html_message)
-
-                    # Send the email
-                    send_mail(
-                        subject=f'Booking Status Update - {booking.status.capitalize()}',
-                        message=plain_message,
-                        from_email=settings.DEFAULT_FROM_EMAIL,
-                        recipient_list=[booking.user.email],
-                        html_message=html_message,
-                        fail_silently=False,
-                    )
-
-                    messages.success(request, f"Status update email sent to {booking.user.email}")
-                except Exception as e:
-                    # Log the error but don't stop the process
-                    print(f"Error sending booking status update email: {str(e)}")
-                    messages.warning(request, f"Status updated but email could not be sent: {str(e)}")
-
         # If sending a message to the user
         message = request.POST.get('message')
         if message:
-            # Add the message as a note to the booking
-            booking.notes = f"{booking.notes or ''}\n\nMessage from manager ({timezone.now().strftime('%Y-%m-%d %H:%M')}): {message}"
+            # Logic for sending a notification to the user would go here
+            # For now, we'll just add it as a note to the booking
+            booking.notes = f"{booking.notes}\n\nMessage from manager ({timezone.now().strftime('%Y-%m-%d %H:%M')}): {message}"
             booking.save()
-            messages.success(request, "Message added to booking notes")
-
-            # Also send the message via email
-            try:
-                from django.core.mail import send_mail
-                from django.conf import settings
-
-                send_mail(
-                    subject=f'Message Regarding Your Booking - {booking.subevent.name}',
-                    message=f"Dear {booking.user.first_name or booking.user.username},\n\n{message}\n\nRegards,\nMyDay Events Team",
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[booking.user.email],
-                    fail_silently=False,
-                )
-
-                messages.success(request, f"Message email sent to {booking.user.email}")
-            except Exception as e:
-                print(f"Error sending message email: {str(e)}")
-                messages.warning(request, f"Message saved but email could not be sent: {str(e)}")
+            messages.success(request, "Message sent to user")
 
     return redirect('manager_bookings')
 
@@ -2513,10 +2446,6 @@ def add_booking(request, subevent_id):
             tax = subtotal * Decimal('0.1')  # 10% tax
             booking.total_amount = subtotal + tax
 
-            # Generate a unique booking ID
-            import uuid
-            booking.booking_id = str(uuid.uuid4())[:8].upper()
-
             booking.save()
 
             # Save the selected categories to the booking
@@ -2534,39 +2463,7 @@ def add_booking(request, subevent_id):
                 request=request
             )
 
-            # Send booking confirmation email
-            try:
-                from django.core.mail import send_mail
-                from django.template.loader import render_to_string
-                from django.utils.html import strip_tags
-                from django.conf import settings
-
-                # Create the booking URL
-                booking_url = request.build_absolute_uri(reverse('user_booking_detail', args=[booking.id]))
-
-                # Render the email template
-                html_message = render_to_string('events/email/booking_confirmation.html', {
-                    'booking': booking,
-                    'booking_url': booking_url,
-                })
-
-                # Create plain text version
-                plain_message = strip_tags(html_message)
-
-                # Send the email
-                send_mail(
-                    subject=f'Booking Confirmation - {subevent.name}',
-                    message=plain_message,
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[request.user.email],
-                    html_message=html_message,
-                    fail_silently=False,
-                )
-            except Exception as e:
-                # Log the error but don't stop the booking process
-                print(f"Error sending booking confirmation email: {str(e)}")
-
-            messages.success(request, "Your booking has been confirmed! You can view your bookings in your dashboard. A confirmation email has been sent to your email address.")
+            messages.success(request, "Your booking has been confirmed! You can view your bookings in your dashboard.")
             return redirect('user_bookings')
         else:
             for field, errors in form.errors.items():

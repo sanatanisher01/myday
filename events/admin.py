@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Event, SubEvent, Review, Booking, UserProfile, ContactMessage, Newsletter, NewsletterTemplate, NewsletterCampaign, ActivityLog
+from .models import Event, SubEvent, Review, Booking, UserProfile, ContactMessage, Newsletter, NewsletterTemplate, NewsletterCampaign
 
 # Register your models here.
 
@@ -282,19 +282,3 @@ class NewsletterCampaignAdmin(admin.ModelAdmin):
         queryset.update(status='draft')
         self.message_user(request, f"{queryset.count()} campaign(s) marked as draft.")
     mark_as_draft.short_description = "Mark selected campaigns as draft"
-
-
-@admin.register(ActivityLog)
-class ActivityLogAdmin(admin.ModelAdmin):
-    list_display = ('action_type', 'user', 'description', 'timestamp', 'ip_address')
-    list_filter = ('action_type', 'timestamp')
-    search_fields = ('description', 'user__username', 'ip_address')
-    readonly_fields = ('user', 'action_type', 'description', 'target_model', 'target_id',
-                       'additional_data', 'ip_address', 'timestamp')
-    date_hierarchy = 'timestamp'
-
-    def has_add_permission(self, request):
-        return False
-
-    def has_change_permission(self, request, obj=None):
-        return False

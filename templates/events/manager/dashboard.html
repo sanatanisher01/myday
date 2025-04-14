@@ -1,6 +1,5 @@
 {% extends 'base.html' %}
 {% load static %}
-{% load custom_filters %}
 
 {% block title %}Manager Dashboard - MyDay{% endblock %}
 
@@ -20,7 +19,7 @@
                 <hr class="gradient-line">
             </div>
         </div>
-
+        
         <!-- Stats Cards -->
         <div class="row mb-4">
             <div class="col-md-3" data-aos="fade-up" data-aos-delay="100">
@@ -112,7 +111,7 @@
                 </div>
             </div>
         </div>
-
+        
         <!-- Quick Links -->
         <div class="row mb-4">
             <div class="col-12" data-aos="zoom-in">
@@ -136,7 +135,7 @@
                                     </div>
                                 </a>
                             </div>
-
+                            
                             <div class="management-link-item" data-aos="fade-up" data-aos-delay="150">
                                 <a href="{% url 'manager_subevents' %}" class="management-link-card">
                                     <div class="link-icon-wrapper success-glow">
@@ -151,7 +150,7 @@
                                     </div>
                                 </a>
                             </div>
-
+                            
                             <div class="management-link-item" data-aos="fade-up" data-aos-delay="200">
                                 <a href="{% url 'manager_bookings' %}" class="management-link-card">
                                     <div class="link-icon-wrapper info-glow">
@@ -166,7 +165,7 @@
                                     </div>
                                 </a>
                             </div>
-
+                            
                             <div class="management-link-item" data-aos="fade-up" data-aos-delay="250">
                                 <a href="{% url 'manager_gallery' %}" class="management-link-card">
                                     <div class="link-icon-wrapper danger-glow">
@@ -181,7 +180,7 @@
                                     </div>
                                 </a>
                             </div>
-
+                            
                             <div class="management-link-item" data-aos="fade-up" data-aos-delay="300">
                                 <a href="{% url 'manager_categories' %}" class="management-link-card">
                                     <div class="link-icon-wrapper dark-glow">
@@ -196,7 +195,7 @@
                                     </div>
                                 </a>
                             </div>
-
+                            
                             <div class="management-link-item" data-aos="fade-up" data-aos-delay="350">
                                 <a href="{% url 'manager_users' %}" class="management-link-card">
                                     <div class="link-icon-wrapper warning-glow">
@@ -211,7 +210,7 @@
                                     </div>
                                 </a>
                             </div>
-
+                            
                             <div class="management-link-item" data-aos="fade-up" data-aos-delay="400">
                                 <a href="{% url 'manager_contacts' %}" class="management-link-card">
                                     <div class="link-icon-wrapper secondary-glow">
@@ -226,7 +225,7 @@
                                     </div>
                                 </a>
                             </div>
-
+                            
                             <div class="management-link-item" data-aos="fade-up" data-aos-delay="450">
                                 <a href="{% url 'manager_messages' %}" class="management-link-card">
                                     <div class="link-icon-wrapper purple-glow">
@@ -246,7 +245,7 @@
                 </div>
             </div>
         </div>
-
+        
         <!-- Recent Bookings and Events -->
         <div class="row mb-4">
             <div class="col-md-6" data-aos="fade-right" data-aos-delay="100">
@@ -262,7 +261,7 @@
                             {% for booking in recent_bookings %}
                             <div class="list-group-item list-hover-item">
                                 <div class="d-flex w-100 justify-content-between">
-                                    <h6 class="mb-1 text-truncate">{{ booking.user.username }} - {% if booking.subevent %}{{ booking.subevent.name }}{% else %}Unknown Event{% endif %}</h6>
+                                    <h6 class="mb-1 text-truncate">{{ booking.user.username }} - {{ booking.subevent.name }}</h6>
                                     <small class="text-muted">{{ booking.created_at|date:"M d, Y" }}</small>
                                 </div>
                                 <p class="mb-1 small">
@@ -286,7 +285,7 @@
                     </div>
                 </div>
             </div>
-
+            
             <!-- Recent Events -->
             <div class="col-md-6" data-aos="fade-left" data-aos-delay="100">
                 <div class="card modern-card hover-shadow h-100">
@@ -305,8 +304,10 @@
                                     <small class="text-muted">{{ event.created_at|date:"M d, Y" }}</small>
                                 </div>
                                 <p class="mb-1 small">
-                                    <span class="badge bg-gradient-success animate-badge">Active</span>
-                                    <span class="text-muted ms-2">{{ event.created_at|date:"F j, Y" }}</span>
+                                    <span class="badge bg-gradient-{{ event.is_active|yesno:'success,danger' }} animate-badge">
+                                        {{ event.is_active|yesno:'Active,Inactive' }}
+                                    </span>
+                                    <span class="text-muted ms-2">{{ event.category.name }}</span>
                                 </p>
                             </div>
                             {% empty %}
@@ -322,7 +323,7 @@
                 </div>
             </div>
         </div>
-
+        
         <!-- Activity Timeline -->
         <div class="row">
             <div class="col-12" data-aos="fade-up">
@@ -330,7 +331,7 @@
                     <div class="card-header bg-gradient-light">
                         <div class="d-flex justify-content-between align-items-center">
                             <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>System Activity</h5>
-                            <button type="button" class="btn btn-sm btn-modern btn-primary" id="refreshActivity">
+                            <button class="btn btn-sm btn-modern btn-primary" id="refreshActivity">
                                 <i class="fas fa-sync-alt"></i> Refresh
                             </button>
                         </div>
@@ -344,12 +345,12 @@
                                         <div class="timeline-dot bg-gradient-primary"></div>
                                         <div class="timeline-content">
                                             <div class="timeline-header">
-                                                <h6 class="mb-0">{{ activity.action_type|format_action_type }}</h6>
+                                                <h6 class="mb-0">{{ activity.action_type }}</h6>
                                                 <small class="text-muted">{{ activity.timestamp|date:"M d, Y H:i" }}</small>
                                             </div>
                                             <div class="timeline-body">
                                                 <p>{{ activity.description }}</p>
-                                                {% if activity.user and activity.user.username %}
+                                                {% if activity.user %}
                                                 <small class="text-muted">By: {{ activity.user.username }}</small>
                                                 {% endif %}
                                             </div>
@@ -382,7 +383,7 @@
             glare: true,
             "max-glare": 0.3,
         });
-
+        
         // Counter animation for statistics
         const counterElements = document.querySelectorAll('.counter-value');
         counterElements.forEach(counter => {
@@ -392,7 +393,7 @@
             const frameDuration = 1000 / 60; // 60fps
             const totalFrames = Math.round(duration / frameDuration);
             const increment = target / totalFrames;
-
+            
             const animate = () => {
                 count += increment;
                 if (count < target) {
@@ -402,10 +403,10 @@
                     counter.textContent = target;
                 }
             };
-
+            
             animate();
         });
-
+        
         // Refresh button animation
         const refreshBtn = document.getElementById('refreshActivity');
         if (refreshBtn) {
