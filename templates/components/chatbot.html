@@ -3,7 +3,7 @@
 <!-- Chatbot Container -->
 <div class="chatbot-container" id="chatbotContainer">
     <!-- Chatbot Button -->
-    <button class="chatbot-toggle" id="chatbotToggle">
+    <button type="button" class="chatbot-toggle" id="chatbotToggle" title="Open chat assistant">
         <i class="fas fa-comments"></i>
         <span class="notification-badge d-none" id="chatNotification">1</span>
     </button>
@@ -15,7 +15,7 @@
                 <i class="fas fa-robot me-2"></i>
                 <h5 class="mb-0">MyDay Assistant</h5>
             </div>
-            <button class="btn-close" id="chatbotClose"></button>
+            <button type="button" class="btn-close" id="chatbotClose" title="Close chat"></button>
         </div>
         <div class="chatbot-messages" id="chatbotMessages">
             <div class="message bot-message">
@@ -26,15 +26,17 @@
             </div>
         </div>
         <div class="quick-replies mb-2" id="quickReplies">
-            <button class="quick-reply-btn" onclick="handleQuickReply('Book Event')">Book Event</button>
-            <button class="quick-reply-btn" onclick="handleQuickReply('Event Pricing')">Event Pricing</button>
-            <button class="quick-reply-btn" onclick="handleQuickReply('Support')">Support</button>
+            <button type="button" class="quick-reply-btn" onclick="handleQuickReply('Book Event')">Book Event</button>
+            <button type="button" class="quick-reply-btn" onclick="handleQuickReply('Event Pricing')">Event Pricing</button>
+            <button type="button" class="quick-reply-btn" onclick="handleQuickReply('Support')">Support</button>
+            <button type="button" class="quick-reply-btn" onclick="handleQuickReply('Tell me a joke')">Tell me a joke</button>
+            <button type="button" class="quick-reply-btn" onclick="handleQuickReply('General Knowledge')">General Knowledge</button>
         </div>
         <div class="chatbot-input">
             <form id="chatbotForm" onsubmit="return false;">
                 <div class="input-group">
                     <input type="text" class="form-control" id="chatbotInput" placeholder="Type your message..." required>
-                    <button class="btn btn-primary" type="submit">
+                    <button class="btn btn-primary" type="submit" title="Send message">
                         <i class="fas fa-paper-plane"></i>
                     </button>
                 </div>
@@ -142,10 +144,12 @@
     from {
         opacity: 0;
         transform: translateY(10px);
+        will-change: opacity, transform;
     }
     to {
         opacity: 1;
         transform: translateY(0);
+        will-change: opacity, transform;
     }
 }
 
@@ -160,7 +164,28 @@
     display: flex;
     gap: 0.5rem;
     overflow-x: auto;
-    scrollbar-width: thin;
+    /* Use cross-browser compatible scrollbar styling */
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: thin;  /* Firefox */
+}
+
+/* Custom scrollbar for Webkit browsers (Chrome, Safari) */
+.quick-replies::-webkit-scrollbar {
+    height: 4px;
+}
+
+.quick-replies::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.quick-replies::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+}
+
+.quick-replies::-webkit-scrollbar-thumb:hover {
+    background: #555;
 }
 
 .quick-reply-btn {
@@ -248,16 +273,16 @@ document.addEventListener('DOMContentLoaded', function() {
         if (message) {
             addMessage(message, 'user');
             chatbotInput.value = '';
-            
+
             // Show typing indicator
             const typingIndicator = document.createElement('div');
             typingIndicator.className = 'message bot-message';
             typingIndicator.innerHTML = '<div class="message-content">Typing...</div>';
             chatbotMessages.appendChild(typingIndicator);
-            
+
             // Get response from Gemini API
             const response = await generateGeminiResponse(message);
-            
+
             // Remove typing indicator and add response
             chatbotMessages.removeChild(typingIndicator);
             addMessage(response, 'bot');
@@ -281,16 +306,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function handleQuickReply(message) {
         addMessage(message, 'user');
-        
+
         // Show typing indicator
         const typingIndicator = document.createElement('div');
         typingIndicator.className = 'message bot-message';
         typingIndicator.innerHTML = '<div class="message-content">Typing...</div>';
         chatbotMessages.appendChild(typingIndicator);
-        
+
         // Get response from Gemini API
         const response = await generateGeminiResponse(message);
-        
+
         // Remove typing indicator and add response
         chatbotMessages.removeChild(typingIndicator);
         addMessage(response, 'bot');
