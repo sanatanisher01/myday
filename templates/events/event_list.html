@@ -210,7 +210,7 @@
                     <h2 class="mb-3">Subscribe to Our Newsletter</h2>
                     <p class="mb-4">Stay updated with our latest events and exclusive offers</p>
                     <div class="newsletter-form">
-                        <form method="post" action="{% url 'subscribe_newsletter' %}">
+                        <form method="post" action="{% url 'subscribe_email' %}">
                             {% csrf_token %}
                             <div class="input-group mb-3">
                                 <input type="email" name="email" class="form-control" placeholder="Your email address" aria-label="Your email address" required>
