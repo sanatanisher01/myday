@@ -81,6 +81,11 @@ class SubEventForm(forms.ModelForm):
     def clean_image(self):
         """Validate and process the uploaded image"""
         image = self.cleaned_data.get('image')
+
+        # If this is an update and no new image is provided, keep the existing one
+        if not image and self.instance and self.instance.pk and hasattr(self.instance, 'image') and self.instance.image:
+            return self.instance.image
+
         if image and hasattr(image, 'name'):
             # Validate file type
             if not image.name.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
@@ -89,6 +94,9 @@ class SubEventForm(forms.ModelForm):
             # Validate file size (max 5MB)
             if hasattr(image, 'size') and image.size > 5 * 1024 * 1024:
                 raise forms.ValidationError("Image file is too large. Maximum size is 5MB.")
+
+            # Add a flag to indicate that a new image was uploaded
+            self.new_image_uploaded = True
 
         return image
 

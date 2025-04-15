@@ -1268,7 +1268,7 @@ def manager_subevents(request, event_id=None):
                         messages.warning(request, form.add_warning)
                     subevent = form.save(commit=False)
 
-                    # Ensure the image is properly processed
+                    # Handle image upload
                     if 'image' in request.FILES:
                         image = request.FILES['image']
                         # Validate image file type
@@ -1276,8 +1276,14 @@ def manager_subevents(request, event_id=None):
                             messages.error(request, "Unsupported image format. Please use PNG, JPG, JPEG, or GIF.")
                             return redirect(request.path)
 
+                        # Log image details for debugging
+                        print(f"Image upload details: name={image.name}, size={image.size}, content_type={image.content_type}")
+
                         # Set the image directly
                         subevent.image = image
+
+                        # Log that image was set
+                        print(f"Image set on subevent: {subevent.image}")
 
                     # Check if slug already exists and make it unique if needed
                     if 'slug' in form.cleaned_data and form.cleaned_data['slug']:
@@ -1329,7 +1335,7 @@ def manager_subevents(request, event_id=None):
                         messages.warning(request, form.add_warning)
                     subevent = form.save(commit=False)
 
-                    # Ensure the image is properly processed if a new one is uploaded
+                    # Handle image upload for updates
                     if 'image' in request.FILES:
                         image = request.FILES['image']
                         # Validate image file type
@@ -1337,8 +1343,18 @@ def manager_subevents(request, event_id=None):
                             messages.error(request, "Unsupported image format. Please use PNG, JPG, JPEG, or GIF.")
                             return redirect(request.path)
 
-                        # Set the image directly
+                        # Log image details for debugging
+                        print(f"Update - Image upload details: name={image.name}, size={image.size}, content_type={image.content_type}")
+
+                        # Store the old image for potential cleanup
+                        old_image = None
+                        if subevent.image:
+                            old_image = subevent.image
+                            print(f"Old image: {old_image}")
+
+                        # Set the new image
                         subevent.image = image
+                        print(f"New image set on subevent: {subevent.image}")
 
                     # Check if slug already exists and make it unique if needed
                     if 'slug' in form.cleaned_data and form.cleaned_data['slug']:
