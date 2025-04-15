@@ -1869,8 +1869,16 @@ def send_welcome_email(email, name=None):
     """Send welcome email to new subscriber"""
     if email:
         try:
-            from django.core.mail import send_mail
+            from django.core.mail import send_mail, get_connection
             from django.conf import settings
+            import logging
+
+            # Set up logging
+            logger = logging.getLogger(__name__)
+
+            # Log email settings
+            logger.info(f"Email settings: HOST={settings.EMAIL_HOST}, PORT={settings.EMAIL_PORT}, TLS={settings.EMAIL_USE_TLS}, USER={settings.EMAIL_HOST_USER}")
+            logger.info(f"Sending email to: {email}, FROM: {settings.DEFAULT_FROM_EMAIL}")
 
             # Create HTML content
             html_message = f'''
@@ -1931,19 +1939,33 @@ If you have any questions or need assistance with planning your event, feel free
 Best regards,
 MyDay Events Team'''
 
+            # Get a connection to the email server
+            connection = get_connection()
+            connection.open()
+
             # Send email
-            send_mail(
+            result = send_mail(
                 subject='Thank You for Subscribing to MyDay Events!',
                 message=plain_message,
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[email],
                 fail_silently=False,
-                html_message=html_message
+                html_message=html_message,
+                connection=connection
             )
+
+            # Close the connection
+            connection.close()
+
+            # Log the result
+            logger.info(f"Email send result: {result}")
+            print(f"Email send result: {result}")
 
             return True
         except Exception as e:
+            import traceback
             print(f"Error sending welcome email: {str(e)}")
+            print(traceback.format_exc())
             return False
     return False
 
@@ -1956,8 +1978,16 @@ def test_email(request):
         return redirect('home')
 
     try:
-        from django.core.mail import send_mail
+        from django.core.mail import send_mail, get_connection
         from django.conf import settings
+        import logging
+
+        # Set up logging
+        logger = logging.getLogger(__name__)
+
+        # Log email settings
+        logger.info(f"Email settings: HOST={settings.EMAIL_HOST}, PORT={settings.EMAIL_PORT}, TLS={settings.EMAIL_USE_TLS}, USER={settings.EMAIL_HOST_USER}")
+        logger.info(f"Sending test email to: {request.user.email}, FROM: {settings.DEFAULT_FROM_EMAIL}")
 
         # Create HTML content
         html_message = f'''
@@ -2009,18 +2039,33 @@ Email details:
 
 This is an automated test email. Please do not reply.'''
 
+        # Get a connection to the email server
+        connection = get_connection()
+        connection.open()
+
         # Send email
-        send_mail(
+        result = send_mail(
             subject='MyDay Events - Email Test',
             message=plain_message,
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[request.user.email],
             fail_silently=False,
-            html_message=html_message
+            html_message=html_message,
+            connection=connection
         )
+
+        # Close the connection
+        connection.close()
+
+        # Log the result
+        logger.info(f"Test email send result: {result}")
+        print(f"Test email send result: {result}")
 
         messages.success(request, f"Test email sent to {request.user.email}. Please check your inbox (and spam folder).")
     except Exception as e:
+        import traceback
+        print(f"Error sending test email: {str(e)}")
+        print(traceback.format_exc())
         messages.error(request, f"Error sending test email: {str(e)}")
 
     return redirect('admin_dashboard')

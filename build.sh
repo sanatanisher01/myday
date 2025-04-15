@@ -21,6 +21,15 @@ if [ -z "$EMAIL_HOST_USER" ] || [ -z "$EMAIL_HOST_PASSWORD" ] || [ -z "$DEFAULT_
     export DEFAULT_FROM_EMAIL="aryansanatani01@gmail.com"
 fi
 
+# Set environment variables for Render
+if [ -d "/opt/render/project/src" ]; then
+    echo "Setting Render environment variables"
+    # These will be used by the Render service
+    echo "export EMAIL_HOST_USER=aryansanatani01@gmail.com" >> $HOME/.bashrc
+    echo "export EMAIL_HOST_PASSWORD=quoy aufm yllf hxcg" >> $HOME/.bashrc
+    echo "export DEFAULT_FROM_EMAIL=aryansanatani01@gmail.com" >> $HOME/.bashrc
+fi
+
 echo "Starting build process..."
 
 # Install dependencies
