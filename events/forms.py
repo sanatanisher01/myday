@@ -57,6 +57,27 @@ class SubEventForm(forms.ModelForm):
         # Make slug optional
         self.fields['slug'].required = False
 
+    def clean_slug(self):
+        """Ensure slug is unique"""
+        slug = self.cleaned_data.get('slug')
+        if not slug:  # If slug is empty, it will be auto-generated in the model's save method
+            return slug
+
+        # Check if this is an update or a new subevent
+        instance = getattr(self, 'instance', None)
+        if instance and instance.pk:
+            # If updating an existing subevent and slug hasn't changed, return it
+            if instance.slug == slug:
+                return slug
+
+        # Check if slug already exists
+        from .models import SubEvent
+        if SubEvent.objects.filter(slug=slug).exists():
+            # Add a warning that the slug might be modified to ensure uniqueness
+            self.add_warning = f"The slug '{slug}' already exists and may be modified to ensure uniqueness."
+
+        return slug
+
     def clean_image(self):
         """Validate and process the uploaded image"""
         image = self.cleaned_data.get('image')

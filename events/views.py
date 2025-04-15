@@ -1263,6 +1263,9 @@ def manager_subevents(request, event_id=None):
             if 'create_subevent' in request.POST:
                 form = SubEventForm(request.POST, request.FILES)
                 if form.is_valid():
+                    # Display warning about slug uniqueness if present
+                    if hasattr(form, 'add_warning'):
+                        messages.warning(request, form.add_warning)
                     subevent = form.save(commit=False)
 
                     # Ensure the image is properly processed
@@ -1276,8 +1279,23 @@ def manager_subevents(request, event_id=None):
                         # Set the image directly
                         subevent.image = image
 
+                    # Check if slug already exists and make it unique if needed
+                    if 'slug' in form.cleaned_data and form.cleaned_data['slug']:
+                        base_slug = form.cleaned_data['slug']
+                        subevent.slug = base_slug
+                        counter = 1
+                        while SubEvent.objects.filter(slug=subevent.slug).exclude(pk=subevent.pk if subevent.pk else None).exists():
+                            subevent.slug = f"{base_slug}-{counter}"
+                            counter += 1
+
                     # Save the subevent
-                    subevent.save()
+                    try:
+                        subevent.save()
+                    except Exception as e:
+                        # Log the error
+                        print(f"Error saving subevent: {str(e)}")
+                        messages.error(request, f"Error saving subevent: {str(e)}")
+                        return redirect(request.path)
 
                     # Log the activity
                     ActivityLog.log_activity(
@@ -1306,6 +1324,9 @@ def manager_subevents(request, event_id=None):
                 subevent = get_object_or_404(SubEvent, id=subevent_id)
                 form = SubEventForm(request.POST, request.FILES, instance=subevent)
                 if form.is_valid():
+                    # Display warning about slug uniqueness if present
+                    if hasattr(form, 'add_warning'):
+                        messages.warning(request, form.add_warning)
                     subevent = form.save(commit=False)
 
                     # Ensure the image is properly processed if a new one is uploaded
@@ -1319,8 +1340,23 @@ def manager_subevents(request, event_id=None):
                         # Set the image directly
                         subevent.image = image
 
+                    # Check if slug already exists and make it unique if needed
+                    if 'slug' in form.cleaned_data and form.cleaned_data['slug']:
+                        base_slug = form.cleaned_data['slug']
+                        subevent.slug = base_slug
+                        counter = 1
+                        while SubEvent.objects.filter(slug=subevent.slug).exclude(pk=subevent.pk if subevent.pk else None).exists():
+                            subevent.slug = f"{base_slug}-{counter}"
+                            counter += 1
+
                     # Save the subevent
-                    subevent.save()
+                    try:
+                        subevent.save()
+                    except Exception as e:
+                        # Log the error
+                        print(f"Error saving subevent: {str(e)}")
+                        messages.error(request, f"Error saving subevent: {str(e)}")
+                        return redirect(request.path)
 
                     # Log the activity
                     ActivityLog.log_activity(

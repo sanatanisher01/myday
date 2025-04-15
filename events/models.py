@@ -42,7 +42,16 @@ class SubEvent(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(f"{self.event.name}-{self.name}")
+            # Create a base slug
+            base_slug = slugify(f"{self.event.name}-{self.name}")
+            self.slug = base_slug
+
+            # Check if the slug already exists and make it unique if needed
+            counter = 1
+            while SubEvent.objects.filter(slug=self.slug).exclude(pk=self.pk).exists():
+                self.slug = f"{base_slug}-{counter}"
+                counter += 1
+
         super().save(*args, **kwargs)
 
     def __str__(self):
