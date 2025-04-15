@@ -1793,164 +1793,58 @@ def signup(request):
         # For GET requests, redirect to home with signup modal
         return redirect('home')
 
-# Newsletter subscription
-def subscribe_newsletter(request):
-    """Handle newsletter subscription"""
-    if request.method == 'POST':
-        form = NewsletterForm(request.POST)
-        if form.is_valid():
-            email = form.cleaned_data['email']
-            name = form.cleaned_data.get('name', '')
-
-            # Check if email already exists
-            if Newsletter.objects.filter(email=email).exists():
-                messages.info(request, "You're already subscribed to our newsletter!")
-                return redirect(request.META.get('HTTP_REFERER', 'home'))
-
-            # Create newsletter subscription
-            newsletter = form.save(commit=False)
-
-            # If user is authenticated, link to user
-            if request.user.is_authenticated:
-                newsletter.user = request.user
-
-            # Save to database
-            newsletter.save()
-
-            # Log activity
-            if request.user.is_authenticated:
-                ActivityLog.objects.create(
-                    user=request.user,
-                    action_type='newsletter_subscription',
-                    description=f"Subscribed to newsletter with email: {email}",
-                )
-
-            # Send welcome email using Django's built-in email functionality
-            try:
-                from django.core.mail import send_mail
-                from django.template.loader import render_to_string
-                from django.utils.html import strip_tags
-
-                # Create HTML content
-                html_message = f'''
-                <html>
-                <head>
-                    <style>
-                        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
-                        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-                        .header {{ background-color: #4e73df; color: white; padding: 20px; text-align: center; }}
-                        .content {{ padding: 20px; background-color: #f9f9f9; }}
-                        .footer {{ text-align: center; margin-top: 20px; font-size: 12px; color: #777; }}
-                        ul {{ padding-left: 20px; }}
-                        .button {{ display: inline-block; background-color: #4e73df; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; }}
-                    </style>
-                </head>
-                <body>
-                    <div class="container">
-                        <div class="header">
-                            <h1>Welcome to MyDay Events Newsletter!</h1>
-                        </div>
-                        <div class="content">
-                            <p>Hello {name or "there"},</p>
-                            <p>Thank you for subscribing to the MyDay Events newsletter!</p>
-                            <p>You will now receive updates about:</p>
-                            <ul>
-                                <li>Our latest event offerings</li>
-                                <li>Special promotions and discounts</li>
-                                <li>Seasonal packages and themes</li>
-                                <li>Event planning tips and inspiration</li>
-                            </ul>
-                            <p>If you have any questions or need assistance with planning your event, feel free to reply to this email or contact our support team at +91 6397664902.</p>
-                            <p><a href="https://myday-kokr.onrender.com/events/" class="button">Explore Our Events</a></p>
-                        </div>
-                        <div class="footer">
-                            <p>Best regards,<br>Aryan Sanatani<br>MyDay Events Team</p>
-                            <p>&copy; 2025 MyDay Events. All rights reserved.</p>
-                        </div>
-                    </div>
-                </body>
-                </html>
-                '''
-
-                # Plain text version
-                plain_message = f'''Hello {name or "there"},
-
-Thank you for subscribing to the MyDay Events newsletter!
-
-You will now receive updates about:
-- Our latest event offerings
-- Special promotions and discounts
-- Seasonal packages and themes
-- Event planning tips and inspiration
-
-If you have any questions or need assistance with planning your event, feel free to reply to this email or contact our support team at +91 6397664902.
-
-Best regards,
-Aryan Sanatani
-MyDay Events Team'''
-
-                # Send email
-                send_mail(
-                    subject='Welcome to MyDay Events Newsletter!',
-                    message=plain_message,
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[email],
-                    fail_silently=False,
-                    html_message=html_message
-                )
-
-                # Update last_sent timestamp
-                from django.utils import timezone
-                newsletter.last_sent = timezone.now()
-                newsletter.save(update_fields=['last_sent'])
-
-            except Exception as e:
-                print(f"Error sending welcome email: {str(e)}")
-
-            messages.success(request, "Thank you for subscribing to our newsletter!")
-        else:
-            # If form is invalid
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, f"{error}")
-
-    return redirect(request.META.get('HTTP_REFERER', 'home'))
+# Newsletter subscription has been replaced by subscribe_email
 
 
 # Email subscription
 def subscribe_email(request):
     """Handle email subscription"""
     if request.method == 'POST':
-        form = EmailSubscriptionForm(request.POST)
-        if form.is_valid():
-            email = form.cleaned_data['email']
-            name = form.cleaned_data.get('name', '')
+        # Check if the request is coming from the simple form in the footer
+        if 'email' in request.POST and not request.POST.get('name', ''):
+            email = request.POST.get('email')
+            name = ''
 
             # Check if email already exists
             if EmailSubscription.objects.filter(email=email).exists():
                 messages.info(request, "You're already subscribed!")
                 return redirect(request.META.get('HTTP_REFERER', 'home'))
 
-            # Create email subscription
-            subscription = form.save()
-
-            # Send welcome email
-            send_welcome_email(email, name)
-
-            # Log activity
-            ActivityLog.log_activity(
-                user=request.user if request.user.is_authenticated else None,
-                action_type='email_subscription',
-                description=f"Email subscription for {email}",
-                request=request
-            )
-
-            messages.success(request, "Thank you for subscribing!")
+            # Create email subscription directly
+            subscription = EmailSubscription.objects.create(email=email)
         else:
-            # If form is invalid
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, f"{error}")
+            # Handle the full form submission
+            form = EmailSubscriptionForm(request.POST)
+            if form.is_valid():
+                email = form.cleaned_data['email']
+                name = form.cleaned_data.get('name', '')
+
+                # Check if email already exists
+                if EmailSubscription.objects.filter(email=email).exists():
+                    messages.info(request, "You're already subscribed!")
+                    return redirect(request.META.get('HTTP_REFERER', 'home'))
+
+                # Create email subscription
+                subscription = form.save()
+            else:
+                # If form is invalid
+                for field, errors in form.errors.items():
+                    for error in errors:
+                        messages.error(request, f"{error}")
+                return redirect(request.META.get('HTTP_REFERER', 'home'))
+
+        # Send welcome email
+        send_welcome_email(email, name)
+
+        # Log activity
+        ActivityLog.log_activity(
+            user=request.user if request.user.is_authenticated else None,
+            action_type='email_subscription',
+            description=f"Email subscription for {email}",
+            request=request
+        )
+
+        messages.success(request, "Thank you for subscribing!")
 
     # Redirect back to the referring page
     return redirect(request.META.get('HTTP_REFERER', 'home'))
