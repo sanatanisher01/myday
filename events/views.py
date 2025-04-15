@@ -1258,6 +1258,18 @@ def manager_subevents(request, event_id=None):
         else:
             subevents = SubEvent.objects.all().order_by('-created_at')
 
+        # Check for missing or corrupted images
+        for subevent in subevents:
+            try:
+                # Check if image exists and is accessible
+                subevent.image_missing = False
+                if not subevent.image or not subevent.image.url:
+                    subevent.image_missing = True
+            except Exception as e:
+                # If there's an error accessing the image, mark it as missing
+                print(f"Error checking image for subevent {subevent.id}: {str(e)}")
+                subevent.image_missing = True
+
         if request.method == 'POST':
             # Handle creating new subevent
             if 'create_subevent' in request.POST:
@@ -1271,19 +1283,34 @@ def manager_subevents(request, event_id=None):
                     # Handle image upload
                     if 'image' in request.FILES:
                         image = request.FILES['image']
-                        # Validate image file type
-                        if not image.name.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
-                            messages.error(request, "Unsupported image format. Please use PNG, JPG, JPEG, or GIF.")
-                            return redirect(request.path)
 
                         # Log image details for debugging
                         print(f"Image upload details: name={image.name}, size={image.size}, content_type={image.content_type}")
 
-                        # Set the image directly
-                        subevent.image = image
+                        try:
+                            # Import PIL to verify the image
+                            from PIL import Image as PILImage
+                            try:
+                                # Try to open the image to verify it's valid
+                                img = PILImage.open(image)
+                                img.verify()  # Verify it's a valid image
 
-                        # Log that image was set
-                        print(f"Image set on subevent: {subevent.image}")
+                                # Reset file pointer
+                                image.seek(0)
+
+                                # Set the image directly
+                                subevent.image = image
+
+                                # Log that image was set
+                                print(f"Image set on subevent: {subevent.image}")
+                            except Exception as e:
+                                print(f"Invalid image: {str(e)}")
+                                messages.error(request, f"The uploaded file is not a valid image: {str(e)}")
+                                return redirect(request.path)
+                        except ImportError:
+                            # If PIL is not available, we'll skip this validation
+                            subevent.image = image
+                            print(f"PIL not available, image set without validation: {subevent.image}")
 
                     # Check if slug already exists and make it unique if needed
                     if 'slug' in form.cleaned_data and form.cleaned_data['slug']:
@@ -1338,10 +1365,6 @@ def manager_subevents(request, event_id=None):
                     # Handle image upload for updates
                     if 'image' in request.FILES:
                         image = request.FILES['image']
-                        # Validate image file type
-                        if not image.name.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
-                            messages.error(request, "Unsupported image format. Please use PNG, JPG, JPEG, or GIF.")
-                            return redirect(request.path)
 
                         # Log image details for debugging
                         print(f"Update - Image upload details: name={image.name}, size={image.size}, content_type={image.content_type}")
@@ -1352,9 +1375,28 @@ def manager_subevents(request, event_id=None):
                             old_image = subevent.image
                             print(f"Old image: {old_image}")
 
-                        # Set the new image
-                        subevent.image = image
-                        print(f"New image set on subevent: {subevent.image}")
+                        try:
+                            # Import PIL to verify the image
+                            from PIL import Image as PILImage
+                            try:
+                                # Try to open the image to verify it's valid
+                                img = PILImage.open(image)
+                                img.verify()  # Verify it's a valid image
+
+                                # Reset file pointer
+                                image.seek(0)
+
+                                # Set the new image
+                                subevent.image = image
+                                print(f"New image set on subevent: {subevent.image}")
+                            except Exception as e:
+                                print(f"Invalid image: {str(e)}")
+                                messages.error(request, f"The uploaded file is not a valid image: {str(e)}")
+                                return redirect(request.path)
+                        except ImportError:
+                            # If PIL is not available, we'll skip this validation
+                            subevent.image = image
+                            print(f"PIL not available, image set without validation: {subevent.image}")
 
                     # Check if slug already exists and make it unique if needed
                     if 'slug' in form.cleaned_data and form.cleaned_data['slug']:

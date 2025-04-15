@@ -188,6 +188,9 @@
                             <label for="image" class="form-label">Subevent Image</label>
                             <input type="file" name="image" class="form-control" accept="image/png,image/jpeg,image/jpg,image/gif" required>
                             <div class="form-text">Supported formats: PNG, JPG, JPEG, GIF. Maximum size: 5MB.</div>
+                            <div class="alert alert-info mt-2">
+                                <small><i class="fas fa-info-circle"></i> Make sure the image is not corrupted and is a valid image file.</small>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -255,6 +258,9 @@
                             </div>
                             <input type="file" class="form-control" name="image" {% if subevent.image_missing %}required{% endif %} accept="image/png,image/jpeg,image/jpg,image/gif">
                             <div class="form-text">{% if subevent.image_missing %}Please upload a new image{% else %}Leave blank to keep current image{% endif %}. Supported formats: PNG, JPG, JPEG, GIF. Maximum size: 5MB.</div>
+                            <div class="alert alert-info mt-2">
+                                <small><i class="fas fa-info-circle"></i> Make sure the image is not corrupted and is a valid image file.</small>
+                            </div>
                         </div>
                     </div>
                 </div>

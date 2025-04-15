@@ -86,17 +86,39 @@ class SubEventForm(forms.ModelForm):
         if not image and self.instance and self.instance.pk and hasattr(self.instance, 'image') and self.instance.image:
             return self.instance.image
 
+        # If image is required for new subevents
+        if not image and not self.instance.pk:
+            raise forms.ValidationError("An image is required for new subevents.")
+
         if image and hasattr(image, 'name'):
             # Validate file type
-            if not image.name.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
-                raise forms.ValidationError("Unsupported image format. Please use PNG, JPG, JPEG, or GIF.")
+            valid_extensions = ('.png', '.jpg', '.jpeg', '.gif')
+            if not any(image.name.lower().endswith(ext) for ext in valid_extensions):
+                raise forms.ValidationError(f"Unsupported image format. Please use {', '.join(valid_extensions)}.")
 
             # Validate file size (max 5MB)
             if hasattr(image, 'size') and image.size > 5 * 1024 * 1024:
                 raise forms.ValidationError("Image file is too large. Maximum size is 5MB.")
 
-            # Add a flag to indicate that a new image was uploaded
-            self.new_image_uploaded = True
+            # Validate that the file is actually an image
+            try:
+                from PIL import Image as PILImage
+                try:
+                    # Try to open the image to verify it's valid
+                    img = PILImage.open(image)
+                    img.verify()  # Verify it's a valid image
+
+                    # Reset file pointer
+                    if hasattr(image, 'seek'):
+                        image.seek(0)
+
+                    # Add a flag to indicate that a new image was uploaded
+                    self.new_image_uploaded = True
+                except Exception as e:
+                    raise forms.ValidationError(f"The uploaded file is not a valid image: {str(e)}")
+            except ImportError:
+                # If PIL is not available, we'll skip this validation
+                self.new_image_uploaded = True
 
         return image
 

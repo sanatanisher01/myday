@@ -36,7 +36,13 @@ class SubEvent(models.Model):
     slug = models.SlugField(max_length=100, unique=True, blank=True)
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    image = CloudinaryField('image', folder='subevents', null=True, blank=True)  # Using Cloudinary for image storage
+    image = CloudinaryField('image', folder='subevents', null=True, blank=True,
+                         resource_type='image', format='jpg',
+                         transformation={
+                             'quality': 'auto:good',
+                             'fetch_format': 'auto',
+                             'width': 800, 'height': 600, 'crop': 'limit'
+                         })  # Using Cloudinary for image storage
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
