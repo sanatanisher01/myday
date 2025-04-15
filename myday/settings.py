@@ -302,15 +302,18 @@ LOGOUT_REDIRECT_URL = '/'
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'aryansanatani01@gmail.com')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'quoy aufm yllf hxcg')
 
-if DEBUG:
-    # Use console backend for development
-    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-else:
-    # Use SMTP backend for production
-    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    EMAIL_HOST = 'smtp.gmail.com'
-    EMAIL_PORT = 587
-    EMAIL_USE_TLS = True
+# Always use SMTP backend for both development and production
+# This ensures emails are actually sent
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+
+# Set timeout to avoid hanging connections
+EMAIL_TIMEOUT = 30
+
+# Allow less secure apps for Gmail
+EMAIL_USE_SSL = False
 
 # Default email settings
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)

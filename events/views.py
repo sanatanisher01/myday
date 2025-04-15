@@ -1869,7 +1869,7 @@ def send_welcome_email(email, name=None):
     """Send welcome email to new subscriber"""
     if email:
         try:
-            from django.core.mail import send_mail, get_connection
+            from django.core.mail import send_mail
             from django.conf import settings
             import logging
 
@@ -1939,23 +1939,59 @@ If you have any questions or need assistance with planning your event, feel free
 Best regards,
 MyDay Events Team'''
 
-            # Get a connection to the email server
-            connection = get_connection()
-            connection.open()
+            # Create a direct SMTP connection for more reliable delivery
+            from django.core.mail import EmailMultiAlternatives
+            import smtplib
 
-            # Send email
-            result = send_mail(
+            # Log SMTP connection attempt
+            logger.info(f"Attempting SMTP connection to {settings.EMAIL_HOST}:{settings.EMAIL_PORT}")
+
+            # Create the email message
+            msg = EmailMultiAlternatives(
                 subject='Thank You for Subscribing to MyDay Events!',
-                message=plain_message,
+                body=plain_message,
                 from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[email],
-                fail_silently=False,
-                html_message=html_message,
-                connection=connection
+                to=[email]
             )
 
-            # Close the connection
-            connection.close()
+            # Attach HTML version
+            msg.attach_alternative(html_message, "text/html")
+
+            # Send the email directly using SMTP
+            try:
+                # Connect to the SMTP server
+                smtp = smtplib.SMTP(settings.EMAIL_HOST, settings.EMAIL_PORT)
+                smtp.ehlo()
+
+                # Use TLS encryption
+                if settings.EMAIL_USE_TLS:
+                    smtp.starttls()
+                    smtp.ehlo()
+
+                # Log in to the SMTP server
+                smtp.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
+
+                # Send the email
+                result = smtp.send_message(msg)
+
+                # Close the connection
+                smtp.quit()
+
+                logger.info(f"SMTP connection successful, email sent to {email}")
+            except Exception as smtp_error:
+                logger.error(f"SMTP error: {str(smtp_error)}")
+                print(f"SMTP error: {str(smtp_error)}")
+
+                # Fall back to Django's send_mail as a backup
+                logger.info("Falling back to Django's send_mail")
+                result = send_mail(
+                    subject='Thank You for Subscribing to MyDay Events!',
+                    message=plain_message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[email],
+                    fail_silently=False,
+                    html_message=html_message
+                )
 
             # Log the result
             logger.info(f"Email send result: {result}")
@@ -1978,7 +2014,7 @@ def test_email(request):
         return redirect('home')
 
     try:
-        from django.core.mail import send_mail, get_connection
+        from django.core.mail import send_mail
         from django.conf import settings
         import logging
 
@@ -2039,23 +2075,59 @@ Email details:
 
 This is an automated test email. Please do not reply.'''
 
-        # Get a connection to the email server
-        connection = get_connection()
-        connection.open()
+        # Create a direct SMTP connection for more reliable delivery
+        from django.core.mail import EmailMultiAlternatives
+        import smtplib
 
-        # Send email
-        result = send_mail(
+        # Log SMTP connection attempt
+        logger.info(f"Attempting SMTP connection to {settings.EMAIL_HOST}:{settings.EMAIL_PORT}")
+
+        # Create the email message
+        msg = EmailMultiAlternatives(
             subject='MyDay Events - Email Test',
-            message=plain_message,
+            body=plain_message,
             from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[request.user.email],
-            fail_silently=False,
-            html_message=html_message,
-            connection=connection
+            to=[request.user.email]
         )
 
-        # Close the connection
-        connection.close()
+        # Attach HTML version
+        msg.attach_alternative(html_message, "text/html")
+
+        # Send the email directly using SMTP
+        try:
+            # Connect to the SMTP server
+            smtp = smtplib.SMTP(settings.EMAIL_HOST, settings.EMAIL_PORT)
+            smtp.ehlo()
+
+            # Use TLS encryption
+            if settings.EMAIL_USE_TLS:
+                smtp.starttls()
+                smtp.ehlo()
+
+            # Log in to the SMTP server
+            smtp.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
+
+            # Send the email
+            result = smtp.send_message(msg)
+
+            # Close the connection
+            smtp.quit()
+
+            logger.info(f"SMTP connection successful, email sent to {request.user.email}")
+        except Exception as smtp_error:
+            logger.error(f"SMTP error: {str(smtp_error)}")
+            print(f"SMTP error: {str(smtp_error)}")
+
+            # Fall back to Django's send_mail as a backup
+            logger.info("Falling back to Django's send_mail")
+            result = send_mail(
+                subject='MyDay Events - Email Test',
+                message=plain_message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[request.user.email],
+                fail_silently=False,
+                html_message=html_message
+            )
 
         # Log the result
         logger.info(f"Test email send result: {result}")

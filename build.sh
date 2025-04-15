@@ -25,9 +25,15 @@ fi
 if [ -d "/opt/render/project/src" ]; then
     echo "Setting Render environment variables"
     # These will be used by the Render service
-    echo "export EMAIL_HOST_USER=aryansanatani01@gmail.com" >> $HOME/.bashrc
-    echo "export EMAIL_HOST_PASSWORD=quoy aufm yllf hxcg" >> $HOME/.bashrc
-    echo "export DEFAULT_FROM_EMAIL=aryansanatani01@gmail.com" >> $HOME/.bashrc
+    # Create a .env file for Django to read
+    echo "EMAIL_HOST_USER=aryansanatani01@gmail.com" > /opt/render/project/src/.env
+    echo "EMAIL_HOST_PASSWORD=quoy aufm yllf hxcg" >> /opt/render/project/src/.env
+    echo "DEFAULT_FROM_EMAIL=aryansanatani01@gmail.com" >> /opt/render/project/src/.env
+
+    # Also set them in the current environment
+    export EMAIL_HOST_USER="aryansanatani01@gmail.com"
+    export EMAIL_HOST_PASSWORD="quoy aufm yllf hxcg"
+    export DEFAULT_FROM_EMAIL="aryansanatani01@gmail.com"
 fi
 
 echo "Starting build process..."
