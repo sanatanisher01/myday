@@ -88,6 +88,10 @@ python manage.py migrate events 0012_cloudinary_storage
 echo "Applying SendGrid migration..."
 python manage.py migrate events 0013_remove_mailersend_field
 
+# Apply EmailSubscription migration
+echo "Applying EmailSubscription migration..."
+python manage.py migrate events 0014_emailsubscription_alter_activitylog_action_type_and_more
+
 # Create cache table for database cache backend
 echo "Creating cache table..."
 python manage.py createcachetable

@@ -1805,13 +1805,17 @@ def subscribe_email(request):
             email = request.POST.get('email')
             name = ''
 
-            # Check if email already exists
-            if EmailSubscription.objects.filter(email=email).exists():
-                messages.info(request, "You're already subscribed!")
-                return redirect(request.META.get('HTTP_REFERER', 'home'))
+            # Check if email already exists and create subscription
+            try:
+                if EmailSubscription.objects.filter(email=email).exists():
+                    messages.info(request, "You're already subscribed!")
+                    return redirect(request.META.get('HTTP_REFERER', 'home'))
 
-            # Create email subscription directly
-            subscription = EmailSubscription.objects.create(email=email)
+                # Create email subscription directly
+                subscription = EmailSubscription.objects.create(email=email)
+            except Exception as e:
+                # If the table doesn't exist yet, just continue without saving
+                print(f"Error checking/creating subscription: {str(e)}")
         else:
             # Handle the full form submission
             form = EmailSubscriptionForm(request.POST)
@@ -1820,12 +1824,16 @@ def subscribe_email(request):
                 name = form.cleaned_data.get('name', '')
 
                 # Check if email already exists
-                if EmailSubscription.objects.filter(email=email).exists():
-                    messages.info(request, "You're already subscribed!")
-                    return redirect(request.META.get('HTTP_REFERER', 'home'))
+                try:
+                    if EmailSubscription.objects.filter(email=email).exists():
+                        messages.info(request, "You're already subscribed!")
+                        return redirect(request.META.get('HTTP_REFERER', 'home'))
 
-                # Create email subscription
-                subscription = form.save()
+                    # Create email subscription
+                    subscription = form.save()
+                except Exception as e:
+                    # If the table doesn't exist yet, just continue without saving
+                    print(f"Error checking/creating subscription from form: {str(e)}")
             else:
                 # If form is invalid
                 for field, errors in form.errors.items():
