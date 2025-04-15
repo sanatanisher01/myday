@@ -1834,15 +1834,21 @@ def subscribe_email(request):
                 return redirect(request.META.get('HTTP_REFERER', 'home'))
 
         # Send welcome email
-        send_welcome_email(email, name)
+        try:
+            send_welcome_email(email, name)
+        except Exception as e:
+            print(f"Error sending welcome email: {str(e)}")
 
         # Log activity
-        ActivityLog.log_activity(
-            user=request.user if request.user.is_authenticated else None,
-            action_type='email_subscription',
-            description=f"Email subscription for {email}",
-            request=request
-        )
+        try:
+            ActivityLog.log_activity(
+                user=request.user if request.user.is_authenticated else None,
+                action_type='email_subscription',
+                description=f"Email subscription for {email}",
+                request=request
+            )
+        except Exception as e:
+            print(f"Error logging activity: {str(e)}")
 
         messages.success(request, "Thank you for subscribing!")
 
