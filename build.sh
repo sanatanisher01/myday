@@ -29,11 +29,19 @@ if [ -d "/opt/render/project/src" ]; then
     echo "EMAIL_HOST_USER=aryansanatani01@gmail.com" > /opt/render/project/src/.env
     echo "EMAIL_HOST_PASSWORD=quoy aufm yllf hxcg" >> /opt/render/project/src/.env
     echo "DEFAULT_FROM_EMAIL=aryansanatani01@gmail.com" >> /opt/render/project/src/.env
+    echo "CLOUDINARY_CLOUD_NAME=darlb4afr" >> /opt/render/project/src/.env
+    echo "CLOUDINARY_API_KEY=324161486593486" >> /opt/render/project/src/.env
+    echo "CLOUDINARY_API_SECRET=iRqM4jQa1iifGl6OqqQOGkYIH_c" >> /opt/render/project/src/.env
+    echo "CLOUDINARY_URL=cloudinary://324161486593486:iRqM4jQa1iifGl6OqqQOGkYIH_c@darlb4afr" >> /opt/render/project/src/.env
 
     # Also set them in the current environment
     export EMAIL_HOST_USER="aryansanatani01@gmail.com"
     export EMAIL_HOST_PASSWORD="quoy aufm yllf hxcg"
     export DEFAULT_FROM_EMAIL="aryansanatani01@gmail.com"
+    export CLOUDINARY_CLOUD_NAME="darlb4afr"
+    export CLOUDINARY_API_KEY="324161486593486"
+    export CLOUDINARY_API_SECRET="iRqM4jQa1iifGl6OqqQOGkYIH_c"
+    export CLOUDINARY_URL="cloudinary://324161486593486:iRqM4jQa1iifGl6OqqQOGkYIH_c@darlb4afr"
 fi
 
 echo "Starting build process..."

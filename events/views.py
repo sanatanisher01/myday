@@ -1273,6 +1273,9 @@ def manager_subevents(request, event_id=None):
                             messages.error(request, "Unsupported image format. Please use PNG, JPG, JPEG, or GIF.")
                             return redirect(request.path)
 
+                        # Set the image directly
+                        subevent.image = image
+
                     # Save the subevent
                     subevent.save()
 
@@ -1312,6 +1315,9 @@ def manager_subevents(request, event_id=None):
                         if not image.name.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
                             messages.error(request, "Unsupported image format. Please use PNG, JPG, JPEG, or GIF.")
                             return redirect(request.path)
+
+                        # Set the image directly
+                        subevent.image = image
 
                     # Save the subevent
                     subevent.save()

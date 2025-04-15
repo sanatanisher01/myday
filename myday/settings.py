@@ -220,13 +220,13 @@ else:
 
 # Cloudinary settings
 CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME', ''),
-    'API_KEY': os.environ.get('CLOUDINARY_API_KEY', ''),
-    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET', ''),
+    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME', 'darlb4afr'),
+    'API_KEY': os.environ.get('CLOUDINARY_API_KEY', '324161486593486'),
+    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET', 'iRqM4jQa1iifGl6OqqQOGkYIH_c'),
 }
 
 # Use Cloudinary for media storage in production
-CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL', '')
+CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL', 'cloudinary://324161486593486:iRqM4jQa1iifGl6OqqQOGkYIH_c@darlb4afr')
 
 # Ensure media files persist in production
 if not DEBUG:
@@ -253,11 +253,8 @@ if not DEBUG:
 # Configure storage for static and media files - using the new STORAGES setting
 STORAGES = {
     "default": {
-        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage" if not DEBUG or ON_RENDER else "django.core.files.storage.FileSystemStorage",
-        "OPTIONS": {
-            "location": MEDIA_ROOT,
-            "base_url": MEDIA_URL,
-        } if DEBUG and not ON_RENDER else {},
+        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+        "OPTIONS": {},
     },
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage" if not DEBUG else "django.contrib.staticfiles.storage.StaticFilesStorage",
